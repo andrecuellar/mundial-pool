@@ -15,6 +15,13 @@
       "when": 1779735348498,
       "tag": "0001_melodic_lionheart",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1779736954496,
+      "tag": "0002_mixed_wallop",
+      "breakpoints": true
     }
   ]
 }

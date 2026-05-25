@@ -84,18 +84,55 @@ Por implementar: revelación, decepción, top-N equipos (necesitan datos pre-tor
 pnpm install
 cp .env.example .env.local
 # Llenar DATABASE_URL y claves de Supabase
-pnpm db:push           # crea las tablas en Supabase
+pnpm db:generate && pnpm db:migrate
+pnpm db:seed:categories
+pnpm db:seed:teams
 pnpm dev
 ```
+
+## Autenticación
+
+Google OAuth + Email magic link, ambos vía Supabase Auth (`@supabase/ssr`). Sin
+passwords. La sesión se mantiene en cookies HTTP-only y se refresca en cada
+request vía `src/proxy.ts` (en Next 16, `middleware` se llama `proxy`).
+
+### Configurar Google OAuth
+
+Una vez por proyecto. El magic link funciona out-of-the-box; Google requiere
+estos pasos:
+
+1. **Google Cloud Console** → [console.cloud.google.com](https://console.cloud.google.com)
+   - Crear proyecto (o reusar uno).
+   - APIs & Services → OAuth consent screen → External → completar app name,
+     soporte email, logo (opcional). Dominios autorizados: el de tu Supabase
+     project (`xxx.supabase.co`).
+   - Credentials → Create credentials → OAuth client ID → Web application.
+   - Authorized redirect URIs: `https://<project-ref>.supabase.co/auth/v1/callback`.
+   - Copiar el Client ID y Client Secret.
+
+2. **Supabase Dashboard** → Authentication → Providers → Google
+   - Pegar Client ID y Client Secret.
+   - Enable. Save.
+
+3. **Supabase Dashboard** → Authentication → URL Configuration
+   - Site URL: `http://localhost:3000` (en dev) o tu dominio en prod.
+   - Redirect URLs (whitelist): `http://localhost:3000/auth/callback` y
+     el equivalente de producción.
+
+### Email magic link
+
+Por defecto Supabase manda los emails con su SMTP compartido (límite ~3
+emails/hora). Para producción, configurar SMTP propio en Authentication →
+Email Templates → SMTP Settings. Gratis: Resend, SendGrid free tier.
 
 ## Roadmap
 
 - [x] Schema + integraciones base
-- [ ] Migraciones iniciales y seed de categorías + selecciones del Mundial 2026
-- [ ] Auth con magic link
+- [x] Seed de categorías + 48 selecciones del Mundial 2026
+- [x] Provider TheSportsDB + endpoint cron de resolución
+- [x] Auth Google + magic link
 - [ ] CRUD de grupos + invitación por código
 - [ ] Formulario de predicciones (bloqueable por fecha)
 - [ ] Leaderboard con cálculo de puntaje server-side
-- [ ] Adapter real de API de fútbol + endpoint cron
-- [ ] Vista admin para overrides manuales
+- [ ] Vista admin para overrides manuales (Balón de Oro, Guante, joven)
 - [ ] Diseño UI (Tailwind + shadcn/ui)
