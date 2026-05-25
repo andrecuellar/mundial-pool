@@ -1,66 +1,48 @@
 import { eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { categories, resolutionRuns, results, teams } from '@/db/schema'
-import type { TournamentSnapshot } from '@/integrations/football'
 import { getFootballProvider } from '@/integrations/football'
+import { teamMatchKey } from '@/integrations/football/normalize'
+import type { TournamentSnapshot } from '@/integrations/football/types'
 
-type ResolutionOutcome =
-  | { kind: 'team'; teamFifaCode: string }
-  | { kind: 'player'; playerExternalId: string }
-  | { kind: 'team_set'; teamFifaCodes: string[] }
+type Outcome =
+  | { kind: 'team'; teamName: string }
+  | { kind: 'player'; reason: string }
+  | { kind: 'team_set'; teamNames: string[] }
   | { kind: 'skip'; reason: string }
 
-function resolveCategory(strategy: string, snapshot: TournamentSnapshot): ResolutionOutcome {
+function planCategory(strategy: string, snapshot: TournamentSnapshot): Outcome {
   switch (strategy) {
     case 'final_winner':
       return snapshot.champion
-        ? { kind: 'team', teamFifaCode: snapshot.champion.fifaCode }
+        ? { kind: 'team', teamName: snapshot.champion.name }
         : { kind: 'skip', reason: 'champion unknown' }
     case 'final_loser':
       return snapshot.runnerUp
-        ? { kind: 'team', teamFifaCode: snapshot.runnerUp.fifaCode }
+        ? { kind: 'team', teamName: snapshot.runnerUp.name }
         : { kind: 'skip', reason: 'runner-up unknown' }
     case 'third_place':
       return snapshot.thirdPlace
-        ? { kind: 'team', teamFifaCode: snapshot.thirdPlace.fifaCode }
+        ? { kind: 'team', teamName: snapshot.thirdPlace.name }
         : { kind: 'skip', reason: 'third place unknown' }
     case 'finalists':
       return snapshot.finalists
-        ? {
-            kind: 'team_set',
-            teamFifaCodes: snapshot.finalists.map((t) => t.fifaCode),
-          }
+        ? { kind: 'team_set', teamNames: snapshot.finalists.map((t) => t.name) }
         : { kind: 'skip', reason: 'finalists unknown' }
-    case 'top_scorer_player':
-      return snapshot.topScorer
-        ? {
-            kind: 'player',
-            playerExternalId: snapshot.topScorer.player.externalId,
-          }
-        : { kind: 'skip', reason: 'top scorer unknown' }
     case 'top_scoring_team':
       return snapshot.topScoringTeam
-        ? { kind: 'team', teamFifaCode: snapshot.topScoringTeam.team.fifaCode }
+        ? { kind: 'team', teamName: snapshot.topScoringTeam.team.name }
         : { kind: 'skip', reason: 'top scoring team unknown' }
     case 'most_conceded_team':
       return snapshot.mostConcededTeam
-        ? { kind: 'team', teamFifaCode: snapshot.mostConcededTeam.team.fifaCode }
+        ? { kind: 'team', teamName: snapshot.mostConcededTeam.team.name }
         : { kind: 'skip', reason: 'most conceded team unknown' }
+    case 'top_scorer_player':
+      return { kind: 'player', reason: 'top scorer auto-resolution pending' }
     case 'fifa_golden_ball':
-      return snapshot.goldenBall
-        ? { kind: 'player', playerExternalId: snapshot.goldenBall.externalId }
-        : { kind: 'skip', reason: 'golden ball not awarded yet' }
     case 'fifa_golden_glove':
-      return snapshot.goldenGlove
-        ? { kind: 'player', playerExternalId: snapshot.goldenGlove.externalId }
-        : { kind: 'skip', reason: 'golden glove not awarded yet' }
     case 'fifa_young_player':
-      return snapshot.bestYoungPlayer
-        ? {
-            kind: 'player',
-            playerExternalId: snapshot.bestYoungPlayer.externalId,
-          }
-        : { kind: 'skip', reason: 'young player not awarded yet' }
+      return { kind: 'player', reason: `${strategy} requires manual override` }
     case 'revelation':
     case 'disappointment':
     case 'top_n_teams':
@@ -71,44 +53,88 @@ function resolveCategory(strategy: string, snapshot: TournamentSnapshot): Resolu
   }
 }
 
+async function loadTeamIndex() {
+  const rows = await db.select().from(teams)
+  const byKey = new Map<string, (typeof rows)[number]>()
+  for (const t of rows) byKey.set(teamMatchKey(t.name), t)
+  return byKey
+}
+
 export async function runResolution() {
   const provider = getFootballProvider()
   const [run] = await db.insert(resolutionRuns).values({ status: 'running' }).returning()
 
   try {
-    const snapshot = await provider.fetchTournamentSnapshot()
-    const cats = await db.select().from(categories)
+    const [snapshot, teamIndex, cats] = await Promise.all([
+      provider.fetchTournamentSnapshot(),
+      loadTeamIndex(),
+      db.select().from(categories),
+    ])
+
     const summary: Record<string, string> = {}
 
     for (const cat of cats) {
-      const outcome = resolveCategory(cat.resolutionStrategy, snapshot)
-      if (outcome.kind === 'skip') {
+      const outcome = planCategory(cat.resolutionStrategy, snapshot)
+
+      if (outcome.kind === 'skip' || outcome.kind === 'player') {
         summary[cat.key] = `skip: ${outcome.reason}`
         continue
       }
+
       if (outcome.kind === 'team') {
-        const team = await db.query.teams.findFirst({
-          where: eq(teams.fifaCode, outcome.teamFifaCode),
-        })
+        const team = teamIndex.get(teamMatchKey(outcome.teamName))
         if (!team) {
-          summary[cat.key] = `skip: team ${outcome.teamFifaCode} missing in db`
+          summary[cat.key] = `skip: team "${outcome.teamName}" not in db`
+          continue
+        }
+        await db
+          .insert(results)
+          .values({ categoryId: cat.id, teamId: team.id, source: provider.id })
+          .onConflictDoUpdate({
+            target: results.categoryId,
+            set: {
+              teamId: team.id,
+              teamSet: null,
+              playerId: null,
+              source: provider.id,
+              resolvedAt: new Date(),
+            },
+          })
+        summary[cat.key] = `team:${team.fifaCode ?? team.name}`
+        continue
+      }
+
+      if (outcome.kind === 'team_set') {
+        const matched: string[] = []
+        const missing: string[] = []
+        for (const name of outcome.teamNames) {
+          const t = teamIndex.get(teamMatchKey(name))
+          if (t) matched.push(t.id)
+          else missing.push(name)
+        }
+        if (missing.length > 0) {
+          summary[cat.key] = `skip: teams missing in db: ${missing.join(', ')}`
           continue
         }
         await db
           .insert(results)
           .values({
             categoryId: cat.id,
-            teamId: team.id,
+            teamSet: matched,
             source: provider.id,
           })
           .onConflictDoUpdate({
             target: results.categoryId,
-            set: { teamId: team.id, source: provider.id, resolvedAt: new Date() },
+            set: {
+              teamSet: matched,
+              teamId: null,
+              playerId: null,
+              source: provider.id,
+              resolvedAt: new Date(),
+            },
           })
-        summary[cat.key] = `team:${team.fifaCode}`
-        continue
+        summary[cat.key] = `team_set:${matched.length}`
       }
-      summary[cat.key] = `pending integration for ${outcome.kind}`
     }
 
     await db

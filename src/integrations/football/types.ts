@@ -1,20 +1,21 @@
-export type ResolvedTeam = { fifaCode: string; name: string }
+export type ResolvedTeam = { name: string }
 
 export type ResolvedPlayer = {
   externalId: string
   fullName: string
-  teamFifaCode: string | null
+  teamName: string | null
 }
 
 export type TournamentRound =
   | 'group_stage'
+  | 'round_of_32'
   | 'round_of_16'
   | 'quarter_finals'
   | 'semi_finals'
   | 'final'
 
 export type TeamTournamentRun = {
-  fifaCode: string
+  name: string
   furthestRound: TournamentRound
   goalsFor: number
   goalsAgainst: number

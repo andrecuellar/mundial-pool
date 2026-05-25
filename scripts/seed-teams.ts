@@ -41,14 +41,14 @@ async function main() {
       .values({
         externalId: t.fifa_code,
         fifaCode: t.fifa_code,
-        name: t.name_normalised ?? t.name,
+        name: t.name,
         flagEmoji: t.flag_icon,
       })
       .onConflictDoUpdate({
         target: teams.externalId,
         set: {
           fifaCode: t.fifa_code,
-          name: t.name_normalised ?? t.name,
+          name: t.name,
           flagEmoji: t.flag_icon,
         },
       })
