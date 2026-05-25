@@ -22,6 +22,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Equipo que gana la final del Mundial 2026',
     valueKind: 'team',
     resolutionStrategy: 'final_winner',
+    defaultPoints: 15,
   },
   {
     key: 'runner_up',
@@ -29,6 +30,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Equipo que pierde la final',
     valueKind: 'team',
     resolutionStrategy: 'final_loser',
+    defaultPoints: 7,
   },
   {
     key: 'third_place',
@@ -36,21 +38,24 @@ const CATEGORIES: SeedRow[] = [
     description: 'Ganador del partido por el tercer puesto',
     valueKind: 'team',
     resolutionStrategy: 'third_place',
+    defaultPoints: 5,
   },
   {
     key: 'finalists',
     name: 'Finalistas',
-    description: 'Los dos equipos que llegan a la final',
+    description: 'Los dos equipos que llegan a la final (all-or-nothing)',
     valueKind: 'team_set',
     resolutionStrategy: 'finalists',
+    defaultPoints: 6,
   },
   {
     key: 'top_5',
     name: 'Top 5 selecciones',
-    description: 'Cinco mejores selecciones por desempeño en el torneo',
+    description: 'Cinco mejores selecciones por desempeño (puntos por cada acierto, sin orden)',
     valueKind: 'team_set',
     resolutionStrategy: 'top_n_teams',
-    metadata: { n: 5 },
+    defaultPoints: 2,
+    metadata: { n: 5, scoring: 'per_match' },
   },
   {
     key: 'revelation',
@@ -59,6 +64,7 @@ const CATEGORIES: SeedRow[] = [
       'Equipo con mayor brecha positiva entre ronda alcanzada y ronda esperada según odds pre-torneo',
     valueKind: 'team',
     resolutionStrategy: 'revelation',
+    defaultPoints: 8,
   },
   {
     key: 'disappointment',
@@ -67,6 +73,7 @@ const CATEGORIES: SeedRow[] = [
       'Equipo con mayor brecha negativa entre ronda alcanzada y ronda esperada según odds pre-torneo',
     valueKind: 'team',
     resolutionStrategy: 'disappointment',
+    defaultPoints: 8,
   },
   {
     key: 'top_scoring_team',
@@ -74,6 +81,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Equipo con más goles a favor en todo el torneo',
     valueKind: 'team',
     resolutionStrategy: 'top_scoring_team',
+    defaultPoints: 5,
   },
   {
     key: 'most_conceded_team',
@@ -81,6 +89,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Equipo con más goles en contra en todo el torneo',
     valueKind: 'team',
     resolutionStrategy: 'most_conceded_team',
+    defaultPoints: 3,
   },
   {
     key: 'top_scorer_player',
@@ -88,6 +97,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Goleador del torneo',
     valueKind: 'player',
     resolutionStrategy: 'top_scorer_player',
+    defaultPoints: 10,
   },
   {
     key: 'golden_ball',
@@ -95,6 +105,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Mejor jugador del torneo (premio FIFA)',
     valueKind: 'player',
     resolutionStrategy: 'fifa_golden_ball',
+    defaultPoints: 7,
   },
   {
     key: 'golden_glove',
@@ -102,6 +113,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Mejor arquero del torneo (premio FIFA)',
     valueKind: 'player',
     resolutionStrategy: 'fifa_golden_glove',
+    defaultPoints: 5,
   },
   {
     key: 'young_player',
@@ -109,6 +121,7 @@ const CATEGORIES: SeedRow[] = [
     description: 'Mejor jugador sub-21 del torneo (premio FIFA)',
     valueKind: 'player',
     resolutionStrategy: 'fifa_young_player',
+    defaultPoints: 5,
   },
 ]
 
@@ -125,6 +138,7 @@ async function main() {
           description: row.description,
           valueKind: row.valueKind,
           resolutionStrategy: row.resolutionStrategy,
+          defaultPoints: row.defaultPoints ?? 1,
           metadata: row.metadata ?? null,
         },
       })

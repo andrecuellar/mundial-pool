@@ -22,6 +22,20 @@
       "when": 1779736954496,
       "tag": "0002_mixed_wallop",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1779741867333,
+      "tag": "0003_boring_orphan",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1779742000000,
+      "tag": "0004_user_scores_view",
+      "breakpoints": true
     }
   ]
 }

@@ -94,6 +94,7 @@ export const categories = pgTable('categories', {
   description: text('description'),
   valueKind: categoryValueKind('value_kind').notNull(),
   resolutionStrategy: resolutionStrategy('resolution_strategy').notNull(),
+  defaultPoints: integer('default_points').notNull().default(1),
   metadata: jsonb('metadata').$type<Record<string, unknown>>(),
 })
 
@@ -127,6 +128,7 @@ export const predictions = pgTable(
       .references(() => categories.id),
     teamId: uuid('team_id').references(() => teams.id),
     playerId: uuid('player_id').references(() => players.id),
+    playerText: text('player_text'),
     teamSet: jsonb('team_set').$type<string[]>(),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
@@ -140,6 +142,7 @@ export const results = pgTable('results', {
     .references(() => categories.id),
   teamId: uuid('team_id').references(() => teams.id),
   playerId: uuid('player_id').references(() => players.id),
+  playerText: text('player_text'),
   teamSet: jsonb('team_set').$type<string[]>(),
   source: text('source').notNull(),
   resolvedAt: timestamp('resolved_at', { withTimezone: true }).defaultNow().notNull(),
