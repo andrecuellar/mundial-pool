@@ -69,9 +69,11 @@ export const groupMembers = pgTable(
 
 export const teams = pgTable('teams', {
   id: uuid('id').defaultRandom().primaryKey(),
-  fifaCode: text('fifa_code').notNull().unique(),
+  externalId: text('external_id').notNull().unique(),
+  fifaCode: text('fifa_code'),
   name: text('name').notNull(),
   flagEmoji: text('flag_emoji'),
+  badgeUrl: text('badge_url'),
   preTournamentChampionOdds: integer('pre_tournament_champion_odds'),
   expectedRound: integer('expected_round'),
 })

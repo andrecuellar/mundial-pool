@@ -8,6 +8,13 @@
       "when": 1779734326342,
       "tag": "0000_thick_falcon",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1779735348498,
+      "tag": "0001_melodic_lionheart",
+      "breakpoints": true
     }
   ]
 }

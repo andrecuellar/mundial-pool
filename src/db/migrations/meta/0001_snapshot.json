@@ -1,6 +1,6 @@
 {
-  "id": "1c077bc8-10e5-4d83-8af8-179c7d8c9cab",
-  "prevId": "00000000-0000-0000-0000-000000000000",
+  "id": "b5d32a11-14e6-482f-85d8-83a2936a0095",
+  "prevId": "1c077bc8-10e5-4d83-8af8-179c7d8c9cab",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -608,11 +608,17 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+        "external_id": {
+          "name": "external_id",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
         "fifa_code": {
           "name": "fifa_code",
           "type": "text",
           "primaryKey": false,
-          "notNull": true
+          "notNull": false
         },
         "name": {
           "name": "name",
@@ -622,6 +628,12 @@
         },
         "flag_emoji": {
           "name": "flag_emoji",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "badge_url": {
+          "name": "badge_url",
           "type": "text",
           "primaryKey": false,
           "notNull": false
@@ -643,10 +655,10 @@
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {
-        "teams_fifa_code_unique": {
-          "name": "teams_fifa_code_unique",
+        "teams_external_id_unique": {
+          "name": "teams_external_id_unique",
           "nullsNotDistinct": false,
-          "columns": ["fifa_code"]
+          "columns": ["external_id"]
         }
       },
       "policies": {},

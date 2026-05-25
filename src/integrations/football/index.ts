@@ -1,11 +1,14 @@
 import { env } from '@/lib/env'
 import { mockProvider } from './mock'
+import { thesportsdbProvider } from './thesportsdb'
 import type { FootballProvider } from './types'
 
 export function getFootballProvider(): FootballProvider {
   switch (env.FOOTBALL_API_PROVIDER) {
     case 'mock':
       return mockProvider
+    case 'thesportsdb':
+      return thesportsdbProvider
     case 'api-football':
     case 'football-data':
       throw new Error(
