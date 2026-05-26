@@ -5,10 +5,19 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 
+// Only allow relative paths so a crafted ?next=https://evil.example can't turn
+// our OAuth callback into an open redirect.
+function safeNext(raw: string | null): string {
+  if (!raw) return '/'
+  if (!raw.startsWith('/') || raw.startsWith('//')) return '/'
+  if (raw.startsWith('/login') || raw.startsWith('/auth/')) return '/'
+  return raw
+}
+
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url)
   const code = searchParams.get('code')
-  const next = searchParams.get('next') ?? '/'
+  const next = safeNext(searchParams.get('next'))
 
   if (!code) {
     return NextResponse.redirect(`${origin}/login?error=missing_code`)

@@ -12,12 +12,27 @@ function daysUntilOpener(): number {
   return Math.max(0, Math.ceil(ms / (1000 * 60 * 60 * 24)))
 }
 
-export default async function LoginPage() {
+type Props = { searchParams: Promise<{ next?: string }> }
+
+// Only allow relative paths so an attacker can't push an open redirect via
+// ?next=https://evil.example/. Single leading slash; no double-slash; not
+// the auth callback itself.
+function safeNext(raw: string | undefined): string | undefined {
+  if (!raw) return undefined
+  if (!raw.startsWith('/') || raw.startsWith('//')) return undefined
+  if (raw.startsWith('/login') || raw.startsWith('/auth/')) return undefined
+  return raw
+}
+
+export default async function LoginPage({ searchParams }: Props) {
+  const { next: nextRaw } = await searchParams
+  const next = safeNext(nextRaw)
+
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
-  if (user) redirect('/')
+  if (user) redirect(next ?? '/')
 
   const days = daysUntilOpener()
 
@@ -44,7 +59,7 @@ export default async function LoginPage() {
           </p>
 
           <div className="mt-8">
-            <LoginForm />
+            <LoginForm next={next} />
           </div>
         </div>
 

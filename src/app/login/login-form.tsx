@@ -7,6 +7,11 @@ import { Input } from '@/components/ui/input'
 import { sendMagicLink } from '@/features/auth/actions'
 import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 
+type Props = {
+  /** Path to return to after a successful sign-in (e.g. /join/CODE). */
+  next?: string
+}
+
 function GoogleIcon() {
   return (
     <svg viewBox="0 0 24 24" className="h-4 w-4" role="img" aria-label="Google">
@@ -19,7 +24,13 @@ function GoogleIcon() {
   )
 }
 
-export function LoginForm() {
+function callbackUrl(origin: string, next?: string): string {
+  const base = `${origin}/auth/callback`
+  if (!next) return base
+  return `${base}?next=${encodeURIComponent(next)}`
+}
+
+export function LoginForm({ next }: Props) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<
     { kind: 'idle' } | { kind: 'sent'; email: string } | { kind: 'error'; msg: string }
@@ -30,12 +41,13 @@ export function LoginForm() {
     const supabase = createSupabaseBrowserClient()
     supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo: `${window.location.origin}/auth/callback` },
+      options: { redirectTo: callbackUrl(window.location.origin, next) },
     })
   }
 
   function handleMagicLink(formData: FormData) {
     formData.set('redirectOrigin', window.location.origin)
+    if (next) formData.set('next', next)
     const sent = (formData.get('email') as string) ?? ''
     startTransition(async () => {
       const result = await sendMagicLink(formData)

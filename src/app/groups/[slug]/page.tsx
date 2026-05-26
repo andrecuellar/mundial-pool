@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
+import { ShareButton } from '@/components/groups/share-button'
 import { PoolStatCard } from '@/components/pool/pool-stat-card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -172,7 +173,10 @@ export default async function GroupPage({ params }: Params) {
                     {group.inviteCode}
                   </p>
                 </div>
-                <CopyCodeButton code={group.inviteCode} />
+                <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                  <CopyCodeButton code={group.inviteCode} />
+                  <ShareButton code={group.inviteCode} groupName={group.name} />
+                </div>
               </div>
             </Card>
 
