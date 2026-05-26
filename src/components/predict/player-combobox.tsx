@@ -21,6 +21,8 @@ type Props = {
   disabled?: boolean
   /** If set, only players born on/after this ISO date are shown. */
   minDob?: string
+  /** If set, only players whose position matches (case-insensitive) are shown. */
+  position?: string
   placeholder?: string
 }
 
@@ -38,15 +40,20 @@ export function PlayerComboBox({
   onChange,
   disabled,
   minDob,
+  position,
   placeholder = 'Buscar jugador o escribir nombre…',
 }: Props) {
   const [open, setOpen] = useState(false)
   const [query, setQuery] = useState('')
 
-  const eligible = useMemo(
-    () => (minDob ? players.filter((p) => p.dateOfBirth && p.dateOfBirth >= minDob) : players),
-    [players, minDob],
-  )
+  const eligible = useMemo(() => {
+    const posUpper = position?.toUpperCase()
+    return players.filter((p) => {
+      if (minDob && (!p.dateOfBirth || p.dateOfBirth < minDob)) return false
+      if (posUpper && (p.position ?? '').toUpperCase() !== posUpper) return false
+      return true
+    })
+  }, [players, minDob, position])
 
   const queryNorm = normalize(query)
   const trimmedQuery = query.trim()
@@ -125,7 +132,6 @@ export function PlayerComboBox({
                       <div className="truncate font-medium">{p.fullName}</div>
                       <div className="text-xs text-muted-foreground truncate">
                         {p.teamName}
-                        {p.position ? ` · ${p.position}` : ''}
                       </div>
                     </div>
                     {value === p.fullName && (

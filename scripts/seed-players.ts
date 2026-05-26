@@ -26,10 +26,29 @@ function stripWikiLinks(s: string): string {
   return s.replace(/\[\[([^\]|]+)(?:\|([^\]]+))?\]\]/g, (_, a, b) => (b ?? a).trim()).trim()
 }
 
+function cleanName(raw: string): string {
+  let s = raw
+  // Drop ref tags and any other HTML tags.
+  s = s.replace(/<ref[^>]*>[\s\S]*?<\/ref>/g, '')
+  s = s.replace(/<[^>]+>/g, '')
+  // Resolve wiki links (handles the |display variant).
+  s = stripWikiLinks(s)
+  // Drop residual {{template|...}} fragments.
+  s = s.replace(/\{\{[^{}]*\}\}/g, '')
+  // Drop trailing Wikipedia disambiguation like "(footballer)", "(Mexican
+  // footballer)", "(footballer, born 1999)", "(born 1999)".
+  s = s.replace(/\s*\([^)]*\)\s*$/g, '')
+  return s.replace(/\s+/g, ' ').trim()
+}
+
 function parsePlayer(raw: string, team: string): ParsedPlayer | null {
-  const nameMatch = raw.match(/\|\s*name\s*=\s*([^|}]+)/)
+  // Name value can contain [[...|...]] blocks whose internal '|' must not
+  // terminate the capture. Allow full bracket / brace blocks as opaque units.
+  const nameMatch = raw.match(
+    /\|\s*name\s*=\s*((?:\[\[[^\]]*\]\]|\{\{[^{}]*\}\}|[^|}])+)/,
+  )
   if (!nameMatch) return null
-  const name = stripWikiLinks(nameMatch[1])
+  const name = cleanName(nameMatch[1])
   if (!name) return null
 
   const posMatch = raw.match(/\|\s*pos\s*=\s*([A-Z]+)/)

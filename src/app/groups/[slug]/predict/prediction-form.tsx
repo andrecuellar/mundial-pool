@@ -324,16 +324,24 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       onChange={(next) => update(c.id, { playerText: next })}
                       disabled={locked}
                       minDob={c.key === 'young_player' ? YOUNG_PLAYER_MIN_DOB : undefined}
+                      position={c.key === 'golden_glove' ? 'GK' : undefined}
                       placeholder={
                         c.key === 'young_player'
                           ? 'Buscar jugador sub-21 o escribir nombre…'
-                          : 'Buscar jugador o escribir nombre…'
+                          : c.key === 'golden_glove'
+                            ? 'Buscar arquero o escribir nombre…'
+                            : 'Buscar jugador o escribir nombre…'
                       }
                     />
                     {c.key === 'young_player' && (
                       <p className="text-xs text-muted-foreground">
                         Solo aparecen jugadores nacidos a partir del 1 de enero de 2005 (sub-21 al
                         inicio del Mundial).
+                      </p>
+                    )}
+                    {c.key === 'golden_glove' && (
+                      <p className="text-xs text-muted-foreground">
+                        Solo aparecen arqueros (GK) en la lista.
                       </p>
                     )}
                     <p className="text-xs text-muted-foreground">
