@@ -125,14 +125,40 @@ Por defecto Supabase manda los emails con su SMTP compartido (límite ~3
 emails/hora). Para producción, configurar SMTP propio en Authentication →
 Email Templates → SMTP Settings. Gratis: Resend, SendGrid free tier.
 
+## Pozo de apuestas privado (opt-in por grupo)
+
+Cada grupo puede activar un pozo monetario manejado offline (Yape, transferencia bancaria, QR de Tigo Money, etc.). La app **no procesa pagos**, solo lleva el ledger.
+
+Schema relevante:
+- `groups.pool_enabled`, `pool_currency`, `pool_qr_url`, `pool_payout_rule`.
+- Tabla `pool_transactions` (id, group_id, contributor_user_id, contributor_label, amount, currency, note, created_by_user_id, created_at).
+
+Reglas de payout disponibles: `winner_takes_all`, `top_3_split` (60/30/10), `manual`. La función `computePayout(groupId)` cruza el leaderboard actual con el monto acumulado y devuelve cuánto le tocaría a cada rank si el torneo terminara ahora.
+
+Solo el `owner` del grupo puede:
+- Activar/desactivar el pozo (`updatePoolConfig`).
+- Subir el QR (URL externa por ahora; subida via Supabase Storage queda como TODO del admin panel).
+- Registrar y eliminar transacciones (`recordPoolTransaction`, `deletePoolTransaction`).
+
+Todos los miembros del grupo pueden ver el monto acumulado, el QR para aportar, y la lista de transacciones (para transparencia).
+
+## Tema (dark / light)
+
+`globals.css` declara el sistema de tokens con CSS variables. **Dark es el default**; si el dispositivo prefiere light (`prefers-color-scheme: light`), se hace override automáticamente. No hay toggle manual por ahora.
+
+Los tokens están en `:root` y deben usarse vía clases Tailwind (`bg-background`, `text-foreground`, `border-border`, etc.) gracias al `@theme inline` block. Claude Design rellenará la paleta final; el scaffolding actual es solo un placeholder funcional.
+
 ## Roadmap
 
 - [x] Schema + integraciones base
 - [x] Seed de categorías + 48 selecciones del Mundial 2026
 - [x] Provider TheSportsDB + endpoint cron de resolución
 - [x] Auth Google + magic link
-- [ ] CRUD de grupos + invitación por código
-- [ ] Formulario de predicciones (bloqueable por fecha)
-- [ ] Leaderboard con cálculo de puntaje server-side
-- [ ] Vista admin para overrides manuales (Balón de Oro, Guante, joven)
-- [ ] Diseño UI (Tailwind + shadcn/ui)
+- [x] CRUD de grupos + invitación por código
+- [x] Formulario de predicciones (bloqueable por fecha)
+- [x] Leaderboard con cálculo de puntaje server-side
+- [x] Pozo de apuestas (schema + server actions, UI pendiente)
+- [x] Dark mode scaffolding (default device-aware)
+- [ ] Diseño UI completo (Claude Design → Claude Code handoff)
+- [ ] Admin panel: subida de QR a Supabase Storage, overrides manuales (FIFA awards)
+- [ ] Seed de odds pre-torneo para resolver revelación/decepción

@@ -1,6 +1,6 @@
 {
-  "id": "7282cb98-9204-4da5-bdf3-2e2a945e9b64",
-  "prevId": "d4894f7b-6246-47b8-9e8b-285fb3aa586c",
+  "id": "5e26f1a0-2132-4564-a703-98a439117f26",
+  "prevId": "7282cb98-9204-4da5-bdf3-2e2a945e9b64",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -242,6 +242,33 @@
           "primaryKey": false,
           "notNull": true
         },
+        "pool_enabled": {
+          "name": "pool_enabled",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "pool_currency": {
+          "name": "pool_currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pool_qr_url": {
+          "name": "pool_qr_url",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "pool_payout_rule": {
+          "name": "pool_payout_rule",
+          "type": "payout_rule",
+          "typeSchema": "public",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "'winner_takes_all'"
+        },
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
@@ -316,6 +343,103 @@
           "tableFrom": "players",
           "tableTo": "teams",
           "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        }
+      },
+      "compositePrimaryKeys": {},
+      "uniqueConstraints": {},
+      "policies": {},
+      "checkConstraints": {},
+      "isRLSEnabled": false
+    },
+    "public.pool_transactions": {
+      "name": "pool_transactions",
+      "schema": "",
+      "columns": {
+        "id": {
+          "name": "id",
+          "type": "uuid",
+          "primaryKey": true,
+          "notNull": true,
+          "default": "gen_random_uuid()"
+        },
+        "group_id": {
+          "name": "group_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "contributor_user_id": {
+          "name": "contributor_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "contributor_label": {
+          "name": "contributor_label",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "amount": {
+          "name": "amount",
+          "type": "numeric(12, 2)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "currency": {
+          "name": "currency",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "note": {
+          "name": "note",
+          "type": "text",
+          "primaryKey": false,
+          "notNull": false
+        },
+        "created_by_user_id": {
+          "name": "created_by_user_id",
+          "type": "uuid",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp with time zone",
+          "primaryKey": false,
+          "notNull": true,
+          "default": "now()"
+        }
+      },
+      "indexes": {},
+      "foreignKeys": {
+        "pool_transactions_group_id_groups_id_fk": {
+          "name": "pool_transactions_group_id_groups_id_fk",
+          "tableFrom": "pool_transactions",
+          "tableTo": "groups",
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
+          "onDelete": "cascade",
+          "onUpdate": "no action"
+        },
+        "pool_transactions_contributor_user_id_profiles_id_fk": {
+          "name": "pool_transactions_contributor_user_id_profiles_id_fk",
+          "tableFrom": "pool_transactions",
+          "tableTo": "profiles",
+          "columnsFrom": ["contributor_user_id"],
+          "columnsTo": ["id"],
+          "onDelete": "no action",
+          "onUpdate": "no action"
+        },
+        "pool_transactions_created_by_user_id_profiles_id_fk": {
+          "name": "pool_transactions_created_by_user_id_profiles_id_fk",
+          "tableFrom": "pool_transactions",
+          "tableTo": "profiles",
+          "columnsFrom": ["created_by_user_id"],
           "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
@@ -707,6 +831,11 @@
       "name": "member_role",
       "schema": "public",
       "values": ["owner", "admin", "member"]
+    },
+    "public.payout_rule": {
+      "name": "payout_rule",
+      "schema": "public",
+      "values": ["winner_takes_all", "top_3_split", "manual"]
     },
     "public.resolution_strategy": {
       "name": "resolution_strategy",

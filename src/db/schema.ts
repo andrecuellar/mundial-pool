@@ -2,6 +2,7 @@ import {
   boolean,
   integer,
   jsonb,
+  numeric,
   pgEnum,
   pgTable,
   primaryKey,
@@ -14,6 +15,8 @@ import {
 export const memberRole = pgEnum('member_role', ['owner', 'admin', 'member'])
 
 export const categoryValueKind = pgEnum('category_value_kind', ['team', 'player', 'team_set'])
+
+export const payoutRule = pgEnum('payout_rule', ['winner_takes_all', 'top_3_split', 'manual'])
 
 export const resolutionStrategy = pgEnum('resolution_strategy', [
   'final_winner',
@@ -51,6 +54,26 @@ export const groups = pgTable('groups', {
   predictionsLockAt: timestamp('predictions_lock_at', {
     withTimezone: true,
   }).notNull(),
+  poolEnabled: boolean('pool_enabled').notNull().default(false),
+  poolCurrency: text('pool_currency'),
+  poolQrUrl: text('pool_qr_url'),
+  poolPayoutRule: payoutRule('pool_payout_rule').notNull().default('winner_takes_all'),
+  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
+export const poolTransactions = pgTable('pool_transactions', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  groupId: uuid('group_id')
+    .notNull()
+    .references(() => groups.id, { onDelete: 'cascade' }),
+  contributorUserId: uuid('contributor_user_id').references(() => profiles.id),
+  contributorLabel: text('contributor_label'),
+  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+  currency: text('currency').notNull(),
+  note: text('note'),
+  createdByUserId: uuid('created_by_user_id')
+    .notNull()
+    .references(() => profiles.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
@@ -165,3 +188,4 @@ export type Category = typeof categories.$inferSelect
 export type GroupCategory = typeof groupCategories.$inferSelect
 export type Prediction = typeof predictions.$inferSelect
 export type Result = typeof results.$inferSelect
+export type PoolTransaction = typeof poolTransactions.$inferSelect

@@ -1,26 +1,61 @@
 @import "tailwindcss";
 
+/*
+ * Theme tokens.
+ * Dark is the default; if the device explicitly prefers light, we override.
+ * Claude Design fills in the final palette; this file just sets the
+ * dark-first structure so the design system has the right scaffolding.
+ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --muted: #1a1a1a;
+  --muted-foreground: #a3a3a3;
+  --border: #262626;
+  --primary: #3b82f6;
+  --primary-foreground: #ffffff;
+  --accent: #22c55e;
+  --destructive: #ef4444;
+  --radius: 0.75rem;
+}
+
+@media (prefers-color-scheme: light) {
+  :root {
+    --background: #ffffff;
+    --foreground: #0a0a0a;
+    --muted: #f5f5f5;
+    --muted-foreground: #525252;
+    --border: #e5e5e5;
+    --primary: #2563eb;
+    --primary-foreground: #ffffff;
+    --accent: #16a34a;
+    --destructive: #dc2626;
+  }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-border: var(--border);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-accent: var(--accent);
+  --color-destructive: var(--destructive);
+  --radius: var(--radius);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+html,
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
+}
+
+* {
+  color-scheme: light dark;
 }
