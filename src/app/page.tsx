@@ -108,13 +108,17 @@ export default async function Home() {
           </Card>
         ) : (
           <ul className="mt-6 space-y-3">
-            {myGroups.map((g) => {
+            {myGroups.map((g, i) => {
               const locked = new Date() >= g.predictionsLockAt
               const poolTotal = totalsByGroup.get(g.id) ?? 0
               return (
-                <li key={g.id}>
+                <li
+                  key={g.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
                   <Link href={`/groups/${g.slug}`} className="block">
-                    <Card className="p-5 transition-colors hover:bg-muted/40">
+                    <Card className="hover-lift p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
                           <div className="flex flex-wrap items-center gap-2">

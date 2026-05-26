@@ -251,7 +251,8 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
           return (
             <Card
               key={c.id}
-              className={`p-5 transition-colors ${filled ? 'border-accent/40' : 'border-border'} ${locked ? 'opacity-70' : ''}`}
+              className={`animate-fade-up p-5 transition-colors ${filled ? 'border-accent/40' : 'border-border'} ${locked ? 'opacity-70' : ''}`}
+              style={{ animationDelay: `${Math.min(idx, 8) * 50}ms` }}
             >
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <span className="font-mono text-[11px] text-muted-foreground tracking-wider">

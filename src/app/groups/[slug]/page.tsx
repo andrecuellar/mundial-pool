@@ -217,7 +217,7 @@ export default async function GroupPage({ params }: Params) {
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
           <Link href={`/groups/${slug}/predict`}>
-            <Card className="p-5 transition-colors hover:bg-muted/40">
+            <Card className="hover-lift p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -240,7 +240,7 @@ export default async function GroupPage({ params }: Params) {
           </Link>
 
           <Link href={`/groups/${slug}/leaderboard`}>
-            <Card className="p-5 transition-colors hover:bg-muted/40">
+            <Card className="hover-lift p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
