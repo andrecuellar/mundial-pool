@@ -15,8 +15,11 @@ export function ShareButton({ code, groupName }: Props) {
 
   async function handleShare() {
     const url = `${window.location.origin}/join/${code}`
-    const text = `Te invito a unirte a "${groupName}" en mundial-pool. Mi código: ${code}`
-    const shareData = { title: 'mundial-pool', text, url }
+    // Bundle everything into `text` (with literal newlines) and skip the
+    // separate `url` field so receiving apps render the message exactly as
+    // composed — most clients otherwise concatenate text + url on one line.
+    const text = `Te invito a unirte a "${groupName}" en mundial-pool.\n\nMi código es: ${code}\n\n${url}`
+    const shareData = { title: 'mundial-pool', text }
 
     if (typeof navigator !== 'undefined' && typeof navigator.share === 'function') {
       try {
@@ -28,9 +31,9 @@ export function ShareButton({ code, groupName }: Props) {
       }
     }
     try {
-      await navigator.clipboard.writeText(url)
+      await navigator.clipboard.writeText(text)
       setCopied(true)
-      toast.success('Link copiado al portapapeles')
+      toast.success('Invitación copiada al portapapeles')
       setTimeout(() => setCopied(false), 1500)
     } catch {
       toast.error('No se pudo compartir. Copia el código manualmente.')
