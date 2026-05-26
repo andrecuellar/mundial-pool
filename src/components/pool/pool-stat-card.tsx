@@ -78,7 +78,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
                   className="w-full rounded-lg border border-border"
                 />
                 <p className="text-xs text-muted-foreground">
-                  Escanea con tu app bancaria. Avísale al owner del grupo para que registre tu
+                  Escanea con tu app bancaria. Avísale al admin del grupo para que registre tu
                   depósito.
                 </p>
               </DialogContent>

@@ -12,7 +12,48 @@ import { Card } from '@/components/ui/card'
 import { submitPredictions } from '@/features/predictions/actions'
 import type { PlayerOption, PredictionFormCategory } from '@/features/predictions/queries'
 
-type Team = { id: string; name: string; flagEmoji: string | null; fifaCode: string | null }
+type Team = {
+  id: string
+  name: string
+  flagEmoji: string | null
+  fifaCode: string | null
+  fifaRanking?: number | null
+}
+
+// Last FIFA ranking update before the World Cup is scheduled for 9 June 2026
+// (2 days before the opening match).
+const FIFA_FINAL_UPDATE = new Date('2026-06-09T00:00:00Z')
+const FIFA_RANKING_CATEGORIES = new Set(['revelation', 'disappointment'])
+
+function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
+  const updatePassed = new Date() >= FIFA_FINAL_UPDATE
+  return (
+    <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed space-y-1.5">
+      {kind === 'revelation' ? (
+        <p>
+          La selección con la mayor brecha positiva entre su{' '}
+          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y
+          la ronda alcanzada. Ejemplo:{' '}
+          <span className="font-medium text-foreground">Costa Rica 2014</span> (ranking
+          FIFA #28 → cuartos de final).
+        </p>
+      ) : (
+        <p>
+          La selección con la mayor brecha negativa entre su{' '}
+          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y
+          la ronda alcanzada. Ejemplo:{' '}
+          <span className="font-medium text-foreground">España 2014</span> (ranking FIFA
+          #1 → eliminada en fase de grupos).
+        </p>
+      )}
+      <p>
+        {updatePassed
+          ? '📅 Estos son los rankings finales pre-Mundial (última actualización: 9 de junio 2026).'
+          : '📅 Habrá una última actualización del ranking FIFA el 9 de junio (2 días antes del partido inaugural).'}
+      </p>
+    </div>
+  )
+}
 
 type Props = {
   groupSlug: string
@@ -237,14 +278,19 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                 </p>
               )}
 
-              <div className="mt-4">
+              <div className="mt-4 space-y-3">
                 {c.valueKind === 'team' && (
-                  <TeamComboBox
-                    teams={teams}
-                    value={v.teamId ?? null}
-                    onChange={(id) => update(c.id, { teamId: id })}
-                    disabled={locked}
-                  />
+                  <>
+                    <TeamComboBox
+                      teams={teams}
+                      value={v.teamId ?? null}
+                      onChange={(id) => update(c.id, { teamId: id })}
+                      disabled={locked}
+                      showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
+                    />
+                    {c.key === 'revelation' && <RankingHelper kind="revelation" />}
+                    {c.key === 'disappointment' && <RankingHelper kind="disappointment" />}
+                  </>
                 )}
 
                 {isFinalists && (

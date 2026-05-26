@@ -112,7 +112,7 @@ export default async function Home() {
                             <h3 className="text-lg font-semibold tracking-tight">{g.name}</h3>
                             {g.role === 'owner' && (
                               <Badge variant="secondary" className="text-[10px]">
-                                Owner
+                                Admin
                               </Badge>
                             )}
                             {g.poolEnabled && (

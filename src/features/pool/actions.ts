@@ -1,6 +1,6 @@
 'use server'
 
-import { and, eq } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { db } from '@/db'
@@ -36,7 +36,7 @@ async function requireOwner(groupId: string): Promise<{ userId: string } | { err
   })
   if (!membership) return { error: 'No perteneces a este grupo.' }
   if (membership.role !== 'owner') {
-    return { error: 'Solo el owner del grupo puede configurar el pozo.' }
+    return { error: 'Solo el admin del grupo puede configurar el pozo.' }
   }
   return { userId: user.id }
 }
@@ -47,6 +47,28 @@ export async function updatePoolConfig(input: unknown): Promise<PoolActionResult
 
   const auth = await requireOwner(parsed.data.groupId)
   if ('error' in auth) return { ok: false, error: auth.error }
+
+  // Defense in depth: if the pool already has deposits, prevent currency
+  // changes even if the client sent one. The form disables the input, but we
+  // verify on the server.
+  const current = await db.query.groups.findFirst({
+    where: eq(groups.id, parsed.data.groupId),
+  })
+  const [{ depositCount }] = await db
+    .select({ depositCount: sql<number>`COUNT(*)::int` })
+    .from(poolTransactions)
+    .where(eq(poolTransactions.groupId, parsed.data.groupId))
+  if (
+    depositCount > 0 &&
+    current?.poolCurrency &&
+    parsed.data.currency &&
+    current.poolCurrency !== parsed.data.currency
+  ) {
+    return {
+      ok: false,
+      error: `No se puede cambiar la moneda con ${depositCount} depósito${depositCount === 1 ? '' : 's'} registrado${depositCount === 1 ? '' : 's'}. Elimínalos primero.`,
+    }
+  }
 
   await db
     .update(groups)

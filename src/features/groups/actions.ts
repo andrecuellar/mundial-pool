@@ -150,13 +150,13 @@ export async function leaveGroup(groupId: string): Promise<ActionResult> {
     return { ok: false, error: 'Necesitas estar autenticado.' }
   }
 
-  // Owners cannot leave (would orphan the group). UI shouldn't show the button.
+  // Admins (the creator) cannot leave (would orphan the group). UI shouldn't show the button.
   const membership = await db.query.groupMembers.findFirst({
     where: (gm, { and, eq: eqOp }) => and(eqOp(gm.groupId, groupId), eqOp(gm.userId, userId)),
   })
   if (!membership) return { ok: false, error: 'No eres miembro de este grupo.' }
   if (membership.role === 'owner') {
-    return { ok: false, error: 'El owner no puede salir; debe eliminar el grupo.' }
+    return { ok: false, error: 'El admin del grupo no puede salir; debe eliminar el grupo.' }
   }
 
   await db

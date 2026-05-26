@@ -90,6 +90,7 @@ export default async function PredictPage({ params }: Params) {
               name: t.name,
               flagEmoji: t.flagEmoji,
               fifaCode: t.fifaCode,
+              fifaRanking: t.fifaRanking,
             }))}
             players={allPlayers}
             locked={locked}

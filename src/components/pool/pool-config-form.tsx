@@ -23,13 +23,16 @@ type Props = {
     currency: string | null
     payoutRule: 'winner_takes_all' | 'top_3_split' | 'manual'
   }
+  /** Number of recorded deposits. Locks the currency picker when > 0. */
+  transactionCount: number
 }
 
-export function PoolConfigForm({ groupId, initial }: Props) {
+export function PoolConfigForm({ groupId, initial, transactionCount }: Props) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [currency, setCurrency] = useState(initial.currency ?? 'BOB')
   const [payoutRule, setPayoutRule] = useState(initial.payoutRule)
   const [pending, startTransition] = useTransition()
+  const currencyLocked = transactionCount > 0
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -61,7 +64,11 @@ export function PoolConfigForm({ groupId, initial }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="currency">Moneda</Label>
-        <Select value={currency} onValueChange={setCurrency} disabled={!enabled}>
+        <Select
+          value={currency}
+          onValueChange={setCurrency}
+          disabled={!enabled || currencyLocked}
+        >
           <SelectTrigger id="currency">
             <SelectValue />
           </SelectTrigger>
@@ -70,6 +77,13 @@ export function PoolConfigForm({ groupId, initial }: Props) {
             <SelectItem value="USDT">USDT · Tether</SelectItem>
           </SelectContent>
         </Select>
+        {currencyLocked && (
+          <p className="text-xs text-muted-foreground">
+            🔒 La moneda queda fija después del primer depósito. Para cambiarla, primero
+            elimina los {transactionCount}{' '}
+            {transactionCount === 1 ? 'depósito' : 'depósitos'} registrados.
+          </p>
+        )}
       </div>
 
       <div className="space-y-3">

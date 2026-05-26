@@ -64,7 +64,7 @@ export default async function AdminPoolPage({ params }: Params) {
           <div>
             <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-gold" />
-              Admin · solo owner
+              Admin · solo el creador
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">Pozo del grupo</h1>
             <p className="mt-1 max-w-xl text-sm text-muted-foreground">
@@ -100,6 +100,7 @@ export default async function AdminPoolPage({ params }: Params) {
                 currency: pool.currency,
                 payoutRule: pool.payoutRule,
               }}
+              transactionCount={pool.transactionCount}
             />
             <div className="mt-6 border-t border-border pt-6">
               <QrUploadCard groupId={group.id} initialUrl={pool.qrUrl} />

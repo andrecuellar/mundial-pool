@@ -33,7 +33,7 @@ async function requireOwner(
     where: and(eq(groupMembers.groupId, groupId), eq(groupMembers.userId, user.id)),
   })
   if (!membership || membership.role !== 'owner') {
-    return { error: 'Solo el owner puede subir el QR.' }
+    return { error: 'Solo el admin del grupo puede subir el QR.' }
   }
   const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) })
   if (!group) return { error: 'Grupo no encontrado.' }

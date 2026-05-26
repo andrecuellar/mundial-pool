@@ -102,6 +102,7 @@ export const teams = pgTable('teams', {
   badgeUrl: text('badge_url'),
   preTournamentChampionOdds: integer('pre_tournament_champion_odds'),
   expectedRound: integer('expected_round'),
+  fifaRanking: integer('fifa_ranking'),
 })
 
 export const players = pgTable('players', {

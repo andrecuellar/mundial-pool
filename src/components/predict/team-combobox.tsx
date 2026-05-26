@@ -14,18 +14,40 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover'
 import { cn } from '@/lib/utils'
 
-type Team = { id: string; name: string; flagEmoji: string | null; fifaCode: string | null }
+type Team = {
+  id: string
+  name: string
+  flagEmoji: string | null
+  fifaCode: string | null
+  fifaRanking?: number | null
+}
 
 type Props = {
   teams: Team[]
   value: string | null
   onChange: (id: string | null) => void
   disabled?: boolean
+  /** When true, displays each team's FIFA ranking ("FIFA #15" / "+50"). */
+  showRanking?: boolean
 }
 
-export function TeamComboBox({ teams, value, onChange, disabled }: Props) {
+function rankingLabel(r: number | null | undefined): string {
+  if (r == null) return '+50'
+  return `#${r}`
+}
+
+export function TeamComboBox({ teams, value, onChange, disabled, showRanking }: Props) {
   const [open, setOpen] = useState(false)
   const selected = teams.find((t) => t.id === value)
+
+  const sortedTeams = showRanking
+    ? [...teams].sort((a, b) => {
+        const ra = a.fifaRanking ?? 999
+        const rb = b.fifaRanking ?? 999
+        if (ra !== rb) return ra - rb
+        return a.name.localeCompare(b.name, 'es')
+      })
+    : teams
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
@@ -39,11 +61,18 @@ export function TeamComboBox({ teams, value, onChange, disabled }: Props) {
           className="w-full justify-between font-normal h-11"
         >
           {selected ? (
-            <span className="flex items-center gap-2">
+            <span className="flex w-full items-center gap-2">
               <span className="text-base leading-none">{selected.flagEmoji ?? '🏳️'}</span>
               <span className="font-medium">{selected.name}</span>
               {selected.fifaCode && (
-                <span className="font-mono text-xs text-muted-foreground">{selected.fifaCode}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {selected.fifaCode}
+                </span>
+              )}
+              {showRanking && (
+                <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">
+                  FIFA {rankingLabel(selected.fifaRanking)}
+                </span>
               )}
             </span>
           ) : (
@@ -58,7 +87,7 @@ export function TeamComboBox({ teams, value, onChange, disabled }: Props) {
           <CommandList>
             <CommandEmpty>Sin resultados.</CommandEmpty>
             <CommandGroup>
-              {teams.map((t) => (
+              {sortedTeams.map((t) => (
                 <CommandItem
                   key={t.id}
                   value={`${t.name} ${t.fifaCode ?? ''}`}
@@ -70,8 +99,13 @@ export function TeamComboBox({ teams, value, onChange, disabled }: Props) {
                   <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
                   <span className="font-medium">{t.name}</span>
                   {t.fifaCode && (
-                    <span className="ml-auto font-mono text-xs text-muted-foreground">
+                    <span className="font-mono text-xs text-muted-foreground">
                       {t.fifaCode}
+                    </span>
+                  )}
+                  {showRanking && (
+                    <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">
+                      FIFA {rankingLabel(t.fifaRanking)}
                     </span>
                   )}
                   <Check
