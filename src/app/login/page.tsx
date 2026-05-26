@@ -47,9 +47,6 @@ export default async function LoginPage() {
           </div>
         </div>
 
-        <p className="text-[11px] text-muted-foreground tracking-wider">
-          Hobby project — Mundial 2026
-        </p>
       </div>
 
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-primary p-14 text-primary-foreground">
@@ -88,7 +85,7 @@ export default async function LoginPage() {
         <div className="relative z-10 flex justify-between font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">
           <span>48 selecciones</span>
           <span>104 partidos</span>
-          <span>13 categorías</span>
+          <span>13 predicciones</span>
         </div>
       </aside>
     </main>

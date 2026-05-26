@@ -74,7 +74,7 @@ export default async function Home() {
             {myGroups.length} {myGroups.length === 1 ? 'activo' : 'activos'}
           </span>
         </div>
-        <p className="mt-1 text-sm text-muted-foreground">Tus quinielas para el Mundial 2026.</p>
+        <p className="mt-1 text-sm text-muted-foreground">Tus pollas del Mundial 2026.</p>
 
         {myGroups.length === 0 ? (
           <Card className="mt-8 flex flex-col items-center gap-3 p-10 text-center">
