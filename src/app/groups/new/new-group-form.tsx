@@ -22,6 +22,13 @@ export function NewGroupForm() {
 
   function handleSubmit(formData: FormData) {
     if (poolEnabled) formData.set('poolEnabled', 'on')
+    const lockRaw = formData.get('predictionsLockAt')
+    if (typeof lockRaw === 'string' && lockRaw.length > 0) {
+      const d = new Date(lockRaw)
+      if (!Number.isNaN(d.getTime())) {
+        formData.set('predictionsLockAt', d.toISOString())
+      }
+    }
     startTransition(async () => {
       const result = await createGroup(formData)
       if (result.ok) {
