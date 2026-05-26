@@ -1,7 +1,7 @@
 'use client'
 
-import { Check, Lock } from 'lucide-react'
-import { useState } from 'react'
+import { Check, Lock, X } from 'lucide-react'
+import { useMemo, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 
@@ -28,6 +28,7 @@ export function TeamSetGrid({ teams, selected, onChange, n, disabled, lockedTeam
   const set = new Set(selected)
   const userPicks = selected.filter((id) => !lockedSet.has(id))
   const userPicksMax = Math.max(0, n - lockedTeamIds.length)
+  const teamMap = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
 
   const filtered = teams.filter((t) => {
     if (!query) return true
@@ -86,6 +87,45 @@ export function TeamSetGrid({ teams, selected, onChange, n, disabled, lockedTeam
         className="h-9 text-sm"
         disabled={disabled}
       />
+
+      {selected.length > 0 && (
+        <div className="flex flex-wrap gap-1.5">
+          {selected.map((id) => {
+            const t = teamMap.get(id)
+            if (!t) return null
+            const isLocked = lockedSet.has(id)
+            return (
+              <span
+                key={id}
+                className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium ${
+                  isLocked
+                    ? 'border-primary/40 bg-primary/10 text-foreground'
+                    : 'border-accent/40 bg-accent/15 text-foreground'
+                }`}
+              >
+                <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
+                <span>{t.name}</span>
+                {isLocked ? (
+                  <Lock
+                    className="h-3 w-3 text-primary"
+                    aria-label="Auto-seleccionado"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => toggle(id)}
+                    disabled={disabled}
+                    aria-label={`Quitar ${t.name}`}
+                    className="-mr-1 grid h-4 w-4 place-items-center rounded-full hover:bg-foreground/10"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                )}
+              </span>
+            )
+          })}
+        </div>
+      )}
 
       <div className="grid max-h-72 grid-cols-2 gap-1.5 overflow-y-auto rounded-lg border border-border p-1.5 sm:grid-cols-3 lg:grid-cols-2">
         {filtered.map((t) => {
