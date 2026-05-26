@@ -27,7 +27,7 @@ export default async function PredictPage({ params }: Params) {
   const membership = await db.query.groupMembers.findFirst({
     where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
   })
-  if (!membership) redirect(`/groups/${slug}`)
+  if (!membership) notFound()
 
   const locked = new Date() >= group.predictionsLockAt
   const [form, allTeams, allPlayers] = await Promise.all([

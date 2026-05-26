@@ -31,7 +31,8 @@ export default async function AdminPoolPage({ params }: Params) {
   const membership = await db.query.groupMembers.findFirst({
     where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
   })
-  if (!membership || membership.role !== 'owner') redirect(`/groups/${slug}`)
+  if (!membership) notFound()
+  if (membership.role !== 'owner') redirect(`/groups/${slug}`)
 
   const [pool, ledger, members] = await Promise.all([
     getPoolSummary(group.id),

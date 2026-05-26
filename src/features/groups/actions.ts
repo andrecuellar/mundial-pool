@@ -68,7 +68,16 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
     slug = `${baseSlug}-${suffix}`
   }
 
-  const inviteCode = generateInviteCode(6)
+  // 32^6 ≈ 1.07B codes, but we still probe before insert because the
+  // invite_code column is UNIQUE and a clash would throw on commit.
+  let inviteCode = generateInviteCode(6)
+  for (let i = 0; i < 5; i++) {
+    const existing = await db.query.groups.findFirst({
+      where: eq(groups.inviteCode, inviteCode),
+    })
+    if (!existing) break
+    inviteCode = generateInviteCode(6)
+  }
   const lockAt = new Date(parsed.data.predictionsLockAt)
 
   const created = await db.transaction(async (tx) => {

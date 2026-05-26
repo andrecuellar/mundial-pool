@@ -48,22 +48,9 @@ export default async function GroupPage({ params }: Params) {
     (user.user_metadata?.picture as string | undefined) ??
     null
 
-  if (!membership) {
-    return (
-      <>
-        <AppHeader user={{ name: displayName, email: user.email ?? null, avatarUrl }} />
-        <main className="mx-auto w-full max-w-xl flex-1 px-4 py-12 sm:px-6">
-          <Card className="p-8 text-center">
-            <h1 className="text-2xl font-semibold">{group.name}</h1>
-            <p className="mt-2 text-sm text-muted-foreground">No eres miembro de este grupo.</p>
-            <Button asChild variant="secondary" className="mt-4">
-              <Link href="/groups/join">Ingresar código de invitación</Link>
-            </Button>
-          </Card>
-        </main>
-      </>
-    )
-  }
+  // Non-members get a 404 — we don't want to leak the group's existence or
+  // name. The only entry into a group is via the invite code at /groups/join.
+  if (!membership) notFound()
 
   const [leaderboard, pool, payoutPreview, [memberCountRow], allMembers, myPredictions] =
     await Promise.all([

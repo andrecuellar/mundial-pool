@@ -31,7 +31,7 @@ export default async function LeaderboardPage({ params }: Params) {
   const membership = await db.query.groupMembers.findFirst({
     where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
   })
-  if (!membership) redirect(`/groups/${slug}`)
+  if (!membership) notFound()
 
   const [leaderboard, catsRaw, pool] = await Promise.all([
     getLeaderboard(group.id),
