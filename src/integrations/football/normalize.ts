@@ -6,16 +6,51 @@ export function normalizeTeamName(name: string): string {
     .replace(/[^a-z0-9]/g, '')
 }
 
+// TheSportsDB returns team names in English; our DB stores Spanish names.
+// Both sides are normalized through normalizeTeamName before lookup, so the
+// keys/values below are already lowercase + diacritic-free + alphanumeric-only.
+// Teams whose Spanish + English normalize to the same key (Argentina, Australia,
+// Colombia, Ecuador, Ghana, Paraguay, Senegal, Uruguay) need no entry.
 const PROVIDER_TO_DB: Record<string, string> = {
-  czechrepublic: 'czechrepublic',
-  southkorea: 'southkorea',
-  bosniaherzegovina: 'bosniaherzegovina',
-  usa: 'usa',
-  unitedstates: 'usa',
-  capeverde: 'capeverde',
-  caboverde: 'capeverde',
-  ivorycoast: 'ivorycoast',
-  cotedivoire: 'ivorycoast',
+  algeria: 'argelia',
+  belgium: 'belgica',
+  bosniaherzegovina: 'bosniayherzegovina',
+  bosnia: 'bosniayherzegovina',
+  brazil: 'brasil',
+  capeverde: 'caboverde',
+  croatia: 'croacia',
+  curacao: 'curazao',
+  czechrepublic: 'republicacheca',
+  czechia: 'republicacheca',
+  drcongo: 'rdcongo',
+  democraticrepublicofthecongo: 'rdcongo',
+  egypt: 'egipto',
+  england: 'inglaterra',
+  france: 'francia',
+  germany: 'alemania',
+  iraq: 'irak',
+  ivorycoast: 'costademarfil',
+  cotedivoire: 'costademarfil',
+  japan: 'japon',
+  jordan: 'jordania',
+  morocco: 'marruecos',
+  netherlands: 'paisesbajos',
+  newzealand: 'nuevazelanda',
+  norway: 'noruega',
+  qatar: 'catar',
+  saudiarabia: 'arabiasaudita',
+  scotland: 'escocia',
+  southafrica: 'sudafrica',
+  southkorea: 'coreadelsur',
+  koreareublic: 'coreadelsur',
+  koreasouth: 'coreadelsur',
+  spain: 'espana',
+  sweden: 'suecia',
+  switzerland: 'suiza',
+  tunisia: 'tunez',
+  turkey: 'turquia',
+  usa: 'estadosunidos',
+  unitedstates: 'estadosunidos',
 }
 
 export function teamMatchKey(name: string): string {

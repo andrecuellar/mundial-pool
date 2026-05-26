@@ -1,9 +1,6 @@
 const CURRENCY_PREFIX: Record<string, string> = {
   BOB: 'Bs.',
-  USD: 'USD',
-  EUR: 'EUR',
-  PEN: 'S/',
-  ARS: '$',
+  USDT: 'USDT',
 }
 
 export function formatMoney(amount: number, currency = 'BOB'): string {

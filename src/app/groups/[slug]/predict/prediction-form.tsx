@@ -1,6 +1,6 @@
 'use client'
 
-import { Check } from 'lucide-react'
+import { Check, Info, Lock } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { TeamComboBox } from '@/components/predict/team-combobox'
@@ -9,7 +9,6 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { submitPredictions } from '@/features/predictions/actions'
 import type { PredictionFormCategory } from '@/features/predictions/queries'
 
@@ -38,7 +37,32 @@ function isFilled(c: PredictionFormCategory, v: DraftValue): boolean {
   return false
 }
 
+function getLockedFromSources(
+  draft: Record<string, DraftValue>,
+  ids: { champion?: string; runnerUp?: string; thirdPlace?: string },
+) {
+  const champion = ids.champion ? draft[ids.champion]?.teamId : null
+  const runnerUp = ids.runnerUp ? draft[ids.runnerUp]?.teamId : null
+  const thirdPlace = ids.thirdPlace ? draft[ids.thirdPlace]?.teamId : null
+  return { champion, runnerUp, thirdPlace }
+}
+
 export function PredictionForm({ groupSlug, categories, teams, locked }: Props) {
+  const byKey = useMemo(() => {
+    const m: Record<string, PredictionFormCategory> = {}
+    for (const c of categories) m[c.key] = c
+    return m
+  }, [categories])
+  const sourceIds = {
+    champion: byKey.champion?.id,
+    runnerUp: byKey.runner_up?.id,
+    thirdPlace: byKey.third_place?.id,
+  }
+  const finalistsId = byKey.finalists?.id
+  const top5Id = byKey.top_5?.id
+  const sourceCategoryKeys = new Set(['champion', 'runner_up', 'third_place'])
+  const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
+
   const [draft, setDraft] = useState<Record<string, DraftValue>>(() => {
     const init: Record<string, DraftValue> = {}
     for (const c of categories) {
@@ -52,15 +76,52 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
   })
   const [pending, startTransition] = useTransition()
 
+  function recomputeDerived(next: Record<string, DraftValue>) {
+    const { champion, runnerUp, thirdPlace } = getLockedFromSources(next, sourceIds)
+    if (finalistsId) {
+      const teamSet = [champion, runnerUp].filter((x): x is string => !!x)
+      next[finalistsId] = { teamSet }
+    }
+    if (top5Id) {
+      const locked = Array.from(
+        new Set([champion, runnerUp, thirdPlace].filter((x): x is string => !!x)),
+      )
+      const current = next[top5Id]?.teamSet ?? []
+      const userPicks = current.filter((id) => !locked.includes(id))
+      next[top5Id] = { teamSet: [...locked, ...userPicks].slice(0, 5) }
+    }
+  }
+
+  function update(id: string, patch: DraftValue) {
+    setDraft((prev) => {
+      const next = { ...prev, [id]: { ...prev[id], ...patch } }
+      // If a source for finalists/top_5 changed, recompute derived values.
+      const cat = categories.find((c) => c.id === id)
+      if (cat && sourceCategoryKeys.has(cat.key)) {
+        recomputeDerived(next)
+      } else if (id === top5Id) {
+        // direct user pick on top_5: still enforce locked teams
+        recomputeDerived(next)
+      }
+      return next
+    })
+  }
+
   const completed = useMemo(
     () => categories.filter((c) => isFilled(c, draft[c.id] ?? {})).length,
     [categories, draft],
   )
   const total = categories.length
-
-  function update(id: string, patch: DraftValue) {
-    setDraft((prev) => ({ ...prev, [id]: { ...prev[id], ...patch } }))
-  }
+  const lockedFromSources = getLockedFromSources(draft, sourceIds)
+  const lockedTop5 = Array.from(
+    new Set(
+      [
+        lockedFromSources.champion,
+        lockedFromSources.runnerUp,
+        lockedFromSources.thirdPlace,
+      ].filter((x): x is string => !!x),
+    ),
+  )
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -80,6 +141,23 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
       if (r.ok) toast.success('Predicciones guardadas')
       else toast.error(r.error)
     })
+  }
+
+  function renderTeamPill(teamId: string | null | undefined, fallback: string) {
+    if (!teamId) {
+      return <span className="text-sm text-muted-foreground">{fallback}</span>
+    }
+    const t = teamById.get(teamId)
+    if (!t) return null
+    return (
+      <span className="inline-flex items-center gap-2 rounded-lg border border-primary/30 bg-primary/10 px-3 py-1.5 text-sm font-medium">
+        <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
+        {t.name}
+        {t.fifaCode && (
+          <span className="font-mono text-[11px] text-muted-foreground">{t.fifaCode}</span>
+        )}
+      </span>
+    )
   }
 
   return (
@@ -123,6 +201,8 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                 : 'EQUIPO'
           const n = (c.metadata as { n?: number } | null)?.n ?? 2
           const perItem = (c.metadata as { scoring?: string } | null)?.scoring === 'per_match'
+          const isFinalists = c.key === 'finalists'
+          const isTop5 = c.key === 'top_5'
 
           return (
             <Card
@@ -136,7 +216,12 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                 <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-primary tracking-wider">
                   {c.points} PTS{perItem ? '/ACIERTO' : ''}
                 </span>
-                {filled && (
+                {(isFinalists || (isTop5 && lockedTop5.length > 0)) && (
+                  <Badge className="gap-1 border-primary/30 bg-primary/10 text-primary">
+                    <Lock className="h-3 w-3" /> Auto
+                  </Badge>
+                )}
+                {filled && !isFinalists && (
                   <Badge className="gap-1 border-accent/30 bg-accent/15 text-accent">
                     <Check className="h-3 w-3" /> Listo
                   </Badge>
@@ -158,31 +243,74 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                     disabled={locked}
                   />
                 )}
-                {c.valueKind === 'team_set' && n === 2 && (
+
+                {isFinalists && (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Se llena automáticamente con tu Campeón y Subcampeón. Edita esas dos
+                        categorías para cambiar tus finalistas.
+                      </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {renderTeamPill(
+                        lockedFromSources.champion,
+                        'Selecciona tu Campeón',
+                      )}
+                      {renderTeamPill(
+                        lockedFromSources.runnerUp,
+                        'Selecciona tu Subcampeón',
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {isTop5 && (
+                  <div className="space-y-3">
+                    <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
+                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                      <p className="text-xs text-muted-foreground leading-relaxed">
+                        Tu Campeón, Subcampeón y Tercer lugar ya cuentan acá (no se pueden
+                        quitar). Elige las otras 2 selecciones que crees que llegarán más
+                        lejos.
+                      </p>
+                    </div>
+                    <TeamSetGrid
+                      teams={teams}
+                      selected={v.teamSet ?? []}
+                      onChange={(next) => update(c.id, { teamSet: next })}
+                      n={n}
+                      disabled={locked}
+                      lockedTeamIds={lockedTop5}
+                    />
+                  </div>
+                )}
+
+                {c.valueKind === 'team_set' && !isFinalists && !isTop5 && n === 2 && (
                   <div className="grid gap-3 sm:grid-cols-2">
                     {[0, 1].map((i) => (
                       <div key={i}>
-                        <Label className="text-xs text-muted-foreground">
-                          Finalista {String.fromCharCode(65 + i)}
-                        </Label>
-                        <div className="mt-1">
-                          <TeamComboBox
-                            teams={teams}
-                            value={v.teamSet?.[i] ?? null}
-                            onChange={(id) => {
-                              const next = [...(v.teamSet ?? [])]
-                              if (id) next[i] = id
-                              else next.splice(i, 1)
-                              update(c.id, { teamSet: next.filter(Boolean) })
-                            }}
-                            disabled={locked}
-                          />
-                        </div>
+                        <p className="mb-1 text-xs text-muted-foreground">
+                          Selección {String.fromCharCode(65 + i)}
+                        </p>
+                        <TeamComboBox
+                          teams={teams}
+                          value={v.teamSet?.[i] ?? null}
+                          onChange={(id) => {
+                            const next = [...(v.teamSet ?? [])]
+                            if (id) next[i] = id
+                            else next.splice(i, 1)
+                            update(c.id, { teamSet: next.filter(Boolean) })
+                          }}
+                          disabled={locked}
+                        />
                       </div>
                     ))}
                   </div>
                 )}
-                {c.valueKind === 'team_set' && n > 2 && (
+
+                {c.valueKind === 'team_set' && !isFinalists && !isTop5 && n > 2 && (
                   <TeamSetGrid
                     teams={teams}
                     selected={v.teamSet ?? []}
@@ -191,6 +319,7 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                     disabled={locked}
                   />
                 )}
+
                 {c.valueKind === 'player' && (
                   <div className="space-y-2">
                     <Input

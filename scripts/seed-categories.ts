@@ -61,7 +61,7 @@ const CATEGORIES: SeedRow[] = [
     key: 'revelation',
     name: 'Selección revelación',
     description:
-      'Equipo con mayor brecha positiva entre ronda alcanzada y ronda esperada según odds pre-torneo',
+      'Equipo que terminó mucho mejor de lo que su ranking FIFA pre-torneo predecía (mayor salto positivo)',
     valueKind: 'team',
     resolutionStrategy: 'revelation',
     defaultPoints: 8,
@@ -70,7 +70,7 @@ const CATEGORIES: SeedRow[] = [
     key: 'disappointment',
     name: 'Selección decepción',
     description:
-      'Equipo con mayor brecha negativa entre ronda alcanzada y ronda esperada según odds pre-torneo',
+      'Equipo que terminó mucho peor de lo que su ranking FIFA pre-torneo predecía (mayor caída)',
     valueKind: 'team',
     resolutionStrategy: 'disappointment',
     defaultPoints: 8,

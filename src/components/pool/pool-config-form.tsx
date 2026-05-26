@@ -67,10 +67,7 @@ export function PoolConfigForm({ groupId, initial }: Props) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="BOB">BOB · Bolivianos</SelectItem>
-            <SelectItem value="USD">USD · Dólares</SelectItem>
-            <SelectItem value="EUR">EUR · Euros</SelectItem>
-            <SelectItem value="PEN">PEN · Soles</SelectItem>
-            <SelectItem value="ARS">ARS · Pesos argentinos</SelectItem>
+            <SelectItem value="USDT">USDT · Tether</SelectItem>
           </SelectContent>
         </Select>
       </div>
