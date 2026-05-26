@@ -3,6 +3,22 @@
 @import "shadcn/tailwind.css";
 
 /*
+ * Windows does not ship a colour emoji font for the regional indicator
+ * sequence pairs that make up flag emojis (Android / iOS / macOS do).
+ * country-flag-emoji-polyfill ships a Twemoji-based webfont that we map
+ * onto exactly that Unicode range, so 🇦🇷 / 🇧🇷 / 🇲🇽 render the same
+ * across platforms without falling back to "AR" / "BR" / "MX".
+ */
+@font-face {
+  font-family: "Twemoji Country Flags";
+  unicode-range: U+1F1E6-1F1FF, U+1F3F4, U+E0062-E0063, U+E0065, U+E0067, U+E006C,
+    U+E006E, U+E0073-E0074, U+E0077, U+E007F;
+  src: url("https://cdn.jsdelivr.net/npm/country-flag-emoji-polyfill@0.1/dist/TwemojiCountryFlags.woff2")
+    format("woff2");
+  font-display: swap;
+}
+
+/*
  * Design tokens from the Claude Design handoff (v2).
  * Dark is the default; if the OS prefers light, we override.
  * No manual toggle — the OS decides.
@@ -60,8 +76,9 @@
 
   --radius: 0.75rem;
 
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
-  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono";
+  --font-sans: var(--font-geist-sans), "Twemoji Country Flags", ui-sans-serif,
+    system-ui;
+  --font-mono: var(--font-geist-mono), "Twemoji Country Flags", ui-monospace, "SF Mono";
 }
 
 @media (prefers-color-scheme: light) {
@@ -157,5 +174,32 @@
   }
   * {
     color-scheme: light dark;
+  }
+
+  /*
+   * Make interactive widgets reflect their affordance with a pointer cursor
+   * on hover. shadcn ships with default cursors per variant, but radix
+   * combobox / select triggers and command items don't always get one.
+   */
+  button:not([disabled]),
+  [role="button"]:not([aria-disabled="true"]),
+  [role="combobox"]:not([data-disabled]),
+  [role="option"]:not([data-disabled]),
+  [role="menuitem"]:not([data-disabled]),
+  [role="menuitemradio"]:not([data-disabled]),
+  [role="menuitemcheckbox"]:not([data-disabled]),
+  [role="tab"]:not([aria-disabled="true"]),
+  [role="switch"]:not([data-disabled]),
+  [role="radio"]:not([data-disabled]),
+  [role="checkbox"]:not([data-disabled]),
+  label[for],
+  summary {
+    cursor: pointer;
+  }
+  input[type="date"]:not([disabled]),
+  input[type="datetime-local"]:not([disabled]),
+  input[type="time"]:not([disabled]),
+  input[type="file"]:not([disabled]) {
+    cursor: pointer;
   }
 }

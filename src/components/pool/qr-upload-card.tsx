@@ -1,6 +1,6 @@
 'use client'
 
-import { Trash2, Upload } from 'lucide-react'
+import { Loader2, Maximize2, Trash2, Upload } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import {
@@ -15,6 +15,13 @@ import {
   AlertDialogTrigger,
 } from '@/components/ui/alert-dialog'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { removePoolQr, uploadPoolQr } from '@/features/pool/storage'
 
@@ -65,8 +72,12 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
               disabled={pending}
               onClick={() => inputRef.current?.click()}
             >
-              <Upload className="h-3.5 w-3.5" />
-              {url ? 'Reemplazar imagen' : 'Subir imagen'}
+              {pending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <Upload className="h-3.5 w-3.5" />
+              )}
+              {pending ? 'Subiendo…' : url ? 'Reemplazar imagen' : 'Subir imagen'}
             </Button>
             <input
               ref={inputRef}
@@ -96,8 +107,8 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Eliminar QR</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Los miembros del grupo dejarán de ver el QR para aportar al pozo. Puedes subir
-                      uno nuevo después.
+                      Los miembros del grupo dejarán de ver el QR para aportar al pozo.
+                      Puedes subir uno nuevo después.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -114,17 +125,41 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            PNG, JPG o WEBP, máx 5 MB. Sube tu QR de Yape, Tigo Money o transferencia. Los miembros
-            lo verán al abrir el dashboard del grupo.
+            PNG, JPG o WEBP, máx 5 MB. Sube tu QR de Yape, Tigo Money o transferencia. Los
+            miembros lo verán al abrir el dashboard del grupo.
           </p>
         </div>
         {url && (
-          // biome-ignore lint/performance/noImgElement: cross-origin Supabase Storage
-          <img
-            src={url}
-            alt="QR actual"
-            className="h-24 w-24 rounded-lg border border-border object-cover"
-          />
+          <Dialog>
+            <DialogTrigger asChild>
+              <button
+                type="button"
+                className="group relative h-24 w-24 shrink-0 overflow-hidden rounded-lg border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                aria-label="Ver QR a pantalla completa"
+              >
+                {/* biome-ignore lint/performance/noImgElement: external Supabase Storage URL */}
+                <img
+                  src={url}
+                  alt="QR actual"
+                  className="h-full w-full object-cover"
+                />
+                <span className="absolute inset-0 grid place-items-center bg-background/0 text-foreground/0 transition-colors group-hover:bg-background/60 group-hover:text-foreground">
+                  <Maximize2 className="h-5 w-5" />
+                </span>
+              </button>
+            </DialogTrigger>
+            <DialogContent className="max-w-sm">
+              <DialogHeader>
+                <DialogTitle>QR de depósito</DialogTitle>
+              </DialogHeader>
+              {/* biome-ignore lint/performance/noImgElement: external Supabase Storage URL */}
+              <img
+                src={url}
+                alt="QR de depósito"
+                className="w-full rounded-lg border border-border"
+              />
+            </DialogContent>
+          </Dialog>
         )}
       </div>
     </div>
