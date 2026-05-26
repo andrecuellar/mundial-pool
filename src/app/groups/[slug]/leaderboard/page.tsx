@@ -9,6 +9,7 @@ import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
 import { getPoolSummary } from '@/features/pool/queries'
+import { sortByCategoryOrder } from '@/features/predictions/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -32,7 +33,7 @@ export default async function LeaderboardPage({ params }: Params) {
   })
   if (!membership) redirect(`/groups/${slug}`)
 
-  const [leaderboard, cats, pool] = await Promise.all([
+  const [leaderboard, catsRaw, pool] = await Promise.all([
     getLeaderboard(group.id),
     db
       .select({
@@ -46,6 +47,7 @@ export default async function LeaderboardPage({ params }: Params) {
       .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
     getPoolSummary(group.id),
   ])
+  const cats = sortByCategoryOrder(catsRaw)
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'

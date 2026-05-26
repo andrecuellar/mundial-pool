@@ -10,6 +10,36 @@ import {
   teams,
 } from '@/db/schema'
 
+/**
+ * Canonical order shown to users. Postgres doesn't guarantee a row order
+ * without ORDER BY, and re-seeding shuffled the physical layout, which made
+ * the predict form jump around between sessions. Both the form and the
+ * leaderboard breakdown sort with this list.
+ */
+export const CATEGORY_ORDER = [
+  'champion',
+  'runner_up',
+  'third_place',
+  'finalists',
+  'top_5',
+  'revelation',
+  'disappointment',
+  'top_scoring_team',
+  'most_conceded_team',
+  'top_scorer_player',
+  'golden_ball',
+  'golden_glove',
+  'young_player',
+] as const
+
+export function sortByCategoryOrder<T extends { key: string }>(rows: T[]): T[] {
+  const index = (k: string) => {
+    const i = (CATEGORY_ORDER as readonly string[]).indexOf(k)
+    return i === -1 ? CATEGORY_ORDER.length : i
+  }
+  return [...rows].sort((a, b) => index(a.key) - index(b.key))
+}
+
 export type PredictionFormCategory = {
   id: string
   key: string
@@ -109,7 +139,7 @@ export async function getPredictionForm(
 
   const map = new Map(existing.map((e) => [e.categoryId, e]))
 
-  return rows.map((r) => ({
+  const mapped = rows.map((r) => ({
     id: r.id,
     key: r.key,
     name: r.name,
@@ -125,4 +155,5 @@ export async function getPredictionForm(
         }
       : null,
   }))
+  return sortByCategoryOrder(mapped)
 }
