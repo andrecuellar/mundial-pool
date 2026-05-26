@@ -10,10 +10,11 @@ config({ path: '.env' })
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
-// FIFA Men's World Ranking — April 1, 2026 snapshot (ESPN / Wikipedia).
+// FIFA Men's World Ranking — April 1, 2026 snapshot.
+// Source for top 50: ESPN / Wikipedia summary of the official FIFA release.
+// Source for the 11 sub-50 teams below: per-team web lookups against the
+// same April 1, 2026 publication.
 // Next FIFA update: June 9, 2026 (2 days before the World Cup opening match).
-// Teams outside the top 50 are not listed; they keep fifa_ranking = NULL and
-// the UI shows them as "+50".
 const RANKING: Record<string, number> = {
   FRA: 1,
   ESP: 2,
@@ -65,6 +66,19 @@ const RANKING: Record<string, number> = {
   // 48. Slovakia — did not qualify
   // 49. Venezuela — did not qualify
   UZB: 50,
+
+  // Sub-50 qualifiers (positions 51+).
+  QAT: 55,
+  IRQ: 57,
+  RSA: 60,
+  KSA: 61,
+  JOR: 63,
+  BIH: 65,
+  CPV: 69,
+  GHA: 74,
+  CUW: 82,
+  HAI: 83,
+  NZL: 85,
 }
 
 async function main() {
