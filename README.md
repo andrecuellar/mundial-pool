@@ -146,19 +146,21 @@ Todos los miembros del grupo pueden ver el monto acumulado, el QR para aportar, 
 
 `globals.css` declara el sistema de tokens con CSS variables. **Dark es el default**; si el dispositivo prefiere light (`prefers-color-scheme: light`), se hace override automáticamente. No hay toggle manual por ahora.
 
-Los tokens están en `:root` y deben usarse vía clases Tailwind (`bg-background`, `text-foreground`, `border-border`, etc.) gracias al `@theme inline` block. Claude Design rellenará la paleta final; el scaffolding actual es solo un placeholder funcional.
+Los tokens están en `:root` y se consumen vía clases Tailwind (`bg-background`, `text-foreground`, `border-border`, etc.) gracias al `@theme inline` block. La paleta vive en OK-LCh para preservar luminancia perceptual entre dark y light.
 
 ## Roadmap
 
 - [x] Schema + integraciones base
 - [x] Seed de categorías + 48 selecciones del Mundial 2026
 - [x] Provider TheSportsDB + endpoint cron de resolución
-- [x] Auth Google + magic link
-- [x] CRUD de grupos + invitación por código
-- [x] Formulario de predicciones (bloqueable por fecha)
-- [x] Leaderboard con cálculo de puntaje server-side
-- [x] Pozo de apuestas (schema + server actions, UI pendiente)
-- [x] Dark mode scaffolding (default device-aware)
-- [ ] Diseño UI completo (Claude Design → Claude Code handoff)
-- [ ] Admin panel: subida de QR a Supabase Storage, overrides manuales (FIFA awards)
-- [ ] Seed de odds pre-torneo para resolver revelación/decepción
+- [x] Auth Google + magic link, deep-link `/join/[code]` con redirect post-auth
+- [x] CRUD de grupos + invitación por código + Share API
+- [x] Formulario de predicciones con autocomplete de jugadores + cascada Top 5
+- [x] Leaderboard con cálculo de puntaje server-side y desglose por categoría
+- [x] Pozo de apuestas opt-in con QR upload a Supabase Storage
+- [x] Tema dark / light / sistema con toggle en el header
+- [x] PWA: icons + manifest + iOS add-to-home-screen
+- [x] Seed de FIFA ranking para revelación / decepción
+- [ ] Cron de resolución conectado a un proveedor real (Wikipedia + TheSportsDB)
+- [ ] Admin panel: overrides manuales para los premios FIFA subjetivos
+- [ ] Notificaciones por email cuando se actualice el leaderboard
