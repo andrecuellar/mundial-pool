@@ -1,65 +1,33 @@
 'use client'
 
 import { AlertTriangle } from 'lucide-react'
-import { useRef, useState, useTransition } from 'react'
+import { useState, useTransition } from 'react'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { joinGroup } from '@/features/groups/actions'
 
 const CODE_LEN = 6
-const ALPHABET = /^[A-Z0-9]$/
+const ALPHABET = /[^A-Z0-9]/g
 
 export function JoinGroupForm() {
-  const [digits, setDigits] = useState<string[]>(Array(CODE_LEN).fill(''))
+  const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
-  const refs = useRef<(HTMLInputElement | null)[]>([])
 
-  function setAt(i: number, v: string) {
-    setError(null)
-    setDigits((prev) => {
-      const next = [...prev]
-      next[i] = v
-      return next
-    })
-  }
-
-  function handleChange(i: number, raw: string) {
-    const v = raw.toUpperCase().slice(-1)
-    if (v && !ALPHABET.test(v)) return
-    setAt(i, v)
-    if (v && i < CODE_LEN - 1) refs.current[i + 1]?.focus()
-  }
-
-  function handleKeyDown(i: number, e: React.KeyboardEvent<HTMLInputElement>) {
-    if (e.key === 'Backspace' && !digits[i] && i > 0) {
-      refs.current[i - 1]?.focus()
-    }
-  }
-
-  function handlePaste(e: React.ClipboardEvent<HTMLInputElement>) {
-    const text = e.clipboardData
-      .getData('text')
-      .toUpperCase()
-      .replace(/[^A-Z0-9]/g, '')
-      .slice(0, CODE_LEN)
-    if (!text) return
-    e.preventDefault()
-    const next = Array(CODE_LEN).fill('')
-    for (let i = 0; i < text.length; i++) next[i] = text[i]
-    setDigits(next)
-    refs.current[Math.min(text.length, CODE_LEN - 1)]?.focus()
+  function sanitize(raw: string): string {
+    return raw.toUpperCase().replace(ALPHABET, '').slice(0, CODE_LEN)
   }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const code = digits.join('')
-    if (code.length !== CODE_LEN) {
+    const clean = sanitize(code)
+    if (clean.length !== CODE_LEN) {
       setError('Completa los 6 caracteres.')
       return
     }
     startTransition(async () => {
       const fd = new FormData()
-      fd.set('inviteCode', code)
+      fd.set('inviteCode', clean)
       const r = await joinGroup(fd)
       if (r.ok) {
         window.location.href = `/groups/${r.data.slug}`
@@ -71,31 +39,33 @@ export function JoinGroupForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="flex justify-center gap-2">
-        {digits.map((d, i) => (
-          <input
-            // biome-ignore lint/suspicious/noArrayIndexKey: positional OTP cells
-            key={`cell-${i}`}
-            ref={(el) => {
-              refs.current[i] = el
-            }}
-            value={d}
-            onChange={(e) => handleChange(i, e.target.value)}
-            onKeyDown={(e) => handleKeyDown(i, e)}
-            onPaste={handlePaste}
-            inputMode="text"
-            maxLength={1}
-            aria-label={`Caracter ${i + 1}`}
-            className={`h-14 w-12 rounded-lg border-[1.5px] bg-card text-center font-mono text-2xl font-semibold tabular-nums uppercase outline-none transition-colors focus:ring-2 focus:ring-ring ${
-              error
-                ? 'border-destructive bg-destructive/5'
-                : d
-                  ? 'border-primary bg-primary/5 text-foreground'
-                  : 'border-border text-muted-foreground'
-            }`}
-          />
-        ))}
-      </div>
+      <Input
+        value={code}
+        onChange={(e) => {
+          setError(null)
+          setCode(sanitize(e.target.value))
+        }}
+        type="text"
+        inputMode="text"
+        autoCapitalize="characters"
+        autoComplete="off"
+        autoCorrect="off"
+        spellCheck={false}
+        maxLength={CODE_LEN}
+        placeholder="K7M2XQ"
+        aria-label="Código de invitación"
+        className={`h-16 text-center font-mono text-3xl font-semibold uppercase tabular-nums tracking-[0.4em] sm:tracking-[0.6em] ${
+          error
+            ? 'border-destructive bg-destructive/5'
+            : code.length === CODE_LEN
+              ? 'border-primary bg-primary/5 text-foreground'
+              : ''
+        }`}
+      />
+
+      <p className="text-center text-xs text-muted-foreground">
+        Pega el código directamente o tipéalo. {code.length} / {CODE_LEN}
+      </p>
 
       {error && (
         <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
@@ -110,7 +80,12 @@ export function JoinGroupForm() {
       )}
 
       <div className="space-y-2 pt-2">
-        <Button type="submit" disabled={pending} size="lg" className="w-full">
+        <Button
+          type="submit"
+          disabled={pending || code.length !== CODE_LEN}
+          size="lg"
+          className="w-full"
+        >
           {pending ? 'Verificando…' : 'Unirme'}
         </Button>
         <Button asChild variant="ghost" size="lg" className="w-full">
