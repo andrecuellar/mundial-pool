@@ -20,8 +20,10 @@
 
 /*
  * Design tokens from the Claude Design handoff (v2).
- * Dark is the default; if the OS prefers light, we override.
- * No manual toggle — the OS decides.
+ * Dark is the default. If the OS prefers light AND the user has not picked
+ * an explicit theme via the header toggle, we fall back to light. The
+ * header toggle uses next-themes which sets `class="light"` or
+ * `class="dark"` on <html>; the media query is scoped accordingly.
  */
 
 :root {
@@ -82,7 +84,7 @@
 }
 
 @media (prefers-color-scheme: light) {
-  :root {
+  :root:not(.dark) {
     --background: oklch(0.985 0.004 80);
     --foreground: oklch(0.20 0.02 250);
     --card: oklch(1.00 0 0);
@@ -111,6 +113,40 @@
     --sidebar-foreground: oklch(0.20 0.02 250);
     --sidebar-border: oklch(0.90 0.008 80);
   }
+}
+
+/*
+ * Explicit light override from the header toggle. Higher specificity than
+ * :root so it wins regardless of OS preference.
+ */
+:root.light {
+  --background: oklch(0.985 0.004 80);
+  --foreground: oklch(0.20 0.02 250);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.20 0.02 250);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.20 0.02 250);
+  --muted: oklch(0.955 0.005 80);
+  --muted-foreground: oklch(0.46 0.02 250);
+  --secondary: oklch(0.955 0.005 80);
+  --secondary-foreground: oklch(0.20 0.02 250);
+  --border: oklch(0.90 0.008 80);
+  --input: oklch(0.90 0.008 80);
+  --ring: oklch(0.44 0.16 250);
+  --primary: oklch(0.44 0.16 250);
+  --primary-foreground: oklch(0.985 0.005 250);
+  --accent: oklch(0.54 0.13 150);
+  --accent-foreground: oklch(0.985 0.005 150);
+  --success: oklch(0.54 0.13 150);
+  --warning: oklch(0.62 0.13 65);
+  --destructive: oklch(0.54 0.18 25);
+  --destructive-foreground: oklch(0.985 0.005 25);
+  --gold: oklch(0.68 0.13 85);
+  --silver: oklch(0.62 0.015 250);
+  --bronze: oklch(0.55 0.10 55);
+  --sidebar: oklch(0.985 0.004 80);
+  --sidebar-foreground: oklch(0.20 0.02 250);
+  --sidebar-border: oklch(0.90 0.008 80);
 }
 
 @theme inline {

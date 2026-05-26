@@ -31,15 +31,16 @@ export default async function LoginPage() {
             Mundial 2026 · 11 jun → 19 jul
           </p>
           <h1 className="text-4xl sm:text-5xl font-semibold tracking-tight text-balance leading-[1.05]">
-            La quiniela
+            El pool
             <br />
-            de tu grupo.
+            del Mundial,
             <br />
-            <span className="text-muted-foreground">Sin apuestas.</span>
+            <span className="text-muted-foreground">para tu grupo.</span>
           </h1>
           <p className="mt-5 text-base text-muted-foreground max-w-sm leading-relaxed">
-            Predice campeón, goleador, balón de oro y diez categorías más. Una sola vez, antes del
-            partido inaugural.
+            Son <span className="font-medium text-foreground">104 partidos</span> en el
+            Mundial 2026. Da flojera adivinar Congo vs Uzbekistán o Haití vs Escocia.
+            Aquí predice solo las cosas que importan.
           </p>
 
           <div className="mt-8">

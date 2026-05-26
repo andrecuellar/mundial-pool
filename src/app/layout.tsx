@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'mundial-pool',
-  description: 'La polla del Mundial 2026 entre amigos',
+  description: 'El pool del Mundial 2026 entre amigos',
   appleWebApp: {
     capable: true,
     title: 'mundial-pool',
