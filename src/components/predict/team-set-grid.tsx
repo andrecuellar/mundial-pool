@@ -22,14 +22,7 @@ type Props = {
   lockedTeamIds?: string[]
 }
 
-export function TeamSetGrid({
-  teams,
-  selected,
-  onChange,
-  n,
-  disabled,
-  lockedTeamIds = [],
-}: Props) {
+export function TeamSetGrid({ teams, selected, onChange, n, disabled, lockedTeamIds = [] }: Props) {
   const [query, setQuery] = useState('')
   const lockedSet = new Set(lockedTeamIds)
   const set = new Set(selected)
@@ -114,7 +107,11 @@ export function TeamSetGrid({
                       ? 'border-border bg-card opacity-40 cursor-not-allowed'
                       : 'border-border bg-card hover:bg-muted/40'
               }`}
-              title={isLocked ? 'Esta selección viene de tu Campeón / Subcampeón / Tercer lugar' : undefined}
+              title={
+                isLocked
+                  ? 'Esta selección viene de tu Campeón / Subcampeón / Tercer lugar'
+                  : undefined
+              }
             >
               <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
               <span className="flex-1 truncate font-medium">{t.name}</span>

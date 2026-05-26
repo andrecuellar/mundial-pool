@@ -1,6 +1,14 @@
-import { and, eq } from 'drizzle-orm'
+import { and, asc, eq } from 'drizzle-orm'
 import { db } from '@/db'
-import { categories, groupCategories, groupMembers, groups, predictions, teams } from '@/db/schema'
+import {
+  categories,
+  groupCategories,
+  groupMembers,
+  groups,
+  players,
+  predictions,
+  teams,
+} from '@/db/schema'
 
 export type PredictionFormCategory = {
   id: string
@@ -36,6 +44,38 @@ export async function listMembers(groupId: string) {
 
 export async function listAllTeams() {
   return db.select().from(teams).orderBy(teams.name)
+}
+
+export type PlayerOption = {
+  id: string
+  fullName: string
+  teamName: string
+  teamFlag: string | null
+  position: string | null
+  dateOfBirth: string | null
+}
+
+export async function listAllPlayers(): Promise<PlayerOption[]> {
+  const rows = await db
+    .select({
+      id: players.id,
+      fullName: players.fullName,
+      teamName: teams.name,
+      teamFlag: teams.flagEmoji,
+      position: players.position,
+      dateOfBirth: players.dateOfBirth,
+    })
+    .from(players)
+    .leftJoin(teams, eq(teams.id, players.teamId))
+    .orderBy(asc(players.fullName))
+  return rows.map((r) => ({
+    id: r.id,
+    fullName: r.fullName,
+    teamName: r.teamName ?? '',
+    teamFlag: r.teamFlag,
+    position: r.position,
+    dateOfBirth: r.dateOfBirth,
+  }))
 }
 
 export async function getPredictionForm(

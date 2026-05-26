@@ -3,14 +3,14 @@
 import { Check, Info, Lock } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { PlayerComboBox } from '@/components/predict/player-combobox'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { Input } from '@/components/ui/input'
 import { submitPredictions } from '@/features/predictions/actions'
-import type { PredictionFormCategory } from '@/features/predictions/queries'
+import type { PlayerOption, PredictionFormCategory } from '@/features/predictions/queries'
 
 type Team = { id: string; name: string; flagEmoji: string | null; fifaCode: string | null }
 
@@ -18,8 +18,13 @@ type Props = {
   groupSlug: string
   categories: PredictionFormCategory[]
   teams: Team[]
+  players: PlayerOption[]
   locked: boolean
 }
+
+// FIFA Young Player Award eligibility: born on or after Jan 1, 2005
+// (under 21 on the first day of the 2026 World Cup).
+const YOUNG_PLAYER_MIN_DOB = '2005-01-01'
 
 type DraftValue = {
   teamId?: string | null
@@ -47,7 +52,7 @@ function getLockedFromSources(
   return { champion, runnerUp, thirdPlace }
 }
 
-export function PredictionForm({ groupSlug, categories, teams, locked }: Props) {
+export function PredictionForm({ groupSlug, categories, teams, players, locked }: Props) {
   const byKey = useMemo(() => {
     const m: Record<string, PredictionFormCategory> = {}
     for (const c of categories) m[c.key] = c
@@ -115,11 +120,9 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
   const lockedFromSources = getLockedFromSources(draft, sourceIds)
   const lockedTop5 = Array.from(
     new Set(
-      [
-        lockedFromSources.champion,
-        lockedFromSources.runnerUp,
-        lockedFromSources.thirdPlace,
-      ].filter((x): x is string => !!x),
+      [lockedFromSources.champion, lockedFromSources.runnerUp, lockedFromSources.thirdPlace].filter(
+        (x): x is string => !!x,
+      ),
     ),
   )
 
@@ -254,14 +257,8 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                       </p>
                     </div>
                     <div className="flex flex-wrap gap-2">
-                      {renderTeamPill(
-                        lockedFromSources.champion,
-                        'Selecciona tu Campeón',
-                      )}
-                      {renderTeamPill(
-                        lockedFromSources.runnerUp,
-                        'Selecciona tu Subcampeón',
-                      )}
+                      {renderTeamPill(lockedFromSources.champion, 'Selecciona tu Campeón')}
+                      {renderTeamPill(lockedFromSources.runnerUp, 'Selecciona tu Subcampeón')}
                     </div>
                   </div>
                 )}
@@ -271,9 +268,8 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
                     <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
                       <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
                       <p className="text-xs text-muted-foreground leading-relaxed">
-                        Tu Campeón, Subcampeón y Tercer lugar ya cuentan acá (no se pueden
-                        quitar). Elige las otras 2 selecciones que crees que llegarán más
-                        lejos.
+                        Tu Campeón, Subcampeón y Tercer lugar ya cuentan acá (no se pueden quitar).
+                        Elige las otras 2 selecciones que crees que llegarán más lejos.
                       </p>
                     </div>
                     <TeamSetGrid
@@ -322,15 +318,28 @@ export function PredictionForm({ groupSlug, categories, teams, locked }: Props) 
 
                 {c.valueKind === 'player' && (
                   <div className="space-y-2">
-                    <Input
+                    <PlayerComboBox
+                      players={players}
                       value={v.playerText ?? ''}
-                      onChange={(e) => update(c.id, { playerText: e.target.value })}
-                      placeholder="Nombre completo del jugador (ej: Lionel Messi)"
+                      onChange={(next) => update(c.id, { playerText: next })}
                       disabled={locked}
-                      className="h-11"
+                      minDob={c.key === 'young_player' ? YOUNG_PLAYER_MIN_DOB : undefined}
+                      placeholder={
+                        c.key === 'young_player'
+                          ? 'Buscar jugador sub-21 o escribir nombre…'
+                          : 'Buscar jugador o escribir nombre…'
+                      }
                     />
+                    {c.key === 'young_player' && (
+                      <p className="text-xs text-muted-foreground">
+                        Solo aparecen jugadores nacidos a partir del 1 de enero de 2005 (sub-21 al
+                        inicio del Mundial).
+                      </p>
+                    )}
                     <p className="text-xs text-muted-foreground">
-                      Verificaremos contra el premio oficial FIFA al cierre del torneo.
+                      Si tu jugador no está en la lista, escribe su nombre y aparecerá una opción{' '}
+                      <span className="font-medium text-foreground">"Usar: …"</span>. Verificaremos
+                      manualmente al cierre del torneo contra el premio oficial FIFA.
                     </p>
                   </div>
                 )}

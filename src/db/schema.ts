@@ -1,5 +1,6 @@
 import {
   boolean,
+  date,
   integer,
   jsonb,
   numeric,
@@ -105,9 +106,11 @@ export const teams = pgTable('teams', {
 
 export const players = pgTable('players', {
   id: uuid('id').defaultRandom().primaryKey(),
-  externalId: text('external_id'),
+  externalId: text('external_id').unique(),
   fullName: text('full_name').notNull(),
   teamId: uuid('team_id').references(() => teams.id),
+  position: text('position'),
+  dateOfBirth: date('date_of_birth'),
 })
 
 export const categories = pgTable('categories', {

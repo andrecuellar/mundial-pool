@@ -5,7 +5,7 @@ import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
-import { getPredictionForm, listAllTeams } from '@/features/predictions/queries'
+import { getPredictionForm, listAllPlayers, listAllTeams } from '@/features/predictions/queries'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { PredictionForm } from './prediction-form'
 
@@ -30,7 +30,11 @@ export default async function PredictPage({ params }: Params) {
   if (!membership) redirect(`/groups/${slug}`)
 
   const locked = new Date() >= group.predictionsLockAt
-  const [form, allTeams] = await Promise.all([getPredictionForm(group.id, user.id), listAllTeams()])
+  const [form, allTeams, allPlayers] = await Promise.all([
+    getPredictionForm(group.id, user.id),
+    listAllTeams(),
+    listAllPlayers(),
+  ])
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
@@ -87,6 +91,7 @@ export default async function PredictPage({ params }: Params) {
               flagEmoji: t.flagEmoji,
               fifaCode: t.fifaCode,
             }))}
+            players={allPlayers}
             locked={locked}
           />
         </div>

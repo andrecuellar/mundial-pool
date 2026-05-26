@@ -16,6 +16,7 @@ const PROVIDER_TO_DB: Record<string, string> = {
   belgium: 'belgica',
   bosniaherzegovina: 'bosniayherzegovina',
   bosnia: 'bosniayherzegovina',
+  bosniaandherzegovina: 'bosniayherzegovina',
   brazil: 'brasil',
   capeverde: 'caboverde',
   croatia: 'croacia',
