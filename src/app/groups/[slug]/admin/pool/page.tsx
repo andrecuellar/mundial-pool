@@ -5,6 +5,7 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { DepositForm } from '@/components/pool/deposit-form'
 import { PoolConfigForm } from '@/components/pool/pool-config-form'
 import { PoolLedgerTable } from '@/components/pool/pool-ledger-table'
+import { QrUploadCard } from '@/components/pool/qr-upload-card'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, profiles } from '@/db/schema'
@@ -96,10 +97,12 @@ export default async function AdminPoolPage({ params }: Params) {
               initial={{
                 enabled: pool.enabled,
                 currency: pool.currency,
-                qrUrl: pool.qrUrl,
                 payoutRule: pool.payoutRule,
               }}
             />
+            <div className="mt-6 border-t border-border pt-6">
+              <QrUploadCard groupId={group.id} initialUrl={pool.qrUrl} />
+            </div>
           </Card>
 
           <Card className="p-6 self-start">

@@ -4,7 +4,6 @@ import { Check } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -22,7 +21,6 @@ type Props = {
   initial: {
     enabled: boolean
     currency: string | null
-    qrUrl: string | null
     payoutRule: 'winner_takes_all' | 'top_3_split' | 'manual'
   }
 }
@@ -30,7 +28,6 @@ type Props = {
 export function PoolConfigForm({ groupId, initial }: Props) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [currency, setCurrency] = useState(initial.currency ?? 'BOB')
-  const [qrUrl, setQrUrl] = useState(initial.qrUrl ?? '')
   const [payoutRule, setPayoutRule] = useState(initial.payoutRule)
   const [pending, startTransition] = useTransition()
 
@@ -41,7 +38,6 @@ export function PoolConfigForm({ groupId, initial }: Props) {
         groupId,
         enabled,
         currency: enabled ? currency : null,
-        qrUrl: qrUrl.trim() === '' ? null : qrUrl.trim(),
         payoutRule,
       })
       if (r.ok) toast.success('Configuración guardada')
@@ -77,35 +73,6 @@ export function PoolConfigForm({ groupId, initial }: Props) {
             <SelectItem value="ARS">ARS · Pesos argentinos</SelectItem>
           </SelectContent>
         </Select>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="qrUrl">URL del QR de depósito</Label>
-        <div className="flex items-start gap-3">
-          <div className="flex-1 space-y-1.5">
-            <Input
-              id="qrUrl"
-              type="url"
-              value={qrUrl}
-              onChange={(e) => setQrUrl(e.target.value)}
-              placeholder="https://..."
-              disabled={!enabled}
-              className="font-mono text-sm"
-            />
-            <p className="text-xs text-muted-foreground">
-              URL pública de la imagen (Yape, Tigo Money, transferencia). Cuando agreguemos Supabase
-              Storage, esto será un uploader.
-            </p>
-          </div>
-          {qrUrl && (
-            // biome-ignore lint/performance/noImgElement: external QR preview
-            <img
-              src={qrUrl}
-              alt="Preview QR"
-              className="h-24 w-24 rounded-lg border border-border object-cover"
-            />
-          )}
-        </div>
       </div>
 
       <div className="space-y-3">

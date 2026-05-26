@@ -13,7 +13,6 @@ const configSchema = z.object({
   groupId: z.uuid(),
   enabled: z.boolean(),
   currency: z.string().min(1).max(8).nullable(),
-  qrUrl: z.string().url().nullable(),
   payoutRule: z.enum(['winner_takes_all', 'top_3_split', 'manual']),
 })
 
@@ -54,7 +53,6 @@ export async function updatePoolConfig(input: unknown): Promise<PoolActionResult
     .set({
       poolEnabled: parsed.data.enabled,
       poolCurrency: parsed.data.currency,
-      poolQrUrl: parsed.data.qrUrl,
       poolPayoutRule: parsed.data.payoutRule,
     })
     .where(eq(groups.id, parsed.data.groupId))

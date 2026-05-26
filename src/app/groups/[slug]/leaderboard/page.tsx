@@ -1,15 +1,15 @@
 import { and, eq } from 'drizzle-orm'
-import { Clock, Wallet } from 'lucide-react'
+import { Clock } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { LeaderboardTabs } from '@/components/leaderboard/leaderboard-tabs'
+import { PoolBand } from '@/components/pool/pool-band'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
 import { getPoolSummary } from '@/features/pool/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
-import { formatMoney, payoutRuleLabel } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -77,22 +77,7 @@ export default async function LeaderboardPage({ params }: Params) {
           </span>
         </p>
 
-        {pool.enabled && hasScores && (
-          <Card className="mt-5 flex flex-wrap items-center justify-between gap-3 border-gold/20 bg-gradient-to-br from-gold/5 to-transparent p-4">
-            <div className="flex items-center gap-2">
-              <Wallet className="h-4 w-4 text-gold" />
-              <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                Pozo actual
-              </span>
-              <span className="font-semibold tabular-nums">
-                {formatMoney(pool.total, pool.currency ?? 'BOB')}
-              </span>
-            </div>
-            <span className="text-xs text-muted-foreground">
-              Payout: {payoutRuleLabel(pool.payoutRule)}
-            </span>
-          </Card>
-        )}
+        {hasScores && <PoolBand pool={pool} />}
 
         {leaderboard.length === 0 || !hasScores ? (
           <Card className="mt-6 p-12 text-center">

@@ -11,6 +11,7 @@ const schema = z.object({
   FOOTBALL_API_KEY: z.string().min(1).optional(),
   FOOTBALL_API_BASE_URL: z.string().url().optional(),
   RESOLUTION_CRON_SECRET: z.string().min(1).optional(),
+  CRON_SECRET: z.string().min(1).optional(),
 })
 
 export const env = schema.parse(process.env)

@@ -7,9 +7,10 @@ export const runtime = 'nodejs'
 export const maxDuration = 60
 
 function isAuthorized(req: Request): boolean {
-  if (!env.RESOLUTION_CRON_SECRET) return false
+  const secret = env.CRON_SECRET ?? env.RESOLUTION_CRON_SECRET
+  if (!secret) return false
   const header = req.headers.get('authorization')
-  return header === `Bearer ${env.RESOLUTION_CRON_SECRET}`
+  return header === `Bearer ${secret}`
 }
 
 async function handle(req: Request) {
