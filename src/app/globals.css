@@ -196,6 +196,46 @@
   --font-heading: var(--font-sans);
 }
 
+/*
+ * Subtle "chef's kiss" wobble for the home-page callout. The pinched-fingers
+ * emoji rotates and grows briefly every loop, like a hand expressing
+ * satisfaction. Respects prefers-reduced-motion.
+ */
+@keyframes mp-chef-kiss {
+  0%,
+  60%,
+  100% {
+    transform: rotate(0) scale(1);
+  }
+  10% {
+    transform: rotate(-10deg) scale(1.15);
+  }
+  20% {
+    transform: rotate(8deg) scale(1.1);
+  }
+  30% {
+    transform: rotate(-6deg) scale(1.08);
+  }
+  40% {
+    transform: rotate(4deg) scale(1.04);
+  }
+  50% {
+    transform: rotate(0) scale(1);
+  }
+}
+
+.animate-chef-kiss {
+  display: inline-block;
+  transform-origin: 50% 80%;
+  animation: mp-chef-kiss 4.5s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-chef-kiss {
+    animation: none;
+  }
+}
+
 @layer base {
   * {
     @apply border-border outline-ring/50;
