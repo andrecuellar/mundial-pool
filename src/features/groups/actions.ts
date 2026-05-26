@@ -5,13 +5,16 @@ import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
-import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
+import { groupMembers, groups } from '@/db/schema'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { generateInviteCode, slugify } from './helpers'
 
 const createGroupSchema = z.object({
   name: z.string().min(2).max(60),
   predictionsLockAt: z.iso.datetime({ offset: true }).or(z.iso.datetime()),
+  poolEnabled: z.boolean().optional(),
+  poolCurrency: z.string().min(1).max(8).optional(),
+  poolPayoutRule: z.enum(['winner_takes_all', 'top_3_split', 'manual']).optional(),
 })
 
 const joinGroupSchema = z.object({
@@ -32,9 +35,15 @@ async function requireUserId(): Promise<string> {
 }
 
 export async function createGroup(formData: FormData): Promise<ActionResult<{ slug: string }>> {
+  const poolEnabled = formData.get('poolEnabled') === 'on'
   const parsed = createGroupSchema.safeParse({
     name: formData.get('name'),
     predictionsLockAt: formData.get('predictionsLockAt'),
+    poolEnabled,
+    poolCurrency: poolEnabled ? (formData.get('poolCurrency') ?? 'BOB') : undefined,
+    poolPayoutRule: poolEnabled
+      ? (formData.get('poolPayoutRule') ?? 'winner_takes_all')
+      : undefined,
   })
   if (!parsed.success) {
     return { ok: false, error: 'Datos inválidos. Nombre y fecha de bloqueo son requeridos.' }
@@ -71,6 +80,9 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
         inviteCode,
         createdBy: userId,
         predictionsLockAt: lockAt,
+        poolEnabled: parsed.data.poolEnabled ?? false,
+        poolCurrency: parsed.data.poolCurrency ?? null,
+        poolPayoutRule: parsed.data.poolPayoutRule ?? 'winner_takes_all',
       })
       .returning()
 

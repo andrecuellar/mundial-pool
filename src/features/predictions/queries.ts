@@ -1,4 +1,4 @@
-import { and, eq, inArray } from 'drizzle-orm'
+import { and, eq } from 'drizzle-orm'
 import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups, predictions, teams } from '@/db/schema'
 

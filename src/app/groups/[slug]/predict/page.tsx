@@ -1,6 +1,8 @@
 import { and, eq } from 'drizzle-orm'
+import { Lock } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { AppHeader } from '@/components/app-shell/app-header'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import { getPredictionForm, listAllTeams } from '@/features/predictions/queries'
@@ -30,26 +32,65 @@ export default async function PredictPage({ params }: Params) {
   const locked = new Date() >= group.predictionsLockAt
   const [form, allTeams] = await Promise.all([getPredictionForm(group.id, user.id), listAllTeams()])
 
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
+
   return (
-    <main style={{ maxWidth: 720, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <p>
-        <Link href={`/groups/${slug}`}>← {group.name}</Link>
-      </p>
-      <h1>Mis predicciones</h1>
-      {locked && (
-        <p style={{ color: 'crimson' }}>🔒 Las predicciones están bloqueadas. Solo modo lectura.</p>
-      )}
-      <PredictionForm
-        groupSlug={slug}
-        categories={form}
-        teams={allTeams.map((t) => ({
-          id: t.id,
-          name: t.name,
-          flagEmoji: t.flagEmoji,
-          fifaCode: t.fifaCode,
-        }))}
-        locked={locked}
+    <>
+      <AppHeader
+        user={{ name: displayName, email: user.email ?? null, avatarUrl }}
+        breadcrumb={[{ label: group.name, href: `/groups/${slug}` }, { label: 'Mis predicciones' }]}
       />
-    </main>
+
+      {locked && (
+        <div className="border-b border-warning/30 bg-warning/10 px-4 sm:px-8 py-3">
+          <div className="mx-auto flex max-w-4xl items-center gap-2 text-sm">
+            <Lock className="h-4 w-4 text-warning" />
+            <span>
+              <span className="font-medium">Las predicciones están bloqueadas.</span>{' '}
+              <span className="text-muted-foreground">
+                Esta vista es solo lectura desde el{' '}
+                {group.predictionsLockAt.toLocaleString('es-BO', {
+                  day: '2-digit',
+                  month: 'short',
+                  hour: '2-digit',
+                  minute: '2-digit',
+                })}
+                .
+              </span>
+            </span>
+          </div>
+        </div>
+      )}
+
+      <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+        <Link
+          href={`/groups/${slug}`}
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← {group.name}
+        </Link>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Mis predicciones</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Llena las 13 categorías antes del partido inaugural. Se guardan con un solo botón al
+          final.
+        </p>
+
+        <div className="mt-6">
+          <PredictionForm
+            groupSlug={slug}
+            categories={form}
+            teams={allTeams.map((t) => ({
+              id: t.id,
+              name: t.name,
+              flagEmoji: t.flagEmoji,
+              fifaCode: t.fifaCode,
+            }))}
+            locked={locked}
+          />
+        </div>
+      </main>
+    </>
   )
 }

@@ -1,61 +1,161 @@
 @import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
 
 /*
- * Theme tokens.
- * Dark is the default; if the device explicitly prefers light, we override.
- * Claude Design fills in the final palette; this file just sets the
- * dark-first structure so the design system has the right scaffolding.
+ * Design tokens from the Claude Design handoff (v2).
+ * Dark is the default; if the OS prefers light, we override.
+ * No manual toggle — the OS decides.
  */
 
 :root {
-  --background: #0a0a0a;
-  --foreground: #ededed;
-  --muted: #1a1a1a;
-  --muted-foreground: #a3a3a3;
-  --border: #262626;
-  --primary: #3b82f6;
-  --primary-foreground: #ffffff;
-  --accent: #22c55e;
-  --destructive: #ef4444;
+  --background: oklch(0.165 0.018 250);
+  --foreground: oklch(0.965 0.005 80);
+
+  --card: oklch(0.215 0.020 250);
+  --card-foreground: oklch(0.965 0.005 80);
+
+  --popover: oklch(0.215 0.020 250);
+  --popover-foreground: oklch(0.965 0.005 80);
+
+  --muted: oklch(0.255 0.018 250);
+  --muted-foreground: oklch(0.70 0.015 250);
+
+  --secondary: oklch(0.255 0.018 250);
+  --secondary-foreground: oklch(0.965 0.005 80);
+
+  --border: oklch(0.305 0.018 250);
+  --input: oklch(0.305 0.018 250);
+  --ring: oklch(0.70 0.165 250);
+
+  --primary: oklch(0.70 0.165 250);
+  --primary-foreground: oklch(0.12 0.018 250);
+
+  --accent: oklch(0.74 0.16 150);
+  --accent-foreground: oklch(0.12 0.018 150);
+
+  --success: oklch(0.74 0.16 150);
+  --warning: oklch(0.78 0.13 75);
+  --destructive: oklch(0.70 0.18 25);
+  --destructive-foreground: oklch(0.12 0.018 25);
+
+  --gold: oklch(0.78 0.10 85);
+  --silver: oklch(0.78 0.015 250);
+  --bronze: oklch(0.70 0.07 50);
+
+  --sidebar: oklch(0.165 0.018 250);
+  --sidebar-foreground: oklch(0.965 0.005 80);
+  --sidebar-primary: oklch(0.70 0.165 250);
+  --sidebar-primary-foreground: oklch(0.12 0.018 250);
+  --sidebar-accent: oklch(0.74 0.16 150);
+  --sidebar-accent-foreground: oklch(0.12 0.018 150);
+  --sidebar-border: oklch(0.305 0.018 250);
+  --sidebar-ring: oklch(0.70 0.165 250);
+
+  --chart-1: oklch(0.70 0.165 250);
+  --chart-2: oklch(0.74 0.16 150);
+  --chart-3: oklch(0.78 0.13 75);
+  --chart-4: oklch(0.70 0.18 25);
+  --chart-5: oklch(0.78 0.10 85);
+
   --radius: 0.75rem;
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui;
+  --font-mono: var(--font-geist-mono), ui-monospace, "SF Mono";
 }
 
 @media (prefers-color-scheme: light) {
   :root {
-    --background: #ffffff;
-    --foreground: #0a0a0a;
-    --muted: #f5f5f5;
-    --muted-foreground: #525252;
-    --border: #e5e5e5;
-    --primary: #2563eb;
-    --primary-foreground: #ffffff;
-    --accent: #16a34a;
-    --destructive: #dc2626;
+    --background: oklch(0.985 0.004 80);
+    --foreground: oklch(0.20 0.02 250);
+    --card: oklch(1.00 0 0);
+    --card-foreground: oklch(0.20 0.02 250);
+    --popover: oklch(1.00 0 0);
+    --popover-foreground: oklch(0.20 0.02 250);
+    --muted: oklch(0.955 0.005 80);
+    --muted-foreground: oklch(0.46 0.02 250);
+    --secondary: oklch(0.955 0.005 80);
+    --secondary-foreground: oklch(0.20 0.02 250);
+    --border: oklch(0.90 0.008 80);
+    --input: oklch(0.90 0.008 80);
+    --ring: oklch(0.44 0.16 250);
+    --primary: oklch(0.44 0.16 250);
+    --primary-foreground: oklch(0.985 0.005 250);
+    --accent: oklch(0.54 0.13 150);
+    --accent-foreground: oklch(0.985 0.005 150);
+    --success: oklch(0.54 0.13 150);
+    --warning: oklch(0.62 0.13 65);
+    --destructive: oklch(0.54 0.18 25);
+    --destructive-foreground: oklch(0.985 0.005 25);
+    --gold: oklch(0.68 0.13 85);
+    --silver: oklch(0.62 0.015 250);
+    --bronze: oklch(0.55 0.10 55);
+    --sidebar: oklch(0.985 0.004 80);
+    --sidebar-foreground: oklch(0.20 0.02 250);
+    --sidebar-border: oklch(0.90 0.008 80);
   }
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
   --color-muted: var(--muted);
   --color-muted-foreground: var(--muted-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
   --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
   --color-primary: var(--primary);
   --color-primary-foreground: var(--primary-foreground);
   --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-success: var(--success);
+  --color-warning: var(--warning);
   --color-destructive: var(--destructive);
-  --radius: var(--radius);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-gold: var(--gold);
+  --color-silver: var(--silver);
+  --color-bronze: var(--bronze);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+  --font-heading: var(--font-sans);
 }
 
-html,
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: var(--font-sans), Arial, Helvetica, sans-serif;
-}
-
-* {
-  color-scheme: light dark;
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  html,
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "ss01", "cv11";
+  }
+  html {
+    @apply font-sans;
+  }
+  * {
+    color-scheme: light dark;
+  }
 }

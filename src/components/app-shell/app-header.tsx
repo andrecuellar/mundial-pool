@@ -1,0 +1,39 @@
+import { ChevronRight } from 'lucide-react'
+import Link from 'next/link'
+import { UserMenu } from './user-menu'
+import { Wordmark } from './wordmark'
+
+type Props = {
+  user: { name: string; email: string | null; avatarUrl: string | null }
+  breadcrumb?: { label: string; href?: string }[]
+}
+
+export function AppHeader({ user, breadcrumb }: Props) {
+  return (
+    <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center justify-between border-b border-border bg-background/95 px-4 sm:px-8 backdrop-blur">
+      <div className="flex items-center gap-3 min-w-0">
+        <Link href="/" className="shrink-0">
+          <Wordmark size="md" />
+        </Link>
+        {breadcrumb && breadcrumb.length > 0 && (
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground min-w-0">
+            {breadcrumb.map((b, i) => (
+              // biome-ignore lint/suspicious/noArrayIndexKey: breadcrumb segments are stable per render
+              <span key={`crumb-${i}-${b.label}`} className="flex items-center gap-2 min-w-0">
+                <ChevronRight className="h-3.5 w-3.5 shrink-0" />
+                {b.href ? (
+                  <Link href={b.href} className="hover:text-foreground truncate">
+                    {b.label}
+                  </Link>
+                ) : (
+                  <span className="truncate text-foreground">{b.label}</span>
+                )}
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+      <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
+    </header>
+  )
+}

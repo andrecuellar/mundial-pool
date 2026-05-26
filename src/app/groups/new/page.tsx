@@ -1,7 +1,10 @@
+import { Bolt } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
-import { createGroupAndRedirect } from '@/features/groups/actions'
+import { AppHeader } from '@/components/app-shell/app-header'
+import { Card } from '@/components/ui/card'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { NewGroupForm } from './new-group-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -12,42 +15,43 @@ export default async function NewGroupPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
+
   return (
-    <main style={{ maxWidth: 480, margin: '4rem auto', fontFamily: 'sans-serif' }}>
-      <p>
-        <Link href="/">← Volver</Link>
-      </p>
-      <h1>Crear grupo</h1>
-      <form action={createGroupAndRedirect} style={{ display: 'grid', gap: '1rem' }}>
-        <label>
-          Nombre del grupo
-          <input
-            name="name"
-            required
-            minLength={2}
-            maxLength={60}
-            placeholder="Ej: Mundialistas BO"
-            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
-          />
-        </label>
-        <label>
-          Bloquear predicciones a partir de
-          <input
-            name="predictionsLockAt"
-            type="datetime-local"
-            required
-            defaultValue="2026-06-11T17:00"
-            style={{ display: 'block', width: '100%', padding: '0.5rem' }}
-          />
-          <small style={{ color: '#666' }}>
-            Después de esta fecha nadie podrá editar predicciones. Sugerido: el inicio del partido
-            inaugural.
-          </small>
-        </label>
-        <button type="submit" style={{ padding: '0.75rem' }}>
-          Crear grupo
-        </button>
-      </form>
-    </main>
+    <>
+      <AppHeader
+        user={{ name: displayName, email: user.email ?? null, avatarUrl }}
+        breadcrumb={[{ label: 'Crear grupo' }]}
+      />
+      <main className="mx-auto w-full max-w-xl flex-1 px-4 py-8 sm:px-6">
+        <Link
+          href="/"
+          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← Volver a mis grupos
+        </Link>
+
+        <Card className="p-6 sm:p-8">
+          <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Crear grupo</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Tu grupo tendrá un código de invitación de 6 caracteres para compartir.
+          </p>
+
+          <div className="mt-5 rounded-lg border border-dashed border-border bg-muted/40 p-3">
+            <div className="flex items-start gap-2.5">
+              <Bolt className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <p className="text-xs text-muted-foreground leading-relaxed">
+                Las 13 categorías del Mundial 2026 (campeón, goleador, balón de oro…) se activan
+                automáticamente. No necesitas configurarlas.
+              </p>
+            </div>
+          </div>
+
+          <NewGroupForm />
+        </Card>
+      </main>
+    </>
   )
 }

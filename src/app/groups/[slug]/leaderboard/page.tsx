@@ -1,9 +1,15 @@
 import { and, eq } from 'drizzle-orm'
+import { Clock, Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
+import { AppHeader } from '@/components/app-shell/app-header'
+import { LeaderboardTabs } from '@/components/leaderboard/leaderboard-tabs'
+import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
+import { getPoolSummary } from '@/features/pool/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
+import { formatMoney, payoutRuleLabel } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -26,7 +32,7 @@ export default async function LeaderboardPage({ params }: Params) {
   })
   if (!membership) redirect(`/groups/${slug}`)
 
-  const [leaderboard, cats] = await Promise.all([
+  const [leaderboard, cats, pool] = await Promise.all([
     getLeaderboard(group.id),
     db
       .select({
@@ -38,72 +44,76 @@ export default async function LeaderboardPage({ params }: Params) {
       .from(categories)
       .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
       .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
+    getPoolSummary(group.id),
   ])
 
+  const displayName =
+    (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
+  const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
+  const hasScores = leaderboard.some((r) => r.totalPoints > 0)
+
   return (
-    <main style={{ maxWidth: 900, margin: '2rem auto', fontFamily: 'sans-serif' }}>
-      <p>
-        <Link href={`/groups/${slug}`}>← {group.name}</Link>
-      </p>
-      <h1>Tabla de líderes</h1>
+    <>
+      <AppHeader
+        user={{ name: displayName, email: user.email ?? null, avatarUrl }}
+        breadcrumb={[{ label: group.name, href: `/groups/${slug}` }, { label: 'Tabla' }]}
+      />
 
-      {leaderboard.length === 0 ? (
-        <p>Todavía no hay jugadores en este grupo.</p>
-      ) : (
-        <table style={{ width: '100%', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ borderBottom: '2px solid #333' }}>
-              <th style={{ textAlign: 'left', padding: '0.5rem' }}>#</th>
-              <th style={{ textAlign: 'left', padding: '0.5rem' }}>Jugador</th>
-              <th style={{ textAlign: 'right', padding: '0.5rem' }}>Total</th>
-              {cats.map((c) => (
-                <th
-                  key={c.id}
-                  style={{ textAlign: 'right', padding: '0.5rem', fontSize: '0.75rem' }}
-                  title={c.name}
-                >
-                  {c.key}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody>
-            {leaderboard.map((row, i) => (
-              <tr
-                key={row.userId}
-                style={{
-                  borderBottom: '1px solid #eee',
-                  background: row.userId === user.id ? '#fffbe6' : 'transparent',
-                }}
-              >
-                <td style={{ padding: '0.5rem' }}>{i + 1}</td>
-                <td style={{ padding: '0.5rem' }}>{row.displayName}</td>
-                <td style={{ padding: '0.5rem', textAlign: 'right', fontWeight: 'bold' }}>
-                  {row.totalPoints}
-                </td>
-                {cats.map((c) => (
-                  <td
-                    key={c.id}
-                    style={{
-                      padding: '0.5rem',
-                      textAlign: 'right',
-                      fontSize: '0.85rem',
-                      color: (row.breakdown[c.id] ?? 0) > 0 ? '#0a0' : '#aaa',
-                    }}
-                  >
-                    {row.breakdown[c.id] ?? 0}
-                  </td>
-                ))}
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
+        <Link
+          href={`/groups/${slug}`}
+          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
+        >
+          ← {group.name}
+        </Link>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Tabla de líderes</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Última actualización ·{' '}
+          <span className="font-mono text-foreground">
+            {new Date().toLocaleTimeString('es-BO', {
+              hour: '2-digit',
+              minute: '2-digit',
+            })}
+          </span>
+        </p>
 
-      <p style={{ color: '#666', marginTop: '2rem', fontSize: '0.85rem' }}>
-        Los puntos se recalculan automáticamente cuando el cron de resolución actualiza los
-        resultados.
-      </p>
-    </main>
+        {pool.enabled && hasScores && (
+          <Card className="mt-5 flex flex-wrap items-center justify-between gap-3 border-gold/20 bg-gradient-to-br from-gold/5 to-transparent p-4">
+            <div className="flex items-center gap-2">
+              <Wallet className="h-4 w-4 text-gold" />
+              <span className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                Pozo actual
+              </span>
+              <span className="font-semibold tabular-nums">
+                {formatMoney(pool.total, pool.currency ?? 'BOB')}
+              </span>
+            </div>
+            <span className="text-xs text-muted-foreground">
+              Payout: {payoutRuleLabel(pool.payoutRule)}
+            </span>
+          </Card>
+        )}
+
+        {leaderboard.length === 0 || !hasScores ? (
+          <Card className="mt-6 p-12 text-center">
+            <div className="mx-auto mb-4 grid h-16 w-16 place-items-center rounded-full border border-dashed border-border bg-muted">
+              <Clock className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h2 className="text-lg font-semibold tracking-tight">Aún no hay puntos</h2>
+            <p className="mx-auto mt-2 max-w-md text-sm text-muted-foreground">
+              La tabla se actualiza cuando inicia el Mundial. Vuelve después del partido inaugural
+              el <span className="font-medium text-foreground">11 de junio</span>.
+            </p>
+          </Card>
+        ) : (
+          <div className="mt-6">
+            <LeaderboardTabs leaderboard={leaderboard} categories={cats} currentUserId={user.id} />
+            <p className="mt-3 text-center text-xs text-muted-foreground">
+              Los puntos se recalculan automáticamente con cada partido resuelto.
+            </p>
+          </div>
+        )}
+      </main>
+    </>
   )
 }
