@@ -95,9 +95,9 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
           <ul className="space-y-1">
             {payoutPreview.map((p) => (
               <li key={p.userId} className="flex items-center justify-between gap-3 tabular-nums">
-                <span className="flex items-center gap-2">
+                <span className="flex min-w-0 items-center gap-2">
                   <span
-                    className={`grid h-5 w-5 place-items-center rounded-full text-[10px] font-semibold ${
+                    className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-semibold ${
                       p.rank === 1
                         ? 'bg-gold/15 text-gold'
                         : p.rank === 2
@@ -105,7 +105,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
                           : 'bg-bronze/15 text-bronze'
                     }`}
                   >
-                    {p.rank}
+                    {p.tied ? `T-${p.rank}` : p.rank}
                   </span>
                   <span className="truncate">{p.displayName}</span>
                 </span>
@@ -113,6 +113,11 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
               </li>
             ))}
           </ul>
+          {payoutPreview.some((p) => p.tied) && (
+            <p className="pt-2 text-[11px] text-muted-foreground leading-relaxed">
+              Hay empate. La parte de ese puesto se reparte por igual entre los empatados.
+            </p>
+          )}
         </div>
       )}
 

@@ -32,18 +32,16 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
       {kind === 'revelation' ? (
         <p>
           La selección con la mayor brecha positiva entre su{' '}
-          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y
-          la ronda alcanzada. Ejemplo:{' '}
-          <span className="font-medium text-foreground">Costa Rica 2014</span> (ranking
-          FIFA #28 → cuartos de final).
+          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y la ronda
+          alcanzada. Ejemplo: <span className="font-medium text-foreground">Costa Rica 2014</span>{' '}
+          (ranking FIFA #28 → cuartos de final).
         </p>
       ) : (
         <p>
           La selección con la mayor brecha negativa entre su{' '}
-          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y
-          la ronda alcanzada. Ejemplo:{' '}
-          <span className="font-medium text-foreground">España 2014</span> (ranking FIFA
-          #1 → eliminada en fase de grupos).
+          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y la ronda
+          alcanzada. Ejemplo: <span className="font-medium text-foreground">España 2014</span>{' '}
+          (ranking FIFA #1 → eliminada en fase de grupos).
         </p>
       )}
       <p>
@@ -410,7 +408,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
             <p className="text-sm font-medium">Guardar mis predicciones</p>
             <p className="text-xs text-muted-foreground">
               {completed === total
-                ? '¡Listo! Tienes las 13 categorías completas.'
+                ? `¡Listo! Tienes las ${total} categorías completas.`
                 : `Te quedan ${total - completed} ${total - completed === 1 ? 'categoría' : 'categorías'} por llenar. Puedes guardar parciales y volver después.`}
             </p>
           </div>

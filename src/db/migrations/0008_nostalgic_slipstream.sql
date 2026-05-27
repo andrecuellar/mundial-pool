@@ -1,0 +1,1 @@
+ALTER TYPE "public"."resolution_strategy" ADD VALUE 'top_assists_player' BEFORE 'top_scoring_team';

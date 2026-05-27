@@ -65,9 +65,7 @@ export function TeamComboBox({ teams, value, onChange, disabled, showRanking }: 
               <span className="text-base leading-none">{selected.flagEmoji ?? '🏳️'}</span>
               <span className="font-medium">{selected.name}</span>
               {selected.fifaCode && (
-                <span className="font-mono text-xs text-muted-foreground">
-                  {selected.fifaCode}
-                </span>
+                <span className="font-mono text-xs text-muted-foreground">{selected.fifaCode}</span>
               )}
               {showRanking && (
                 <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">
@@ -99,9 +97,7 @@ export function TeamComboBox({ teams, value, onChange, disabled, showRanking }: 
                   <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
                   <span className="font-medium">{t.name}</span>
                   {t.fifaCode && (
-                    <span className="font-mono text-xs text-muted-foreground">
-                      {t.fifaCode}
-                    </span>
+                    <span className="font-mono text-xs text-muted-foreground">{t.fifaCode}</span>
                   )}
                   {showRanking && (
                     <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">

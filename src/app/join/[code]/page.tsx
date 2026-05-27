@@ -43,8 +43,8 @@ export default async function JoinByCodePage({ params }: Params) {
         <Card className="mt-8 w-full p-6 text-center">
           <h1 className="text-xl font-semibold">Código no válido</h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            El código <code className="font-mono font-medium">{codeUpper}</code> no
-            existe. Verifícalo con quien te invitó.
+            El código <code className="font-mono font-medium">{codeUpper}</code> no existe.
+            Verifícalo con quien te invitó.
           </p>
           <div className="mt-5 flex justify-center gap-2">
             <Button asChild>
@@ -90,9 +90,8 @@ export default async function JoinByCodePage({ params }: Params) {
               Ya estás en este grupo
             </h1>
             <p className="mt-2 text-sm text-muted-foreground leading-relaxed">
-              Ya eres miembro de{' '}
-              <span className="font-medium text-foreground">{group.name}</span>. No
-              necesitas volver a unirte.
+              Ya eres miembro de <span className="font-medium text-foreground">{group.name}</span>.
+              No necesitas volver a unirte.
             </p>
             <div className="mt-3 flex flex-wrap items-center justify-center gap-2 text-xs">
               {locked ? (
@@ -133,9 +132,7 @@ export default async function JoinByCodePage({ params }: Params) {
           <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
             Te invitaron a un pool
           </p>
-          <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">
-            {group.name}
-          </h1>
+          <h1 className="mt-2 text-2xl sm:text-3xl font-semibold tracking-tight">{group.name}</h1>
           <div className="mt-3 flex flex-wrap items-center gap-2 text-sm">
             {locked ? (
               <Badge variant="secondary">🔒 Predicciones bloqueadas</Badge>
@@ -152,8 +149,8 @@ export default async function JoinByCodePage({ params }: Params) {
           </div>
 
           <p className="mt-5 text-sm text-muted-foreground leading-relaxed">
-            Al unirte podrás hacer tus 13 predicciones del Mundial 2026 y aparecer en la
-            tabla de líderes del grupo.
+            Al unirte podrás hacer tus 14 predicciones del Mundial 2026 y aparecer en la tabla de
+            líderes del grupo.
           </p>
 
           <form action={joinGroupAndRedirect} className="mt-6 space-y-2">
@@ -167,8 +164,7 @@ export default async function JoinByCodePage({ params }: Params) {
           </form>
 
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
-            Código de invitación:{' '}
-            <span className="font-mono text-foreground">{codeUpper}</span>
+            Código de invitación: <span className="font-mono text-foreground">{codeUpper}</span>
           </p>
         </Card>
       </main>

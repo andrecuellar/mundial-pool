@@ -1,6 +1,6 @@
 {
-  "id": "557eb165-db5e-4add-9a22-582cdcab7fb4",
-  "prevId": "07c4c705-161b-48b6-85d2-105a423b386c",
+  "id": "0e3f8c9a-4330-4b3a-8c8f-e4d214b1a7eb",
+  "prevId": "557eb165-db5e-4add-9a22-582cdcab7fb4",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -869,6 +869,7 @@
         "final_loser",
         "third_place",
         "top_scorer_player",
+        "top_assists_player",
         "top_scoring_team",
         "most_conceded_team",
         "finalists",

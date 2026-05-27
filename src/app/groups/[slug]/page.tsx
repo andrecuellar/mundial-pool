@@ -3,6 +3,7 @@ import { ChevronRight, Lock, Share2, Users } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { BackLink } from '@/components/app-shell/back-link'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
 import { ShareButton } from '@/components/groups/share-button'
 import { PoolStatCard } from '@/components/pool/pool-stat-card'
@@ -74,9 +75,29 @@ export default async function GroupPage({ params }: Params) {
   const locked = new Date() >= group.predictionsLockAt
   const days = daysUntil(group.predictionsLockAt)
   const memberCount = memberCountRow.count
-  const myRank = leaderboard.findIndex((r) => r.userId === user.id)
   const completedCount = myPredictions[0].count
-  const totalPredictions = 13
+  const totalPredictions = 14
+
+  // Competition rank: ties share a position (1, 1, 3, 3, 5).
+  let myRank = -1
+  let myTied = false
+  {
+    let prevPoints: number | null = null
+    let prevRank = 0
+    for (let i = 0; i < leaderboard.length; i++) {
+      const r = leaderboard[i]
+      const rank = prevPoints !== null && r.totalPoints === prevPoints ? prevRank : i + 1
+      if (r.userId === user.id) {
+        myRank = rank
+      }
+      prevPoints = r.totalPoints
+      prevRank = rank
+    }
+    if (myRank > 0) {
+      const me = leaderboard.find((r) => r.userId === user.id)
+      myTied = leaderboard.filter((r) => r.totalPoints === me?.totalPoints).length > 1
+    }
+  }
 
   return (
     <>
@@ -86,12 +107,7 @@ export default async function GroupPage({ params }: Params) {
       />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
-        <Link
-          href="/"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Mis grupos
-        </Link>
+        <BackLink href="/" label="Mis grupos" className="mb-4" />
 
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
           <Card className="relative overflow-hidden border-none bg-primary p-6 sm:p-8 text-primary-foreground">
@@ -125,11 +141,11 @@ export default async function GroupPage({ params }: Params) {
                     Predicciones abiertas
                   </Badge>
                 )}
-                {myRank >= 0 && (
+                {myRank > 0 && (
                   <span className="opacity-80">
                     Vas en el lugar{' '}
                     <span className="font-medium opacity-100">
-                      #{myRank + 1} de {leaderboard.length}
+                      {myTied ? `T-${myRank}` : `#${myRank}`} de {leaderboard.length}
                     </span>
                   </span>
                 )}
@@ -251,7 +267,7 @@ export default async function GroupPage({ params }: Params) {
                     Tabla de líderes
                   </p>
                   <p className="mt-2 text-2xl font-semibold tabular-nums">
-                    {myRank >= 0 ? `#${myRank + 1}` : '—'}
+                    {myRank > 0 ? (myTied ? `T-${myRank}` : `#${myRank}`) : '—'}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {leaderboard.length > 0
@@ -271,6 +287,27 @@ export default async function GroupPage({ params }: Params) {
             isOwner={membership.role === 'owner'}
           />
         </div>
+
+        <Link href={`/groups/${slug}/predictions`} className="mt-4 block">
+          <Card className="hover-lift p-5">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  Apuestas del grupo
+                </p>
+                <p className="mt-2 text-sm">
+                  {locked
+                    ? `Mira lo que apostó cada uno de los ${memberCount} jugadores.`
+                    : `Se revelan el ${group.predictionsLockAt.toLocaleString('es-BO', {
+                        day: '2-digit',
+                        month: 'short',
+                      })}, junto con el cierre.`}
+                </p>
+              </div>
+              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+            </div>
+          </Card>
+        </Link>
       </main>
     </>
   )

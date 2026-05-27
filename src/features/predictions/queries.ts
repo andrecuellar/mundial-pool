@@ -7,6 +7,7 @@ import {
   groups,
   players,
   predictions,
+  profiles,
   teams,
 } from '@/db/schema'
 
@@ -27,6 +28,7 @@ export const CATEGORY_ORDER = [
   'top_scoring_team',
   'most_conceded_team',
   'top_scorer_player',
+  'top_assists_player',
   'golden_ball',
   'golden_glove',
   'young_player',
@@ -156,4 +158,103 @@ export async function getPredictionForm(
       : null,
   }))
   return sortByCategoryOrder(mapped)
+}
+
+export type AllPredictionsMember = {
+  userId: string
+  displayName: string
+  avatarUrl: string | null
+}
+
+export type AllPredictionsCategory = {
+  id: string
+  key: string
+  name: string
+  valueKind: 'team' | 'player' | 'team_set'
+  points: number
+}
+
+export type AllPredictionsPick =
+  | { kind: 'team'; teamName: string; teamFlag: string | null; fifaCode: string | null }
+  | { kind: 'team_set'; teams: { name: string; flag: string | null }[] }
+  | { kind: 'player'; text: string }
+  | { kind: 'empty' }
+
+export type AllPredictionsView = {
+  members: AllPredictionsMember[]
+  categories: AllPredictionsCategory[]
+  // member → category → pick
+  picks: Map<string, Map<string, AllPredictionsPick>>
+}
+
+export async function getAllGroupPredictions(groupId: string): Promise<AllPredictionsView> {
+  const [members, catsRaw, predRows, teamRows] = await Promise.all([
+    db
+      .select({
+        userId: profiles.id,
+        displayName: profiles.displayName,
+        avatarUrl: profiles.avatarUrl,
+      })
+      .from(groupMembers)
+      .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
+      .where(eq(groupMembers.groupId, groupId))
+      .orderBy(asc(profiles.displayName)),
+    db
+      .select({
+        id: categories.id,
+        key: categories.key,
+        name: categories.name,
+        valueKind: categories.valueKind,
+        points: groupCategories.points,
+      })
+      .from(categories)
+      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+      .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+    db
+      .select({
+        userId: predictions.userId,
+        categoryId: predictions.categoryId,
+        teamId: predictions.teamId,
+        teamSet: predictions.teamSet,
+        playerText: predictions.playerText,
+        teamName: teams.name,
+        teamFlag: teams.flagEmoji,
+        teamFifa: teams.fifaCode,
+      })
+      .from(predictions)
+      .leftJoin(teams, eq(teams.id, predictions.teamId))
+      .where(eq(predictions.groupId, groupId)),
+    db.select({ id: teams.id, name: teams.name, flag: teams.flagEmoji }).from(teams),
+  ])
+
+  const teamById = new Map(teamRows.map((t) => [t.id, t]))
+  const cats = sortByCategoryOrder(catsRaw)
+
+  const picks: Map<string, Map<string, AllPredictionsPick>> = new Map()
+  for (const m of members) picks.set(m.userId, new Map())
+
+  for (const row of predRows) {
+    const cat = cats.find((c) => c.id === row.categoryId)
+    if (!cat) continue
+    let pick: AllPredictionsPick = { kind: 'empty' }
+    if (cat.valueKind === 'team' && row.teamId && row.teamName) {
+      pick = {
+        kind: 'team',
+        teamName: row.teamName,
+        teamFlag: row.teamFlag,
+        fifaCode: row.teamFifa,
+      }
+    } else if (cat.valueKind === 'team_set' && row.teamSet) {
+      const items = (row.teamSet as string[])
+        .map((id) => teamById.get(id))
+        .filter((t): t is { id: string; name: string; flag: string | null } => !!t)
+        .map((t) => ({ name: t.name, flag: t.flag }))
+      pick = { kind: 'team_set', teams: items }
+    } else if (cat.valueKind === 'player' && row.playerText) {
+      pick = { kind: 'player', text: row.playerText }
+    }
+    picks.get(row.userId)?.set(row.categoryId, pick)
+  }
+
+  return { members, categories: cats, picks }
 }

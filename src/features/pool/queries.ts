@@ -83,6 +83,7 @@ export async function listPoolTransactions(groupId: string): Promise<PoolTransac
 
 export type PayoutEntry = {
   rank: number
+  tied: boolean
   userId: string
   displayName: string
   amount: number
@@ -103,11 +104,39 @@ export async function computePayout(groupId: string): Promise<PayoutEntry[]> {
   const percents = splits[summary.payoutRule]
   if (percents.length === 0) return []
 
-  return percents.slice(0, leaderboard.length).map((p, i) => ({
-    rank: i + 1,
-    userId: leaderboard[i].userId,
-    displayName: leaderboard[i].displayName,
-    amount: Math.round(summary.total * p * 100) / 100,
-    percent: p,
-  }))
+  // Group by points using competition ranking: tied players share a rank and
+  // split their slice proportionally; the next distinct group's rank skips by
+  // the size of the tie (1, 1, 3, 3, 5).
+  const groups: { rank: number; points: number; users: typeof leaderboard }[] = []
+  let position = 1
+  for (const row of leaderboard) {
+    const last = groups.at(-1)
+    if (last && last.points === row.totalPoints) {
+      last.users.push(row)
+    } else {
+      groups.push({ rank: position, points: row.totalPoints, users: [row] })
+    }
+    position++
+  }
+
+  const eligibleGroups = groups.filter((g) => g.points > 0)
+
+  const entries: PayoutEntry[] = []
+  percents.slice(0, eligibleGroups.length).forEach((p, i) => {
+    const g = eligibleGroups[i]
+    const perUser = (summary.total * p) / g.users.length
+    const tied = g.users.length > 1
+    for (const u of g.users) {
+      entries.push({
+        rank: g.rank,
+        tied,
+        userId: u.userId,
+        displayName: u.displayName,
+        amount: Math.round(perUser * 100) / 100,
+        percent: p / g.users.length,
+      })
+    }
+  })
+
+  return entries
 }

@@ -57,6 +57,13 @@
       "when": 1779825628216,
       "tag": "0007_nice_night_nurse",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1779891716986,
+      "tag": "0008_nostalgic_slipstream",
+      "breakpoints": true
     }
   ]
 }

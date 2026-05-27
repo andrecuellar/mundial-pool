@@ -1,8 +1,8 @@
 import { and, eq } from 'drizzle-orm'
 import { Lock } from 'lucide-react'
-import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { BackLink } from '@/components/app-shell/back-link'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import { getPredictionForm, listAllPlayers, listAllTeams } from '@/features/predictions/queries'
@@ -69,15 +69,10 @@ export default async function PredictPage({ params }: Params) {
       )}
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
-        <Link
-          href={`/groups/${slug}`}
-          className="mb-3 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← {group.name}
-        </Link>
+        <BackLink href={`/groups/${slug}`} label={group.name} className="mb-4" />
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Mis predicciones</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Llena las 13 categorías antes del partido inaugural. Se guardan con un solo botón al
+          Llena las 14 categorías antes del partido inaugural. Se guardan con un solo botón al
           final.
         </p>
 

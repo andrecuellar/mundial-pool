@@ -107,8 +107,8 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
                   <AlertDialogHeader>
                     <AlertDialogTitle>Eliminar QR</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Los miembros del grupo dejarán de ver el QR para aportar al pozo.
-                      Puedes subir uno nuevo después.
+                      Los miembros del grupo dejarán de ver el QR para aportar al pozo. Puedes subir
+                      uno nuevo después.
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
@@ -125,8 +125,8 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
             )}
           </div>
           <p className="text-xs text-muted-foreground">
-            PNG, JPG o WEBP, máx 5 MB. Sube tu QR de Yape, Tigo Money o transferencia. Los
-            miembros lo verán al abrir el dashboard del grupo.
+            PNG, JPG o WEBP, máx 5 MB. Sube tu QR de Yape, Tigo Money o transferencia. Los miembros
+            lo verán al abrir el dashboard del grupo.
           </p>
         </div>
         {url && (
@@ -138,11 +138,7 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
                 aria-label="Ver QR a pantalla completa"
               >
                 {/* biome-ignore lint/performance/noImgElement: external Supabase Storage URL */}
-                <img
-                  src={url}
-                  alt="QR actual"
-                  className="h-full w-full object-cover"
-                />
+                <img src={url} alt="QR actual" className="h-full w-full object-cover" />
                 <span className="absolute inset-0 grid place-items-center bg-background/0 text-foreground/0 transition-colors group-hover:bg-background/60 group-hover:text-foreground">
                   <Maximize2 className="h-5 w-5" />
                 </span>

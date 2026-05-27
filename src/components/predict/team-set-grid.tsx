@@ -106,10 +106,7 @@ export function TeamSetGrid({ teams, selected, onChange, n, disabled, lockedTeam
                 <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
                 <span>{t.name}</span>
                 {isLocked ? (
-                  <Lock
-                    className="h-3 w-3 text-primary"
-                    aria-label="Auto-seleccionado"
-                  />
+                  <Lock className="h-3 w-3 text-primary" aria-label="Auto-seleccionado" />
                 ) : (
                   <button
                     type="button"

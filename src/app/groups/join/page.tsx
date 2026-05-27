@@ -1,6 +1,6 @@
-import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { BackLink } from '@/components/app-shell/back-link'
 import { Card } from '@/components/ui/card'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { JoinGroupForm } from './join-group-form'
@@ -25,12 +25,7 @@ export default async function JoinGroupPage() {
         breadcrumb={[{ label: 'Unirme con código' }]}
       />
       <main className="mx-auto w-full max-w-md flex-1 px-4 py-8 sm:px-6">
-        <Link
-          href="/"
-          className="mb-4 inline-flex items-center gap-1 text-sm text-muted-foreground hover:text-foreground"
-        >
-          ← Volver a mis grupos
-        </Link>
+        <BackLink href="/" label="Mis grupos" className="mb-4" />
 
         <Card className="p-6 sm:p-8">
           <h1 className="text-center text-2xl sm:text-3xl font-semibold tracking-tight">

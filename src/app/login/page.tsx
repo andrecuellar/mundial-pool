@@ -53,16 +53,15 @@ export default async function LoginPage({ searchParams }: Props) {
             <span className="text-muted-foreground">para tu grupo.</span>
           </h1>
           <p className="mt-5 text-base text-muted-foreground max-w-sm leading-relaxed">
-            Son <span className="font-medium text-foreground">104 partidos</span> en el
-            Mundial 2026. Da flojera adivinar Congo vs Uzbekistán o Haití vs Escocia.
-            Aquí predice solo las cosas que importan.
+            Son <span className="font-medium text-foreground">104 partidos</span> en el Mundial
+            2026. Da flojera adivinar Congo vs Uzbekistán o Haití vs Escocia. Aquí predice solo las
+            cosas que importan.
           </p>
 
           <div className="mt-8">
             <LoginForm next={next} />
           </div>
         </div>
-
       </div>
 
       <aside className="relative hidden lg:flex flex-col justify-between overflow-hidden bg-primary p-14 text-primary-foreground">
@@ -101,7 +100,7 @@ export default async function LoginPage({ searchParams }: Props) {
         <div className="relative z-10 flex justify-between font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">
           <span>48 selecciones</span>
           <span>104 partidos</span>
-          <span>13 predicciones</span>
+          <span>14 predicciones</span>
         </div>
       </aside>
     </main>

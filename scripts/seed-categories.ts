@@ -100,6 +100,14 @@ const CATEGORIES: SeedRow[] = [
     defaultPoints: 10,
   },
   {
+    key: 'top_assists_player',
+    name: 'Máximo Asistente',
+    description: 'Jugador con más asistencias en todo el torneo',
+    valueKind: 'player',
+    resolutionStrategy: 'top_assists_player',
+    defaultPoints: 7,
+  },
+  {
     key: 'golden_ball',
     name: 'Balón de Oro',
     description: 'Mejor jugador del torneo (premio FIFA)',

@@ -64,11 +64,7 @@ export function PoolConfigForm({ groupId, initial, transactionCount }: Props) {
 
       <div className="space-y-2">
         <Label htmlFor="currency">Moneda</Label>
-        <Select
-          value={currency}
-          onValueChange={setCurrency}
-          disabled={!enabled || currencyLocked}
-        >
+        <Select value={currency} onValueChange={setCurrency} disabled={!enabled || currencyLocked}>
           <SelectTrigger id="currency">
             <SelectValue />
           </SelectTrigger>
@@ -79,9 +75,8 @@ export function PoolConfigForm({ groupId, initial, transactionCount }: Props) {
         </Select>
         {currencyLocked && (
           <p className="text-xs text-muted-foreground">
-            🔒 La moneda queda fija después del primer depósito. Para cambiarla, primero
-            elimina los {transactionCount}{' '}
-            {transactionCount === 1 ? 'depósito' : 'depósitos'} registrados.
+            🔒 La moneda queda fija después del primer depósito. Para cambiarla, primero elimina los{' '}
+            {transactionCount} {transactionCount === 1 ? 'depósito' : 'depósitos'} registrados.
           </p>
         )}
       </div>

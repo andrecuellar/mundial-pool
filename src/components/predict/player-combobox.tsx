@@ -130,9 +130,7 @@ export function PlayerComboBox({
                     <span className="text-base leading-none">{p.teamFlag ?? '🏳️'}</span>
                     <div className="flex-1 min-w-0">
                       <div className="truncate font-medium">{p.fullName}</div>
-                      <div className="text-xs text-muted-foreground truncate">
-                        {p.teamName}
-                      </div>
+                      <div className="text-xs text-muted-foreground truncate">{p.teamName}</div>
                     </div>
                     {value === p.fullName && (
                       <Check className="ml-2 h-4 w-4 text-primary shrink-0" />

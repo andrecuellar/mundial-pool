@@ -19,7 +19,7 @@
 }
 
 /*
- * Design tokens from the Claude Design handoff (v2).
+ * Design tokens (v2).
  * Dark is the default. If the OS prefers light AND the user has not picked
  * an explicit theme via the header toggle, we fall back to light. The
  * header toggle uses next-themes which sets `class="light"` or

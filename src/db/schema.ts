@@ -24,6 +24,7 @@ export const resolutionStrategy = pgEnum('resolution_strategy', [
   'final_loser',
   'third_place',
   'top_scorer_player',
+  'top_assists_player',
   'top_scoring_team',
   'most_conceded_team',
   'finalists',

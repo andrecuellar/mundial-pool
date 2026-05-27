@@ -39,6 +39,8 @@ function planCategory(strategy: string, snapshot: TournamentSnapshot): Outcome {
         : { kind: 'skip', reason: 'most conceded team unknown' }
     case 'top_scorer_player':
       return { kind: 'player', reason: 'top scorer auto-resolution pending' }
+    case 'top_assists_player':
+      return { kind: 'player', reason: 'top assists auto-resolution pending' }
     case 'fifa_golden_ball':
     case 'fifa_golden_glove':
     case 'fifa_young_player':

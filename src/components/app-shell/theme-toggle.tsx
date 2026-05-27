@@ -70,16 +70,12 @@ export function ThemeToggle() {
         <DropdownMenuItem onSelect={() => setTheme('dark')}>
           <Moon className="h-4 w-4" />
           Oscuro
-          {theme === 'dark' && (
-            <span className="ml-auto text-[10px] text-muted-foreground">●</span>
-          )}
+          {theme === 'dark' && <span className="ml-auto text-[10px] text-muted-foreground">●</span>}
         </DropdownMenuItem>
         <DropdownMenuItem onSelect={() => setTheme('system')}>
           <Monitor className="h-4 w-4" />
           Sistema
-          {isSystem && (
-            <span className="ml-auto text-[10px] text-muted-foreground">●</span>
-          )}
+          {isSystem && <span className="ml-auto text-[10px] text-muted-foreground">●</span>}
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

@@ -44,9 +44,7 @@ function cleanName(raw: string): string {
 function parsePlayer(raw: string, team: string): ParsedPlayer | null {
   // Name value can contain [[...|...]] blocks whose internal '|' must not
   // terminate the capture. Allow full bracket / brace blocks as opaque units.
-  const nameMatch = raw.match(
-    /\|\s*name\s*=\s*((?:\[\[[^\]]*\]\]|\{\{[^{}]*\}\}|[^|}])+)/,
-  )
+  const nameMatch = raw.match(/\|\s*name\s*=\s*((?:\[\[[^\]]*\]\]|\{\{[^{}]*\}\}|[^|}])+)/)
   if (!nameMatch) return null
   const name = cleanName(nameMatch[1])
   if (!name) return null
