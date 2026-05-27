@@ -4,6 +4,7 @@ import { Check, Info, Lock } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PlayerComboBox } from '@/components/predict/player-combobox'
+import { RevelationCriteriaDialog } from '@/components/predict/revelation-criteria-dialog'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'
@@ -270,7 +271,10 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                   </Badge>
                 )}
               </div>
-              <h3 className="text-base font-semibold tracking-tight">{c.name}</h3>
+              <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight">
+                {c.name}
+                {FIFA_RANKING_CATEGORIES.has(c.key) && <RevelationCriteriaDialog />}
+              </h3>
               {c.description && (
                 <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
                   {c.description}
