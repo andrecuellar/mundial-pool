@@ -4,7 +4,10 @@ import { Check, Info, Lock } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PlayerComboBox } from '@/components/predict/player-combobox'
-import { RevelationCriteriaDialog } from '@/components/predict/revelation-criteria-dialog'
+import {
+  RevelationCriteriaDialog,
+  RevelationCriteriaLink,
+} from '@/components/predict/revelation-criteria-dialog'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'
@@ -49,6 +52,9 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
         {updatePassed
           ? '📅 Estos son los rankings finales pre-Mundial (última actualización: 9 de junio 2026).'
           : '📅 Habrá una última actualización del ranking FIFA el 9 de junio (2 días antes del partido inaugural).'}
+      </p>
+      <p className="pt-1">
+        <RevelationCriteriaLink kind={kind} />.
       </p>
     </div>
   )

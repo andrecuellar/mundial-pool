@@ -44,39 +44,72 @@ export function RevelationCriteriaDialog({ size = 'sm', className }: Props) {
               </button>
             </DialogTrigger>
           </TooltipTrigger>
-          <TooltipContent side="top">
-            Tocá para ver cómo se decide
-          </TooltipContent>
+          <TooltipContent side="top">Tocá para ver cómo se decide</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 
       <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle>Cómo se decide Revelación y Decepción</DialogTitle>
-          <DialogDescription>
-            Comparamos cuán arriba o abajo terminó cada selección respecto a lo que predecía su
-            ranking FIFA pre-Mundial.
-          </DialogDescription>
-        </DialogHeader>
-
-        <FormulaDiagram />
-
-        <RankingTable />
-
-        <TiebreakersList />
-
-        <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
-          📅 El ranking FIFA usado es el del{' '}
-          <span className="font-medium text-foreground">9 de junio de 2026</span> (última
-          actualización oficial antes del Mundial).
-        </div>
-
-        <Button onClick={() => setOpen(false)} variant="outline" className="w-full">
-          <X className="h-3.5 w-3.5" />
-          Cerrar
-        </Button>
+        <CriteriaBody onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
+  )
+}
+
+type LinkProps = {
+  kind: 'revelation' | 'disappointment'
+  className?: string
+}
+
+export function RevelationCriteriaLink({ kind, className }: LinkProps) {
+  const [open, setOpen] = useState(false)
+  const label =
+    kind === 'revelation'
+      ? 'Haz click aquí para ver cómo decidiremos la selección revelación'
+      : 'Haz click aquí para ver cómo decidiremos la selección decepción'
+
+  return (
+    <Dialog open={open} onOpenChange={setOpen}>
+      <DialogTrigger asChild>
+        <button
+          type="button"
+          className={`inline text-left font-medium text-primary underline-offset-4 hover:underline ${className ?? ''}`}
+        >
+          {label}
+        </button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+        <CriteriaBody onClose={() => setOpen(false)} />
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+function CriteriaBody({ onClose }: { onClose: () => void }) {
+  return (
+    <>
+      <DialogHeader>
+        <DialogTitle>Cómo se decide Revelación y Decepción</DialogTitle>
+        <DialogDescription>
+          Comparamos cuán arriba o abajo terminó cada selección respecto a lo que predecía su
+          ranking FIFA pre-Mundial.
+        </DialogDescription>
+      </DialogHeader>
+
+      <FormulaDiagram />
+      <RankingTable />
+      <TiebreakersList />
+
+      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
+        📅 El ranking FIFA usado es el del{' '}
+        <span className="font-medium text-foreground">9 de junio de 2026</span> (última
+        actualización oficial antes del Mundial).
+      </div>
+
+      <Button onClick={onClose} variant="outline" className="w-full">
+        <X className="h-3.5 w-3.5" />
+        Cerrar
+      </Button>
+    </>
   )
 }
 
@@ -86,30 +119,31 @@ function FormulaDiagram() {
       <h3 className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
         Fórmula
       </h3>
-      <div className="rounded-xl border border-border bg-muted/20 p-4">
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
-          <ScalePill
-            label="Rank FIFA pre-Mundial"
-            value="#28"
-            sub="Costa Rica"
-            tone="muted"
-          />
-          <ArrowRight className="hidden h-5 w-5 shrink-0 self-center text-muted-foreground sm:block" />
-          <ScalePill
-            label="Rank Torneo final"
-            value="#5"
-            sub="Llegó a cuartos"
-            tone="muted"
-          />
-          <span className="hidden text-2xl font-bold text-muted-foreground sm:inline">=</span>
-          <ScalePill
-            label="Delta"
-            value="+23"
-            sub="Salto hacia arriba"
-            tone="accent"
-          />
-        </div>
-        <ul className="mt-4 space-y-1.5 text-xs">
+      <div className="space-y-3 rounded-xl border border-border bg-muted/20 p-4">
+        <ExampleRow
+          headline="Ejemplo · Revelación"
+          headlineTone="accent"
+          fifaRank="#28"
+          fifaSub="Costa Rica 2014"
+          tournamentRank="#5"
+          tournamentSub="Llegó a cuartos"
+          delta="+23"
+          deltaSub="Salto hacia arriba"
+          deltaTone="accent"
+        />
+        <div className="h-px bg-border" />
+        <ExampleRow
+          headline="Ejemplo · Decepción"
+          headlineTone="destructive"
+          fifaRank="#1"
+          fifaSub="España 2014"
+          tournamentRank="#25"
+          tournamentSub="Eliminada en grupos"
+          delta="−24"
+          deltaSub="Caída fuerte"
+          deltaTone="destructive"
+        />
+        <ul className="mt-2 space-y-1.5 text-xs">
           <li className="flex items-center gap-2 text-foreground">
             <span className="inline-grid h-4 w-4 place-items-center rounded-full bg-accent/15 text-accent">
               ★
@@ -134,6 +168,52 @@ function FormulaDiagram() {
   )
 }
 
+function ExampleRow({
+  headline,
+  headlineTone,
+  fifaRank,
+  fifaSub,
+  tournamentRank,
+  tournamentSub,
+  delta,
+  deltaSub,
+  deltaTone,
+}: {
+  headline: string
+  headlineTone: 'accent' | 'destructive'
+  fifaRank: string
+  fifaSub: string
+  tournamentRank: string
+  tournamentSub: string
+  delta: string
+  deltaSub: string
+  deltaTone: 'accent' | 'destructive'
+}) {
+  return (
+    <div className="space-y-2">
+      <p
+        className={`font-mono text-[10px] uppercase tracking-[0.14em] ${
+          headlineTone === 'accent' ? 'text-accent' : 'text-destructive'
+        }`}
+      >
+        {headline}
+      </p>
+      <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <ScalePill label="Rank FIFA pre-Mundial" value={fifaRank} sub={fifaSub} tone="muted" />
+        <ArrowRight className="hidden h-5 w-5 shrink-0 self-center text-muted-foreground sm:block" />
+        <ScalePill
+          label="Rank Torneo final"
+          value={tournamentRank}
+          sub={tournamentSub}
+          tone="muted"
+        />
+        <span className="hidden text-2xl font-bold text-muted-foreground sm:inline">=</span>
+        <ScalePill label="Delta" value={delta} sub={deltaSub} tone={deltaTone} />
+      </div>
+    </div>
+  )
+}
+
 function ScalePill({
   label,
   value,
@@ -143,17 +223,16 @@ function ScalePill({
   label: string
   value: string
   sub: string
-  tone: 'muted' | 'accent'
+  tone: 'muted' | 'accent' | 'destructive'
 }) {
-  const accent = tone === 'accent'
+  const toneClass =
+    tone === 'accent'
+      ? 'border-accent/30 bg-accent/10 text-accent'
+      : tone === 'destructive'
+        ? 'border-destructive/30 bg-destructive/10 text-destructive'
+        : 'border-border bg-card text-foreground'
   return (
-    <div
-      className={`flex-1 rounded-lg border p-3 ${
-        accent
-          ? 'border-accent/30 bg-accent/10 text-accent'
-          : 'border-border bg-card text-foreground'
-      }`}
-    >
+    <div className={`flex-1 rounded-lg border p-3 ${toneClass}`}>
       <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
         {label}
       </p>
@@ -207,10 +286,7 @@ function RankingTable() {
           </thead>
           <tbody>
             {BRACKETS.map((b, i) => (
-              <tr
-                key={b.rank}
-                className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}
-              >
+              <tr key={b.rank} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
                 <td className="px-3 py-2 align-top">
                   <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
                     {b.rank === '1' && <Trophy className="h-3 w-3 text-gold" />}
@@ -242,7 +318,7 @@ function TiebreakersList() {
         <div className="rounded-lg border border-accent/30 bg-accent/5 p-3">
           <p className="text-sm font-semibold text-foreground">A. Perdió por penales</p>
           <p className="mt-0.5 text-xs text-muted-foreground">
-            (empató en 90 min + alargue, perdió el shootout)
+            (empató en 90 min + alargue, perdió en la tanda de penales)
           </p>
           <ol className="mt-2 space-y-1 text-xs text-muted-foreground leading-relaxed">
             <li>
@@ -250,8 +326,8 @@ function TiebreakersList() {
               (antes de penales)
             </li>
             <li>
-              <span className="font-semibold text-foreground">2.</span> Fair play — menos
-              amarillas + rojas en el torneo
+              <span className="font-semibold text-foreground">2.</span> Fair play — menos amarillas
+              + rojas en el torneo
             </li>
           </ol>
         </div>
@@ -268,8 +344,8 @@ function TiebreakersList() {
               partido
             </li>
             <li>
-              <span className="font-semibold text-foreground">3.</span> Fair play — menos
-              amarillas + rojas en el torneo
+              <span className="font-semibold text-foreground">3.</span> Fair play — menos amarillas
+              + rojas en el torneo
             </li>
           </ol>
         </div>
