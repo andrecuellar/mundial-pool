@@ -1,10 +1,10 @@
 # mundial-pool
 
-Quiniela del Mundial 2026 enfocada en **premios y resultados globales** del torneo, no en predicciones partido-por-partido. Multi-tenant: cualquier persona puede crear su grupo, invitar amigos y armar su propia liga.
+Pool del Mundial 2026 enfocado en **premios y resultados globales** del torneo, no en predicciones partido-por-partido. Multi-tenant: cualquier persona puede crear su grupo, invitar amigos y armar su propia liga.
 
 ## Objetivo
 
-Las quinielas tradicionales obligan a predecir 100+ partidos del Mundial 2026 (formato de 48 equipos). La mayoría son partidos de baja convocatoria — predecir "Congo vs Uzbekistán" no es divertido.
+Los pools tradicionales obligan a predecir 100+ partidos del Mundial 2026 (formato de 48 equipos). La mayoría son partidos de baja convocatoria — predecir "Congo vs Uzbekistán" no es divertido.
 
 Esta app reemplaza eso por **un set fijo de predicciones de torneo completo** que los jugadores llenan una sola vez antes del partido inaugural:
 
@@ -58,7 +58,7 @@ Se asigna a cada equipo una **ronda esperada** basada en odds de campeonato pre-
 ## Modelo de datos (resumen)
 
 - `profiles` — perfil del usuario (1:1 con `auth.users` de Supabase)
-- `groups` — cada quiniela tiene nombre, slug, código de invitación, fecha de bloqueo
+- `groups` — cada pool tiene nombre, slug, código de invitación, fecha de bloqueo
 - `group_members` — pertenencia usuario-grupo con rol (owner/admin/member)
 - `teams` — selecciones del Mundial (con odds y ronda esperada)
 - `players` — jugadores (para categorías de tipo jugador)

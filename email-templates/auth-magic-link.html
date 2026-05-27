@@ -1,0 +1,153 @@
+<!--
+  Plantilla del email de magic link / signup confirmation de Supabase Auth.
+
+  Cómo aplicar:
+    1. Supabase Dashboard → Authentication → Email Templates.
+    2. Pestaña "Magic Link" (y opcionalmente "Confirm signup", "Invite user",
+       "Change Email Address") — pegar este HTML.
+    3. En "Subject heading" usar: Tu enlace para entrar a mundial•pool
+
+  Variables disponibles: {{ .ConfirmationURL }}, {{ .Token }}, {{ .SiteURL }}.
+  Editar esta plantilla acá y volver a pegarla cuando cambie — Supabase
+  no expone la config por SQL ni por API pública.
+-->
+<!DOCTYPE html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <meta name="supported-color-schemes" content="light dark" />
+    <title>Tu enlace para entrar a mundial•pool</title>
+  </head>
+  <body
+    style="
+      margin: 0;
+      padding: 0;
+      background: #f5f4ed;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial,
+        sans-serif;
+      color: #1e2436;
+      -webkit-font-smoothing: antialiased;
+    "
+  >
+    <table role="presentation" cellpadding="0" cellspacing="0" border="0" width="100%" style="background: #f5f4ed;">
+      <tr>
+        <td align="center" style="padding: 40px 20px;">
+          <table
+            role="presentation"
+            cellpadding="0"
+            cellspacing="0"
+            border="0"
+            width="100%"
+            style="
+              max-width: 480px;
+              background: #ffffff;
+              border-radius: 16px;
+              overflow: hidden;
+              box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+            "
+          >
+            <!-- Top accent bar -->
+            <tr>
+              <td style="background: #4f7ddc; height: 4px; line-height: 4px; font-size: 0;">&nbsp;</td>
+            </tr>
+
+            <!-- Wordmark -->
+            <tr>
+              <td style="padding: 32px 32px 0 32px;">
+                <div style="font-size: 22px; font-weight: 700; letter-spacing: -0.02em; color: #1e2436;">
+                  mundial<span style="color: #4f7ddc;">•</span>pool
+                </div>
+                <div
+                  style="
+                    margin-top: 4px;
+                    font-family: ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+                    font-size: 11px;
+                    text-transform: uppercase;
+                    letter-spacing: 0.14em;
+                    color: #7a8499;
+                  "
+                >
+                  El pool del Mundial 2026
+                </div>
+              </td>
+            </tr>
+
+            <!-- Body -->
+            <tr>
+              <td style="padding: 24px 32px 8px 32px;">
+                <h1
+                  style="
+                    margin: 0 0 8px 0;
+                    font-size: 24px;
+                    line-height: 1.2;
+                    font-weight: 600;
+                    letter-spacing: -0.01em;
+                    color: #1e2436;
+                  "
+                >
+                  Entrá a tu pool
+                </h1>
+                <p style="margin: 0 0 24px 0; font-size: 15px; line-height: 1.55; color: #525c7a;">
+                  Tocá el botón para iniciar sesión en mundial•pool. El enlace expira en 1 hora y solo
+                  funciona una vez.
+                </p>
+                <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                  <tr>
+                    <td style="border-radius: 10px; background: #4f7ddc;">
+                      <a
+                        href="{{ .ConfirmationURL }}"
+                        target="_blank"
+                        style="
+                          display: inline-block;
+                          padding: 14px 28px;
+                          font-size: 15px;
+                          font-weight: 600;
+                          color: #ffffff;
+                          text-decoration: none;
+                          border-radius: 10px;
+                        "
+                      >
+                        Iniciar sesión
+                      </a>
+                    </td>
+                  </tr>
+                </table>
+                <p style="margin: 24px 0 0 0; font-size: 13px; line-height: 1.55; color: #7a8499;">
+                  ¿No funciona el botón? Copiá este enlace en tu navegador:<br />
+                  <a
+                    href="{{ .ConfirmationURL }}"
+                    style="color: #4f7ddc; text-decoration: none; word-break: break-all;"
+                    >{{ .ConfirmationURL }}</a
+                  >
+                </p>
+              </td>
+            </tr>
+
+            <!-- Divider -->
+            <tr>
+              <td style="padding: 32px 32px 0 32px;">
+                <div style="height: 1px; background: #e5e3d6; line-height: 1px; font-size: 0;">&nbsp;</div>
+              </td>
+            </tr>
+
+            <!-- Footer -->
+            <tr>
+              <td style="padding: 20px 32px 32px 32px;">
+                <p style="margin: 0; font-size: 12px; line-height: 1.55; color: #7a8499;">
+                  Si no pediste este correo, podés ignorarlo. Nadie podrá entrar a tu cuenta sin tocar
+                  el botón de arriba.
+                </p>
+              </td>
+            </tr>
+          </table>
+
+          <p style="margin: 24px 0 0 0; font-size: 11px; color: #9aa1b5;">
+            mundial•pool · 14 predicciones, una sola vez.
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

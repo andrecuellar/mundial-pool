@@ -4,7 +4,7 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: 'mundial-pool',
     short_name: 'mundial-pool',
-    description: 'Quiniela del Mundial 2026 entre amigos',
+    description: 'El pool del Mundial 2026 entre amigos',
     start_url: '/',
     display: 'standalone',
     background_color: '#0a0a0a',
