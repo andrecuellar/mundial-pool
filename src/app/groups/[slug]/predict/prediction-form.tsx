@@ -136,6 +136,8 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   }
   const finalistsId = byKey.finalists?.id
   const top5Id = byKey.top_5?.id
+  const revelationId = byKey.revelation?.id
+  const disappointmentId = byKey.disappointment?.id
   const sourceCategoryKeys = new Set(['champion', 'runner_up', 'third_place'])
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
 
@@ -349,6 +351,22 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       bottomFavoriteIds.has(v.teamId) && (
                         <MismatchWarning
                           text="No es decepción que esta selección no destaque — es una de las menos favoritas según el ranking FIFA. ¿No la estarás confundiendo con Selección revelación?"
+                        />
+                      )}
+                    {c.key === 'revelation' &&
+                      v.teamId &&
+                      disappointmentId &&
+                      draft[disappointmentId]?.teamId === v.teamId && (
+                        <MismatchWarning
+                          text="Tenés la misma selección marcada como revelación y como decepción — no puede ser las dos al mismo tiempo. Revisá cuál de las dos querés cambiar."
+                        />
+                      )}
+                    {c.key === 'disappointment' &&
+                      v.teamId &&
+                      revelationId &&
+                      draft[revelationId]?.teamId === v.teamId && (
+                        <MismatchWarning
+                          text="Tenés la misma selección marcada como decepción y como revelación — no puede ser las dos al mismo tiempo. Revisá cuál de las dos querés cambiar."
                         />
                       )}
                     {c.key === 'revelation' && <RankingHelper kind="revelation" />}
