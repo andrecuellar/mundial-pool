@@ -99,6 +99,31 @@ function isFilled(c: PredictionFormCategory, v: DraftValue): boolean {
   return false
 }
 
+// Returns the team IDs to hide from the combobox of the given podium category
+// so the user cannot pick the same team for champion / runner-up / third place.
+// Only the OTHER podium spots are excluded — the team picked for the current
+// category itself stays visible (handled by the combobox).
+function podiumExcludesFor(
+  key: string,
+  draft: Record<string, DraftValue>,
+  sourceIds: { champion?: string; runnerUp?: string; thirdPlace?: string },
+): string[] {
+  const ids: string[] = []
+  const others: ('champion' | 'runnerUp' | 'thirdPlace')[] = (() => {
+    if (key === 'champion') return ['runnerUp', 'thirdPlace']
+    if (key === 'runner_up') return ['champion', 'thirdPlace']
+    if (key === 'third_place') return ['champion', 'runnerUp']
+    return []
+  })()
+  for (const other of others) {
+    const otherCatId = sourceIds[other]
+    if (!otherCatId) continue
+    const teamId = draft[otherCatId]?.teamId
+    if (teamId) ids.push(teamId)
+  }
+  return ids
+}
+
 type WarningContext = {
   draft: Record<string, DraftValue>
   sourceIds: { champion?: string; runnerUp?: string; thirdPlace?: string }
@@ -128,58 +153,23 @@ function warningsFor(
   const decPick = disappointmentId ? draft[disappointmentId]?.teamId : null
   const top5Pick = top5Id ? (draft[top5Id]?.teamSet ?? []) : []
 
-  if (key === 'champion') {
-    if (runnerUpPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como subcampeón. La final la juegan dos equipos distintos — no puede ser ambas a la vez.',
-      )
-    }
-    if (thirdPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como tercer lugar. El campeón no juega el partido por el tercer puesto.',
-      )
-    }
-    if (decPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como decepción. Si fue campeona, no puede ser decepción al mismo tiempo.',
-      )
-    }
+  // Champion / Runner-up / Third-place mutual exclusion is enforced by the
+  // combobox filter (see podiumExcludesFor), so no warnings needed for those.
+  // The only cross-category check left is the conflict with Decepción.
+  if (key === 'champion' && decPick === teamId) {
+    out.push(
+      'Esta selección también está marcada como decepción. Si fue campeona, no puede ser decepción al mismo tiempo.',
+    )
   }
-
-  if (key === 'runner_up') {
-    if (championPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como campeón. La final la juegan dos equipos distintos — no puede ser ambas a la vez.',
-      )
-    }
-    if (thirdPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como tercer lugar. El subcampeón pierde la final; no juega el tercer puesto.',
-      )
-    }
-    if (decPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como decepción. Llegar a la final no es decepción.',
-      )
-    }
+  if (key === 'runner_up' && decPick === teamId) {
+    out.push(
+      'Esta selección también está marcada como decepción. Llegar a la final no es decepción.',
+    )
   }
-
-  if (key === 'third_place') {
-    if (championPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como campeón. El campeón llega a la final, no al partido por el tercer puesto.',
-      )
-    }
-    if (runnerUpPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como subcampeón. El subcampeón llega a la final, no al partido por el tercer puesto.',
-      )
-    }
-    if (decPick === teamId) {
-      out.push(
-        'Esta selección también está marcada como decepción. Llegar al podio no es decepción.',
-      )
-    }
+  if (key === 'third_place' && decPick === teamId) {
+    out.push(
+      'Esta selección también está marcada como decepción. Llegar al podio no es decepción.',
+    )
   }
 
   if (key === 'revelation') {
@@ -472,6 +462,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       onChange={(id) => update(c.id, { teamId: id })}
                       disabled={locked}
                       showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
+                      excludeIds={podiumExcludesFor(c.key, draft, sourceIds)}
                     />
                     {warningsFor(c.key, v.teamId, {
                       draft,

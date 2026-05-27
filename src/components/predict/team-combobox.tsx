@@ -29,6 +29,13 @@ type Props = {
   disabled?: boolean
   /** When true, displays each team's FIFA ranking ("FIFA #15" / "+50"). */
   showRanking?: boolean
+  /**
+   * IDs to remove from the list entirely. Used to prevent picking the same
+   * team across mutually exclusive podium spots (champion / runner-up / third
+   * place). The currently selected team (`value`) is always kept visible even
+   * if it appears here, otherwise the user can't see what they had picked.
+   */
+  excludeIds?: string[]
 }
 
 function rankingLabel(r: number | null | undefined): string {
@@ -36,18 +43,30 @@ function rankingLabel(r: number | null | undefined): string {
   return `#${r}`
 }
 
-export function TeamComboBox({ teams, value, onChange, disabled, showRanking }: Props) {
+export function TeamComboBox({
+  teams,
+  value,
+  onChange,
+  disabled,
+  showRanking,
+  excludeIds,
+}: Props) {
   const [open, setOpen] = useState(false)
   const selected = teams.find((t) => t.id === value)
 
+  const excludeSet = excludeIds && excludeIds.length > 0 ? new Set(excludeIds) : null
+  const filtered = excludeSet
+    ? teams.filter((t) => t.id === value || !excludeSet.has(t.id))
+    : teams
+
   const sortedTeams = showRanking
-    ? [...teams].sort((a, b) => {
+    ? [...filtered].sort((a, b) => {
         const ra = a.fifaRanking ?? 999
         const rb = b.fifaRanking ?? 999
         if (ra !== rb) return ra - rb
         return a.name.localeCompare(b.name, 'es')
       })
-    : teams
+    : filtered
 
   return (
     <Popover open={open} onOpenChange={setOpen}>
