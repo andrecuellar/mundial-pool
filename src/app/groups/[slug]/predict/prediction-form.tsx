@@ -99,6 +99,138 @@ function isFilled(c: PredictionFormCategory, v: DraftValue): boolean {
   return false
 }
 
+type WarningContext = {
+  draft: Record<string, DraftValue>
+  sourceIds: { champion?: string; runnerUp?: string; thirdPlace?: string }
+  revelationId?: string
+  disappointmentId?: string
+  top5Id?: string
+  topFavoriteIds: Set<string>
+  bottomFavoriteIds: Set<string>
+}
+
+// Returns the warning messages that apply to the current pick on a given
+// category. Each card calls this with its own key + selected team — multiple
+// warnings can stack (e.g. same team is both champion and runner-up, AND
+// flagged as bottom-favorite as decepción).
+function warningsFor(
+  key: string,
+  teamId: string | null | undefined,
+  ctx: WarningContext,
+): string[] {
+  if (!teamId) return []
+  const out: string[] = []
+  const { draft, sourceIds, revelationId, disappointmentId, top5Id } = ctx
+  const championPick = sourceIds.champion ? draft[sourceIds.champion]?.teamId : null
+  const runnerUpPick = sourceIds.runnerUp ? draft[sourceIds.runnerUp]?.teamId : null
+  const thirdPick = sourceIds.thirdPlace ? draft[sourceIds.thirdPlace]?.teamId : null
+  const revPick = revelationId ? draft[revelationId]?.teamId : null
+  const decPick = disappointmentId ? draft[disappointmentId]?.teamId : null
+  const top5Pick = top5Id ? (draft[top5Id]?.teamSet ?? []) : []
+
+  if (key === 'champion') {
+    if (runnerUpPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como subcampeón. La final la juegan dos equipos distintos — no puede ser ambas a la vez.',
+      )
+    }
+    if (thirdPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como tercer lugar. El campeón no juega el partido por el tercer puesto.',
+      )
+    }
+    if (decPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como decepción. Si fue campeona, no puede ser decepción al mismo tiempo.',
+      )
+    }
+  }
+
+  if (key === 'runner_up') {
+    if (championPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como campeón. La final la juegan dos equipos distintos — no puede ser ambas a la vez.',
+      )
+    }
+    if (thirdPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como tercer lugar. El subcampeón pierde la final; no juega el tercer puesto.',
+      )
+    }
+    if (decPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como decepción. Llegar a la final no es decepción.',
+      )
+    }
+  }
+
+  if (key === 'third_place') {
+    if (championPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como campeón. El campeón llega a la final, no al partido por el tercer puesto.',
+      )
+    }
+    if (runnerUpPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como subcampeón. El subcampeón llega a la final, no al partido por el tercer puesto.',
+      )
+    }
+    if (decPick === teamId) {
+      out.push(
+        'Esta selección también está marcada como decepción. Llegar al podio no es decepción.',
+      )
+    }
+  }
+
+  if (key === 'revelation') {
+    if (ctx.topFavoriteIds.has(teamId)) {
+      out.push(
+        'No es revelación que esta selección termine entre las mejores — es una de las favoritas según el ranking FIFA. ¿No la estás confundiendo con Selección decepción?',
+      )
+    }
+    if (decPick === teamId) {
+      out.push(
+        'La misma selección está marcada como revelación y como decepción — no puede ser las dos al mismo tiempo. Revisa cuál de las dos quieres cambiar.',
+      )
+    }
+  }
+
+  if (key === 'disappointment') {
+    if (ctx.bottomFavoriteIds.has(teamId)) {
+      out.push(
+        'No es decepción que esta selección no destaque — es una de las menos favoritas según el ranking FIFA. ¿No la estás confundiendo con Selección revelación?',
+      )
+    }
+    if (revPick === teamId) {
+      out.push(
+        'La misma selección está marcada como decepción y como revelación — no puede ser las dos al mismo tiempo. Revisa cuál de las dos quieres cambiar.',
+      )
+    }
+    if (championPick === teamId) {
+      out.push(
+        'La misma selección está marcada como campeón. Si gana el Mundial, no puede ser decepción.',
+      )
+    }
+    if (runnerUpPick === teamId) {
+      out.push(
+        'La misma selección está marcada como subcampeón. Llegar a la final no es decepción.',
+      )
+    }
+    if (thirdPick === teamId) {
+      out.push(
+        'La misma selección está marcada como tercer lugar. Llegar al podio no es decepción.',
+      )
+    }
+    if (top5Pick.includes(teamId)) {
+      out.push(
+        'La misma selección está dentro de tu Top 5. Si crees que va a estar en el top, no puede ser decepción.',
+      )
+    }
+  }
+
+  return out
+}
+
 function MismatchWarning({ text }: { text: string }) {
   return (
     <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
@@ -341,34 +473,18 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       disabled={locked}
                       showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
                     />
-                    {c.key === 'revelation' && v.teamId && topFavoriteIds.has(v.teamId) && (
-                      <MismatchWarning
-                        text="No es revelación que esta selección termine entre las mejores — es una de las favoritas según el ranking FIFA. ¿No la estarás confundiendo con Selección decepción?"
-                      />
-                    )}
-                    {c.key === 'disappointment' &&
-                      v.teamId &&
-                      bottomFavoriteIds.has(v.teamId) && (
-                        <MismatchWarning
-                          text="No es decepción que esta selección no destaque — es una de las menos favoritas según el ranking FIFA. ¿No la estarás confundiendo con Selección revelación?"
-                        />
-                      )}
-                    {c.key === 'revelation' &&
-                      v.teamId &&
-                      disappointmentId &&
-                      draft[disappointmentId]?.teamId === v.teamId && (
-                        <MismatchWarning
-                          text="Tenés la misma selección marcada como revelación y como decepción — no puede ser las dos al mismo tiempo. Revisá cuál de las dos querés cambiar."
-                        />
-                      )}
-                    {c.key === 'disappointment' &&
-                      v.teamId &&
-                      revelationId &&
-                      draft[revelationId]?.teamId === v.teamId && (
-                        <MismatchWarning
-                          text="Tenés la misma selección marcada como decepción y como revelación — no puede ser las dos al mismo tiempo. Revisá cuál de las dos querés cambiar."
-                        />
-                      )}
+                    {warningsFor(c.key, v.teamId, {
+                      draft,
+                      sourceIds,
+                      revelationId,
+                      disappointmentId,
+                      top5Id,
+                      topFavoriteIds,
+                      bottomFavoriteIds,
+                    }).map((w, i) => (
+                      // biome-ignore lint/suspicious/noArrayIndexKey: warning order is stable for a given pick
+                      <MismatchWarning key={i} text={w} />
+                    ))}
                     {c.key === 'revelation' && <RankingHelper kind="revelation" />}
                     {c.key === 'disappointment' && <RankingHelper kind="disappointment" />}
                   </>

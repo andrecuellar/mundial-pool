@@ -19,7 +19,7 @@ type Props = {
 }
 
 const RATE_LIMITED_MESSAGE =
-  'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.'
+  'Servicio de correo saturado. Para entrar sin esperar, usa Continuar con Google.'
 
 function GoogleIcon() {
   return (
@@ -183,9 +183,9 @@ export function LoginForm({ next, magicLinkBlockedUntil }: Props) {
             <div className="text-sm leading-relaxed">
               <p className="font-medium">Servicio de correo saturado</p>
               <p className="mt-0.5 text-muted-foreground">
-                Hay demasiadas solicitudes de magic link ahora mismo. Para entrar sin esperar, usá{' '}
+                Hay demasiadas solicitudes de magic link ahora mismo. Para entrar sin esperar, usa{' '}
                 <span className="font-medium text-foreground">Continuar con Google</span> arriba. Si
-                preferís magic link, podrás pedirlo de nuevo en{' '}
+                prefieres magic link, podrás pedirlo de nuevo en{' '}
                 <span className="font-medium text-foreground">
                   {formatRemaining(blockedRemaining)}
                 </span>
@@ -201,7 +201,7 @@ export function LoginForm({ next, magicLinkBlockedUntil }: Props) {
           <div className="flex items-start gap-2.5">
             <Clock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
             <p className="text-sm leading-relaxed">
-              Esperá{' '}
+              Espera{' '}
               <span className="font-medium text-foreground">
                 {formatRemaining(blockedRemaining)}
               </span>{' '}

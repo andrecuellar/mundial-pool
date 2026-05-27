@@ -64,7 +64,7 @@ export function JoinGroupForm() {
       />
 
       <p className="text-center text-xs text-muted-foreground">
-        Pega el código directamente o tipéalo. {code.length} / {CODE_LEN}
+        Pega el código directamente o escríbelo. {code.length} / {CODE_LEN}
       </p>
 
       {error && (

@@ -105,7 +105,7 @@ export function PlayerCategoryCriteriaDialog({ kind, size = 'sm', className }: P
               </button>
             </DialogTrigger>
           </TooltipTrigger>
-          <TooltipContent side="top">Tocá para ver cómo se decide</TooltipContent>
+          <TooltipContent side="top">Haz click para ver cómo se decide</TooltipContent>
         </Tooltip>
       </TooltipProvider>
 

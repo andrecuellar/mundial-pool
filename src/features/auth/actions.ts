@@ -55,7 +55,7 @@ function classifyAuthError(raw: string): {
     return {
       code: 'rate_limited' as const,
       error:
-        'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.',
+        'Servicio de correo saturado. Para entrar sin esperar, usa Continuar con Google.',
     }
   }
 
@@ -64,14 +64,14 @@ function classifyAuthError(raw: string): {
     const secs = Number(secsMatch[1])
     return {
       code: 'cooldown',
-      error: `Esperá ${secs} segundos antes de pedir otro link.`,
+      error: `Espera ${secs} segundos antes de pedir otro link.`,
       retryAfterSeconds: secs,
     }
   }
 
   return {
     code: 'other',
-    error: 'No pudimos enviar el link. Probá de nuevo en un momento.',
+    error: 'No pudimos enviar el link. Intenta de nuevo en un momento.',
   }
 }
 
@@ -93,7 +93,7 @@ export async function sendMagicLink(formData: FormData): Promise<MagicLinkResult
     return {
       ok: false,
       code: 'rate_limited',
-      error: 'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.',
+      error: 'Servicio de correo saturado. Para entrar sin esperar, usa Continuar con Google.',
       retryAfterSeconds: Math.ceil((globalBlock.getTime() - Date.now()) / 1000),
       blockedUntil: globalBlock.toISOString(),
     }
