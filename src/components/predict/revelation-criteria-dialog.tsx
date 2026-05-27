@@ -91,7 +91,8 @@ function CriteriaBody({ onClose }: { onClose: () => void }) {
         <DialogTitle>Cómo se decide Revelación y Decepción</DialogTitle>
         <DialogDescription>
           Comparamos cuán arriba o abajo terminó cada selección respecto a lo que predecía su
-          ranking FIFA pre-Mundial.
+          ranking FIFA <span className="font-medium text-foreground">entre las 48 del Mundial</span>{' '}
+          (no el ranking global de FIFA).
         </DialogDescription>
       </DialogHeader>
 
@@ -99,10 +100,19 @@ function CriteriaBody({ onClose }: { onClose: () => void }) {
       <RankingTable />
       <TiebreakersList />
 
-      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
-        📅 El ranking FIFA usado es el del{' '}
-        <span className="font-medium text-foreground">9 de junio de 2026</span> (última
-        actualización oficial antes del Mundial).
+      <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed space-y-1.5">
+        <p>
+          📅 El ranking FIFA usado es el del{' '}
+          <span className="font-medium text-foreground">9 de junio de 2026</span> (última
+          actualización oficial antes del Mundial).
+        </p>
+        <p>
+          ⚠️ Normalizamos a una escala{' '}
+          <span className="font-medium text-foreground">1 a 48 entre las selecciones del Mundial</span>
+          : la mejor rankeada del torneo es #1 y la peor es #48. Esto evita que una selección con
+          ranking global FIFA muy bajo (ej. #85) suba "injustamente" por terminar en el fondo del
+          torneo — su ranking interno también es #48, así que la diferencia queda en 0.
+        </p>
       </div>
 
       <Button onClick={onClose} variant="outline" className="w-full">
@@ -123,11 +133,11 @@ function FormulaDiagram() {
         <ExampleRow
           headline="Ejemplo · Revelación"
           headlineTone="accent"
-          fifaRank="#28"
+          fifaRank="#24"
           fifaSub="Costa Rica 2014"
           tournamentRank="#5"
           tournamentSub="Llegó a cuartos"
-          delta="+23"
+          delta="+19"
           deltaSub="Salto hacia arriba"
           deltaTone="accent"
         />
@@ -199,7 +209,12 @@ function ExampleRow({
         {headline}
       </p>
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <ScalePill label="Rank FIFA pre-Mundial" value={fifaRank} sub={fifaSub} tone="muted" />
+        <ScalePill
+          label="Rank FIFA entre las 48"
+          value={fifaRank}
+          sub={fifaSub}
+          tone="muted"
+        />
         <ArrowRight className="hidden h-5 w-5 shrink-0 self-center text-muted-foreground sm:block" />
         <ScalePill
           label="Rank Torneo final"

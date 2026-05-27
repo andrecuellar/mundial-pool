@@ -47,16 +47,18 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
       {kind === 'revelation' ? (
         <p>
           La selección con la mayor brecha positiva entre su{' '}
-          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y la ronda
-          alcanzada. Ejemplo: <span className="font-medium text-foreground">Costa Rica 2014</span>{' '}
-          (ranking FIFA #28 → cuartos de final).
+          <span className="font-medium text-foreground">ranking FIFA entre las 48 del Mundial</span>{' '}
+          y la ronda alcanzada. Ejemplo:{' '}
+          <span className="font-medium text-foreground">Costa Rica 2014</span> (FIFA #24 entre las
+          32 → cuartos de final).
         </p>
       ) : (
         <p>
           La selección con la mayor brecha negativa entre su{' '}
-          <span className="font-medium text-foreground">ranking FIFA pre-Mundial</span> y la ronda
-          alcanzada. Ejemplo: <span className="font-medium text-foreground">España 2014</span>{' '}
-          (ranking FIFA #1 → eliminada en fase de grupos).
+          <span className="font-medium text-foreground">ranking FIFA entre las 48 del Mundial</span>{' '}
+          y la ronda alcanzada. Ejemplo:{' '}
+          <span className="font-medium text-foreground">España 2014</span> (FIFA #1 entre las 32 →
+          eliminada en fase de grupos).
         </p>
       )}
       <p>

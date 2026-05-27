@@ -9,7 +9,15 @@
 export type TournamentTeamInput = {
   teamId: string
   teamName: string
-  /** Pre-tournament FIFA ranking among the 48 participating teams (1 = best). */
+  /**
+   * Pre-tournament FIFA ranking normalized 1→48 across ONLY the participating
+   * teams. The caller must rank the 48 World Cup teams by their global FIFA
+   * rank and assign 1 to the best (lowest global rank) up to 48 to the worst.
+   * This is intentional — using the raw global rank (e.g. New Zealand #85)
+   * would give a fake +37 delta when they finish last in the tournament,
+   * making them look like a "revelation" just for being the worst-ranked
+   * participant. Normalizing to 1-48 prevents that.
+   */
   fifaRank: number
   /**
    * Reached round in the bracket. 'group' = eliminated in group stage.
