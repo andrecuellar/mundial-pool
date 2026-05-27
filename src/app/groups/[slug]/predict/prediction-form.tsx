@@ -335,11 +335,6 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     })
   }
 
-  const completed = useMemo(
-    () => categories.filter((c) => isFilled(c, draft[c.id] ?? {})).length,
-    [categories, draft],
-  )
-  const total = categories.length
   const lockedFromSources = getLockedFromSources(draft, sourceIds)
   const lockedTop5 = Array.from(
     new Set(
@@ -348,12 +343,30 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
       ),
     ),
   )
+  // Top-5 is gated behind a complete podium. Any stale picks the user might
+  // already have saved (from before this gate existed) don't count as filled
+  // until they fill the 3 source categories.
+  const top5Gated = lockedTop5.length < 3
+  const completed = useMemo(
+    () =>
+      categories.filter((c) => {
+        if (c.key === 'top_5' && top5Gated) return false
+        return isFilled(c, draft[c.id] ?? {})
+      }).length,
+    [categories, draft, top5Gated],
+  )
+  const total = categories.length
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     const fd = new FormData()
     for (const c of categories) {
       const v = draft[c.id] ?? {}
+      // Don't submit a top_5 set unless the podium is complete — otherwise the
+      // user could persist 5 manual picks that bypass the auto-anchor rule.
+      // Server treats a missing key as "delete", so stale top_5 rows get
+      // cleaned up here.
+      if (c.key === 'top_5' && top5Gated) continue
       if (c.valueKind === 'team' && v.teamId) {
         fd.append(`cat:${c.key}`, v.teamId)
       } else if (c.valueKind === 'team_set' && v.teamSet) {
@@ -422,7 +435,8 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
       <div className="grid gap-3 lg:grid-cols-2">
         {categories.map((c, idx) => {
           const v = draft[c.id] ?? {}
-          const filled = isFilled(c, v)
+          const top5Locked = c.key === 'top_5' && top5Gated
+          const filled = !top5Locked && isFilled(c, v)
           const kindLabel =
             c.valueKind === 'player'
               ? 'JUGADOR'
@@ -518,25 +532,38 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                   </div>
                 )}
 
-                {isTop5 && (
-                  <div className="space-y-3">
-                    <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
-                      <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-                      <p className="text-xs text-muted-foreground leading-relaxed">
-                        Tu Campeón, Subcampeón y Tercer lugar ya cuentan acá (no se pueden quitar).
-                        Elige las otras 2 selecciones que crees que llegarán más lejos.
+                {isTop5 &&
+                  (lockedTop5.length < 3 ? (
+                    <div className="flex items-start gap-2 rounded-lg border border-warning/30 bg-warning/10 p-3">
+                      <Lock className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+                      <p className="text-xs leading-relaxed">
+                        <span className="font-medium text-foreground">Falta llenar el podio.</span>{' '}
+                        <span className="text-muted-foreground">
+                          Esta categoría se desbloquea cuando elijas tu Campeón, Subcampeón y
+                          Tercer lugar. Esas 3 selecciones se anclan automáticamente al Top 5, y
+                          después podrás elegir las otras 2 manualmente.
+                        </span>
                       </p>
                     </div>
-                    <TeamSetGrid
-                      teams={teams}
-                      selected={v.teamSet ?? []}
-                      onChange={(next) => update(c.id, { teamSet: next })}
-                      n={n}
-                      disabled={locked}
-                      lockedTeamIds={lockedTop5}
-                    />
-                  </div>
-                )}
+                  ) : (
+                    <div className="space-y-3">
+                      <div className="flex items-start gap-2 rounded-lg border border-border bg-muted/40 p-3">
+                        <Info className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+                        <p className="text-xs text-muted-foreground leading-relaxed">
+                          Tu Campeón, Subcampeón y Tercer lugar ya cuentan acá (no se pueden
+                          quitar). Elige las otras 2 selecciones que crees que llegarán más lejos.
+                        </p>
+                      </div>
+                      <TeamSetGrid
+                        teams={teams}
+                        selected={v.teamSet ?? []}
+                        onChange={(next) => update(c.id, { teamSet: next })}
+                        n={n}
+                        disabled={locked}
+                        lockedTeamIds={lockedTop5}
+                      />
+                    </div>
+                  ))}
 
                 {c.valueKind === 'team_set' && !isFinalists && !isTop5 && n === 2 && (
                   <div className="grid gap-3 sm:grid-cols-2">
