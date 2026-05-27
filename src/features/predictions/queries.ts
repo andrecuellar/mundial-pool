@@ -258,3 +258,81 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
 
   return { members, categories: cats, picks }
 }
+
+export type UserComprobante = {
+  categories: AllPredictionsCategory[]
+  picks: Map<string, AllPredictionsPick>
+  /** Most recent updatedAt across the user's predictions for this group. */
+  lastUpdatedAt: Date | null
+  filledCount: number
+  totalCount: number
+}
+
+export async function getUserComprobante(
+  groupId: string,
+  userId: string,
+): Promise<UserComprobante> {
+  const [catsRaw, predRows, teamRows] = await Promise.all([
+    db
+      .select({
+        id: categories.id,
+        key: categories.key,
+        name: categories.name,
+        valueKind: categories.valueKind,
+        points: groupCategories.points,
+      })
+      .from(categories)
+      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+      .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+    db
+      .select({
+        categoryId: predictions.categoryId,
+        teamId: predictions.teamId,
+        teamSet: predictions.teamSet,
+        playerText: predictions.playerText,
+        updatedAt: predictions.updatedAt,
+        teamName: teams.name,
+        teamFlag: teams.flagEmoji,
+        teamFifa: teams.fifaCode,
+      })
+      .from(predictions)
+      .leftJoin(teams, eq(teams.id, predictions.teamId))
+      .where(and(eq(predictions.groupId, groupId), eq(predictions.userId, userId))),
+    db.select({ id: teams.id, name: teams.name, flag: teams.flagEmoji }).from(teams),
+  ])
+
+  const teamById = new Map(teamRows.map((t) => [t.id, t]))
+  const cats = sortByCategoryOrder(catsRaw)
+  const picks = new Map<string, AllPredictionsPick>()
+  let lastUpdatedAt: Date | null = null
+  let filledCount = 0
+
+  for (const row of predRows) {
+    const cat = cats.find((c) => c.id === row.categoryId)
+    if (!cat) continue
+    let pick: AllPredictionsPick = { kind: 'empty' }
+    if (cat.valueKind === 'team' && row.teamId && row.teamName) {
+      pick = {
+        kind: 'team',
+        teamName: row.teamName,
+        teamFlag: row.teamFlag,
+        fifaCode: row.teamFifa,
+      }
+    } else if (cat.valueKind === 'team_set' && row.teamSet) {
+      const items = (row.teamSet as string[])
+        .map((id) => teamById.get(id))
+        .filter((t): t is { id: string; name: string; flag: string | null } => !!t)
+        .map((t) => ({ name: t.name, flag: t.flag }))
+      pick = { kind: 'team_set', teams: items }
+    } else if (cat.valueKind === 'player' && row.playerText) {
+      pick = { kind: 'player', text: row.playerText }
+    }
+    if (pick.kind !== 'empty') filledCount++
+    picks.set(row.categoryId, pick)
+    if (!lastUpdatedAt || row.updatedAt > lastUpdatedAt) {
+      lastUpdatedAt = row.updatedAt
+    }
+  }
+
+  return { categories: cats, picks, lastUpdatedAt, filledCount, totalCount: cats.length }
+}

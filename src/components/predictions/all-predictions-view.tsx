@@ -70,9 +70,9 @@ export function AllPredictionsView({ view, currentUserId }: Props) {
   )
 }
 
-function renderPick(p: AllPredictionsPick | undefined): React.ReactNode {
+export function renderPick(p: AllPredictionsPick | undefined): React.ReactNode {
   if (!p || p.kind === 'empty') {
-    return <span className="text-xs italic text-muted-foreground">No respondió</span>
+    return <span className="text-xs italic text-muted-foreground">Sin respuesta</span>
   }
   if (p.kind === 'team') {
     return (

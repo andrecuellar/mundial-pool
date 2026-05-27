@@ -1,6 +1,7 @@
 'use client'
 
 import { AlertTriangle, Check, Info, Lock } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PlayerComboBox } from '@/components/predict/player-combobox'
@@ -301,6 +302,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     return init
   })
   const [pending, startTransition] = useTransition()
+  const router = useRouter()
 
   function recomputeDerived(next: Record<string, DraftValue>) {
     const { champion, runnerUp, thirdPlace } = getLockedFromSources(next, sourceIds)
@@ -362,8 +364,12 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     }
     startTransition(async () => {
       const r = await submitPredictions(groupSlug, fd)
-      if (r.ok) toast.success('Predicciones guardadas')
-      else toast.error(r.error)
+      if (r.ok) {
+        toast.success('Predicciones guardadas')
+        router.push(`/groups/${groupSlug}/comprobante`)
+      } else {
+        toast.error(r.error)
+      }
     })
   }
 
