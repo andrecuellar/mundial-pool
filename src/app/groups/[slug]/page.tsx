@@ -177,8 +177,8 @@ export default async function GroupPage({ params }: Params) {
             </div>
           </Card>
 
-          <div className="space-y-4">
-            <Card className="p-5">
+          <div className="flex flex-col gap-4">
+            <Card className="p-5 lg:flex-1">
               <div className="flex items-center justify-between gap-3">
                 <div className="min-w-0">
                   <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -196,7 +196,7 @@ export default async function GroupPage({ params }: Params) {
               </div>
             </Card>
 
-            <Card className="p-5">
+            <Card className="p-5 lg:flex-1">
               <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                 <Users className="h-3 w-3" />
                 Miembros · {memberCount}
