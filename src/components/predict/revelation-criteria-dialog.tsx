@@ -48,7 +48,7 @@ export function RevelationCriteriaDialog({ size = 'sm', className }: Props) {
         </Tooltip>
       </TooltipProvider>
 
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl lg:max-w-3xl">
         <CriteriaBody onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
@@ -77,7 +77,7 @@ export function RevelationCriteriaLink({ kind, className }: LinkProps) {
           {label}
         </button>
       </DialogTrigger>
-      <DialogContent className="max-w-2xl max-h-[85vh] overflow-y-auto">
+      <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-2xl lg:max-w-3xl">
         <CriteriaBody onClose={() => setOpen(false)} />
       </DialogContent>
     </Dialog>
