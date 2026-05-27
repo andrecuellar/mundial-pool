@@ -5,6 +5,10 @@ import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PlayerComboBox } from '@/components/predict/player-combobox'
 import {
+  PlayerCategoryCriteriaDialog,
+  type PlayerCategoryKey,
+} from '@/components/predict/player-category-criteria-dialog'
+import {
   RevelationCriteriaDialog,
   RevelationCriteriaLink,
 } from '@/components/predict/revelation-criteria-dialog'
@@ -28,6 +32,13 @@ type Team = {
 // (2 days before the opening match).
 const FIFA_FINAL_UPDATE = new Date('2026-06-09T00:00:00Z')
 const FIFA_RANKING_CATEGORIES = new Set(['revelation', 'disappointment'])
+const PLAYER_MANUAL_CATEGORIES: ReadonlySet<PlayerCategoryKey> = new Set([
+  'top_scorer_player',
+  'top_assists_player',
+  'golden_ball',
+  'golden_glove',
+  'young_player',
+])
 
 function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
   const updatePassed = new Date() >= FIFA_FINAL_UPDATE
@@ -280,6 +291,9 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
               <h3 className="flex items-center gap-2 text-base font-semibold tracking-tight">
                 {c.name}
                 {FIFA_RANKING_CATEGORIES.has(c.key) && <RevelationCriteriaDialog />}
+                {PLAYER_MANUAL_CATEGORIES.has(c.key as PlayerCategoryKey) && (
+                  <PlayerCategoryCriteriaDialog kind={c.key as PlayerCategoryKey} />
+                )}
               </h3>
               {c.description && (
                 <p className="mt-1 text-sm text-muted-foreground leading-relaxed">
