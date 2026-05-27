@@ -54,8 +54,11 @@ export default async function LoginPage({ searchParams }: Props) {
           </h1>
           <p className="mt-5 text-base text-muted-foreground max-w-sm leading-relaxed">
             Son <span className="font-medium text-foreground">104 partidos</span> en el Mundial
-            2026. Da flojera adivinar Congo vs Uzbekistán o Haití vs Escocia. Aquí predice solo las
-            cosas que importan.
+            2026. Da flojera adivinar Congo vs Uzbekistán o Haití vs Escocia{' '}
+            <span className="animate-chef-kiss" aria-label="chef's kiss">
+              🤌🏽
+            </span>
+            . Aquí predice solo las cosas que importan.
           </p>
 
           <div className="mt-8">

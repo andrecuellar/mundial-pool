@@ -203,24 +203,27 @@
  */
 @keyframes mp-chef-kiss {
   0%,
-  60%,
+  62%,
   100% {
     transform: rotate(0) scale(1);
   }
-  10% {
-    transform: rotate(-10deg) scale(1.15);
+  8% {
+    transform: rotate(-18deg) scale(1.4);
   }
-  20% {
-    transform: rotate(8deg) scale(1.1);
+  18% {
+    transform: rotate(14deg) scale(1.32);
   }
-  30% {
-    transform: rotate(-6deg) scale(1.08);
+  28% {
+    transform: rotate(-10deg) scale(1.22);
   }
-  40% {
-    transform: rotate(4deg) scale(1.04);
+  38% {
+    transform: rotate(6deg) scale(1.12);
   }
-  50% {
-    transform: rotate(0) scale(1);
+  48% {
+    transform: rotate(-3deg) scale(1.18);
+  }
+  55% {
+    transform: rotate(0) scale(0.96);
   }
 }
 
