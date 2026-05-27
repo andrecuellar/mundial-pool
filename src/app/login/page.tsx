@@ -1,5 +1,6 @@
 import { redirect } from 'next/navigation'
 import { Wordmark } from '@/components/app-shell/wordmark'
+import { getMagicLinkBlockedUntil } from '@/features/auth/rate-limit'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { LoginForm } from './login-form'
 
@@ -34,6 +35,7 @@ export default async function LoginPage({ searchParams }: Props) {
   } = await supabase.auth.getUser()
   if (user) redirect(next ?? '/')
 
+  const blockedUntil = await getMagicLinkBlockedUntil()
   const days = daysUntilOpener()
 
   return (
@@ -62,7 +64,10 @@ export default async function LoginPage({ searchParams }: Props) {
           </p>
 
           <div className="mt-8">
-            <LoginForm next={next} />
+            <LoginForm
+              next={next}
+              magicLinkBlockedUntil={blockedUntil ? blockedUntil.toISOString() : null}
+            />
           </div>
         </div>
       </div>

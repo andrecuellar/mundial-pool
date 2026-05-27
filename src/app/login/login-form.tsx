@@ -10,15 +10,16 @@ import { createSupabaseBrowserClient } from '@/lib/supabase/browser'
 type Props = {
   /** Path to return to after a successful sign-in (e.g. /join/CODE). */
   next?: string
+  /**
+   * ISO timestamp until which the magic-link button is globally blocked
+   * because Supabase's email cap was hit. Read from the database on the
+   * server so the block is shared across devices and reloads.
+   */
+  magicLinkBlockedUntil?: string | null
 }
 
-// Persist the rate-limit cooldown across navigation/reload — once a user
-// hits the project-wide hourly cap we want them to stop hammering the
-// button (each retry just consumes the next slot when the hour rolls over).
-const RATE_LIMIT_KEY = 'mp:magiclink:rate-limit-until'
-// Supabase's email cap is hourly; the docs are vague on the exact number,
-// so we conservatively block for an hour after the first 429.
-const RATE_LIMIT_BACKOFF_MS = 60 * 60 * 1000
+const RATE_LIMITED_MESSAGE =
+  'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.'
 
 function GoogleIcon() {
   return (
@@ -47,7 +48,7 @@ function formatRemaining(ms: number): string {
   return `${totalSec} s`
 }
 
-export function LoginForm({ next }: Props) {
+export function LoginForm({ next, magicLinkBlockedUntil }: Props) {
   const [email, setEmail] = useState('')
   const [status, setStatus] = useState<
     | { kind: 'idle' }
@@ -55,27 +56,14 @@ export function LoginForm({ next }: Props) {
     | { kind: 'cooldown'; msg: string; until: number }
     | { kind: 'rate_limited'; msg: string; until: number }
     | { kind: 'error'; msg: string }
-  >({ kind: 'idle' })
+  >(() => {
+    if (!magicLinkBlockedUntil) return { kind: 'idle' }
+    const ts = Date.parse(magicLinkBlockedUntil)
+    if (!Number.isFinite(ts) || ts <= Date.now()) return { kind: 'idle' }
+    return { kind: 'rate_limited', msg: RATE_LIMITED_MESSAGE, until: ts }
+  })
   const [pending, startTransition] = useTransition()
   const [now, setNow] = useState(() => Date.now())
-
-  // Restore a persisted rate-limit cooldown on mount so reloading the page
-  // does not re-enable the button.
-  useEffect(() => {
-    if (typeof window === 'undefined') return
-    const raw = window.localStorage.getItem(RATE_LIMIT_KEY)
-    if (!raw) return
-    const until = Number.parseInt(raw, 10)
-    if (Number.isFinite(until) && until > Date.now()) {
-      setStatus({
-        kind: 'rate_limited',
-        msg: 'Demasiadas solicitudes de magic link en la última hora. Probá entrar con Google o intentá de nuevo más tarde.',
-        until,
-      })
-    } else if (Number.isFinite(until)) {
-      window.localStorage.removeItem(RATE_LIMIT_KEY)
-    }
-  }, [])
 
   // Tick the countdown when there is a pending cooldown.
   useEffect(() => {
@@ -87,12 +75,7 @@ export function LoginForm({ next }: Props) {
   // Auto-clear the cooldown once the deadline passes.
   useEffect(() => {
     if (status.kind !== 'cooldown' && status.kind !== 'rate_limited') return
-    if (now >= status.until) {
-      if (status.kind === 'rate_limited' && typeof window !== 'undefined') {
-        window.localStorage.removeItem(RATE_LIMIT_KEY)
-      }
-      setStatus({ kind: 'idle' })
-    }
+    if (now >= status.until) setStatus({ kind: 'idle' })
   }, [now, status])
 
   const blockedUntil =
@@ -120,8 +103,10 @@ export function LoginForm({ next }: Props) {
         return
       }
       if (result.code === 'rate_limited') {
-        const until = Date.now() + RATE_LIMIT_BACKOFF_MS
-        window.localStorage.setItem(RATE_LIMIT_KEY, String(until))
+        const fromServer = result.blockedUntil ? Date.parse(result.blockedUntil) : NaN
+        const until = Number.isFinite(fromServer)
+          ? fromServer
+          : Date.now() + (result.retryAfterSeconds ?? 3600) * 1000
         setStatus({ kind: 'rate_limited', msg: result.error, until })
         return
       }

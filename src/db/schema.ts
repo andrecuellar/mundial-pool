@@ -184,6 +184,15 @@ export const resolutionRuns = pgTable('resolution_runs', {
   details: jsonb('details').$type<Record<string, unknown>>(),
 })
 
+// Tiny key/value table for app-wide global state that doesn't fit anywhere
+// else. First user: persisting the magic-link rate-limit deadline so it's
+// shared across devices, not local to a browser.
+export const appState = pgTable('app_state', {
+  key: text('key').primaryKey(),
+  value: text('value').notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export type Profile = typeof profiles.$inferSelect
 export type Group = typeof groups.$inferSelect
 export type GroupMember = typeof groupMembers.$inferSelect

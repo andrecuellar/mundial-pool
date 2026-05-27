@@ -3,6 +3,11 @@
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import {
+  getMagicLinkBlockedUntil,
+  MAGIC_LINK_BACKOFF_MS,
+  setMagicLinkBlockedUntil,
+} from './rate-limit'
 
 const magicLinkSchema = z.object({
   email: z.email(),
@@ -23,6 +28,7 @@ export type MagicLinkResult =
       code: MagicLinkErrorCode
       error: string
       retryAfterSeconds?: number
+      blockedUntil?: string
     }
 
 function safeNext(raw: string | undefined): string | undefined {
@@ -47,7 +53,7 @@ function classifyAuthError(raw: string): {
 
   if (msg.includes('rate limit') && msg.includes('email')) {
     return {
-      code: 'rate_limited',
+      code: 'rate_limited' as const,
       error:
         'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.',
     }
@@ -79,6 +85,20 @@ export async function sendMagicLink(formData: FormData): Promise<MagicLinkResult
     return { ok: false, code: 'invalid_email', error: 'Email inválido.' }
   }
 
+  // Global block check: if any device/user previously hit the cap, every
+  // subsequent request is rejected before hitting Supabase so we don't burn
+  // the next slot when the hour rolls over.
+  const globalBlock = await getMagicLinkBlockedUntil()
+  if (globalBlock) {
+    return {
+      ok: false,
+      code: 'rate_limited',
+      error: 'Servicio de correo saturado. Para entrar sin esperar, usá Continuar con Google.',
+      retryAfterSeconds: Math.ceil((globalBlock.getTime() - Date.now()) / 1000),
+      blockedUntil: globalBlock.toISOString(),
+    }
+  }
+
   const next = safeNext(parsed.data.next)
   const callback = next
     ? `${parsed.data.redirectOrigin}/auth/callback?next=${encodeURIComponent(next)}`
@@ -92,8 +112,22 @@ export async function sendMagicLink(formData: FormData): Promise<MagicLinkResult
       shouldCreateUser: true,
     },
   })
-  if (error) return { ok: false, ...classifyAuthError(error.message) }
-  return { ok: true }
+  if (!error) return { ok: true }
+
+  const classified = classifyAuthError(error.message)
+  // Promote the rate-limit error into a global block so every other device
+  // also stops trying — Supabase's cap is project-wide.
+  if (classified.code === 'rate_limited') {
+    const until = new Date(Date.now() + MAGIC_LINK_BACKOFF_MS)
+    await setMagicLinkBlockedUntil(until)
+    return {
+      ok: false,
+      ...classified,
+      retryAfterSeconds: Math.ceil(MAGIC_LINK_BACKOFF_MS / 1000),
+      blockedUntil: until.toISOString(),
+    }
+  }
+  return { ok: false, ...classified }
 }
 
 export async function signOut() {
