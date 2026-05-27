@@ -53,9 +53,11 @@ export function TeamSetGrid({ teams, selected, onChange, n, disabled, lockedTeam
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <p className="text-sm text-muted-foreground">
-          {lockedTeamIds.length > 0
-            ? `${lockedTeamIds.length} ya bloqueadas. Elige ${userPicksMax} más.`
-            : 'Toca para seleccionar. Sin orden.'}
+          {set.size === n
+            ? `Listo. ${n} selecciones elegidas.`
+            : lockedTeamIds.length > 0
+              ? `${lockedTeamIds.length} ya bloqueadas. Elige ${userPicksMax - userPicks.length} más.`
+              : 'Toca para seleccionar. Sin orden.'}
         </p>
         <div className="flex items-center gap-2">
           <span
