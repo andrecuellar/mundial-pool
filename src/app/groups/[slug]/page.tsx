@@ -14,6 +14,7 @@ import { db } from '@/db'
 import { groupMembers, groups, predictions, profiles } from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
+import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -164,12 +165,7 @@ export default async function GroupPage({ params }: Params) {
                       días para cerrar
                     </p>
                     <p className="text-sm font-medium">
-                      {group.predictionsLockAt.toLocaleString('es-BO', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })}
+                      {formatDayTime(group.predictionsLockAt)}
                     </p>
                   </div>
                 </div>
@@ -370,10 +366,7 @@ export default async function GroupPage({ params }: Params) {
                 <p className="mt-2 text-sm">
                   {locked
                     ? `Mira lo que apostó cada uno de los ${memberCount} jugadores.`
-                    : `Se revelan el ${group.predictionsLockAt.toLocaleString('es-BO', {
-                        day: '2-digit',
-                        month: 'short',
-                      })}, junto con el cierre.`}
+                    : `Se revelan el ${formatDayShort(group.predictionsLockAt)}, junto con el cierre.`}
                 </p>
               </div>
               <ChevronRight className="h-4 w-4 text-muted-foreground" />

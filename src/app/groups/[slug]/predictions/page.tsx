@@ -8,6 +8,7 @@ import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import { getAllGroupPredictions } from '@/features/predictions/queries'
+import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -67,12 +68,7 @@ export default async function PredictionsPage({ params }: Params) {
               Para que nadie pueda copiarse, las apuestas se revelan recién cuando se cierran las
               predicciones, el{' '}
               <span className="font-medium text-foreground">
-                {group.predictionsLockAt.toLocaleString('es-BO', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
+                {formatDayTime(group.predictionsLockAt)}
               </span>
               . Hasta entonces solo puedes ver las tuyas.
             </p>

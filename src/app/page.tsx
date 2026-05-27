@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, poolTransactions } from '@/db/schema'
+import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -146,12 +147,7 @@ export default async function Home() {
                               <>
                                 Cierra{' '}
                                 <span className="font-medium text-foreground">
-                                  {g.predictionsLockAt.toLocaleString('es-BO', {
-                                    day: '2-digit',
-                                    month: 'short',
-                                    hour: '2-digit',
-                                    minute: '2-digit',
-                                  })}
+                                  {formatDayTime(g.predictionsLockAt)}
                                 </span>
                               </>
                             )}

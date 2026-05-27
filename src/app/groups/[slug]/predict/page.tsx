@@ -6,6 +6,7 @@ import { BackLink } from '@/components/app-shell/back-link'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import { getPredictionForm, listAllPlayers, listAllTeams } from '@/features/predictions/queries'
+import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { PredictionForm } from './prediction-form'
 
@@ -54,14 +55,7 @@ export default async function PredictPage({ params }: Params) {
             <span>
               <span className="font-medium">Las predicciones están bloqueadas.</span>{' '}
               <span className="text-muted-foreground">
-                Esta vista es solo lectura desde el{' '}
-                {group.predictionsLockAt.toLocaleString('es-BO', {
-                  day: '2-digit',
-                  month: 'short',
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-                .
+                Esta vista es solo lectura desde el {formatDayTime(group.predictionsLockAt)}.
               </span>
             </span>
           </div>

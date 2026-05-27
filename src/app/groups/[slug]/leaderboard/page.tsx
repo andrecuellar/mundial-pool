@@ -9,6 +9,7 @@ import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
 import { getPoolSummary } from '@/features/pool/queries'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
+import { formatTimeOnly } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -66,12 +67,7 @@ export default async function LeaderboardPage({ params }: Params) {
           {hasScores ? (
             <>
               Última actualización ·{' '}
-              <span className="font-mono text-foreground">
-                {new Date().toLocaleTimeString('es-BO', {
-                  hour: '2-digit',
-                  minute: '2-digit',
-                })}
-              </span>
+              <span className="font-mono text-foreground">{formatTimeOnly(new Date())}</span>
             </>
           ) : (
             <>

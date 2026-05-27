@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { renderPick } from '@/components/predictions/all-predictions-view'
 import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
+import { formatDayTime } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -109,14 +110,7 @@ export default async function ComprobantePage({ params }: Params) {
                   Última edición
                 </dt>
                 <dd className="mt-0.5 text-sm font-medium">
-                  {comprobante.lastUpdatedAt
-                    ? comprobante.lastUpdatedAt.toLocaleString('es-BO', {
-                        day: '2-digit',
-                        month: 'short',
-                        hour: '2-digit',
-                        minute: '2-digit',
-                      })
-                    : '—'}
+                  {comprobante.lastUpdatedAt ? formatDayTime(comprobante.lastUpdatedAt) : '—'}
                 </dd>
               </div>
               <div className="col-span-2 sm:col-span-1">
@@ -124,12 +118,7 @@ export default async function ComprobantePage({ params }: Params) {
                   Cierre del grupo
                 </dt>
                 <dd className="mt-0.5 text-sm font-medium">
-                  {group.predictionsLockAt.toLocaleString('es-BO', {
-                    day: '2-digit',
-                    month: 'short',
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
+                  {formatDayTime(group.predictionsLockAt)}
                 </dd>
               </div>
             </dl>

@@ -55,6 +55,7 @@ export function PoolLedgerTable({ rows, currency, ownerMode, groupId }: Props) {
                   day: '2-digit',
                   month: 'short',
                   year: 'numeric',
+                  timeZone: 'America/La_Paz',
                 })}
               </TableCell>
               {ownerMode && groupId && (
