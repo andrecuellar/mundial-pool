@@ -1,4 +1,4 @@
-import { ChevronRight } from 'lucide-react'
+import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
 import { ThemeToggle } from './theme-toggle'
 import { UserMenu } from './user-menu'
@@ -9,11 +9,34 @@ type Props = {
   breadcrumb?: { label: string; href?: string }[]
 }
 
+// Last breadcrumb is the current page. Walk back from the previous one until
+// we find an entry with an href — that's the natural "parent". If none, the
+// user is one level below home, so back goes to "/".
+function deriveBackHref(breadcrumb?: { label: string; href?: string }[]): string | null {
+  if (!breadcrumb || breadcrumb.length === 0) return null
+  const parents = breadcrumb.slice(0, -1)
+  for (let i = parents.length - 1; i >= 0; i--) {
+    const href = parents[i].href
+    if (href) return href
+  }
+  return '/'
+}
+
 export function AppHeader({ user, breadcrumb }: Props) {
+  const backHref = deriveBackHref(breadcrumb)
   return (
-    <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center justify-between border-b border-border bg-background/95 px-4 sm:px-8 backdrop-blur">
-      <div className="flex items-center gap-3 min-w-0">
-        <Link href="/" className="shrink-0">
+    <header className="sticky top-0 z-30 flex h-14 sm:h-16 items-center justify-between border-b border-border bg-background/95 px-2 sm:px-8 backdrop-blur">
+      <div className="flex items-center gap-1 sm:gap-3 min-w-0">
+        {backHref && (
+          <Link
+            href={backHref}
+            aria-label="Volver"
+            className="grid h-9 w-9 shrink-0 place-items-center rounded-lg text-muted-foreground transition-colors hover:bg-muted hover:text-foreground sm:hidden"
+          >
+            <ChevronLeft className="h-5 w-5" />
+          </Link>
+        )}
+        <Link href="/" className="shrink-0 px-1 sm:px-0">
           <Wordmark size="md" />
         </Link>
         {breadcrumb && breadcrumb.length > 0 && (

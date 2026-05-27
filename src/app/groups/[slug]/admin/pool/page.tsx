@@ -2,6 +2,7 @@ import { and, desc, eq } from 'drizzle-orm'
 import { Wallet } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { BackLink } from '@/components/app-shell/back-link'
 import { DepositForm } from '@/components/pool/deposit-form'
 import { PoolConfigForm } from '@/components/pool/pool-config-form'
 import { PoolLedgerTable } from '@/components/pool/pool-ledger-table'
@@ -59,8 +60,10 @@ export default async function AdminPoolPage({ params }: Params) {
         breadcrumb={[{ label: group.name, href: `/groups/${slug}` }, { label: 'Configurar pozo' }]}
       />
 
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-8 sm:px-6">
-        <div className="mb-6 flex items-end justify-between gap-4 flex-wrap">
+      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
+        <BackLink href={`/groups/${slug}`} label={group.name} className="mb-4" />
+
+        <div className="mb-6 flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-gold" />
@@ -72,11 +75,11 @@ export default async function AdminPoolPage({ params }: Params) {
               cada depósito.
             </p>
           </div>
-          <Card className="min-w-[200px] border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-4">
+          <Card className="w-full border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-4 sm:w-auto sm:min-w-[220px]">
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               Total actual
             </p>
-            <div className="mt-1 flex items-baseline gap-2">
+            <div className="mt-1 flex items-baseline gap-2 flex-wrap">
               <span className="text-2xl font-semibold tabular-nums">
                 {formatMoney(pool.total, pool.currency ?? 'BOB')}
               </span>
