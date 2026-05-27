@@ -5,6 +5,7 @@ import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { renderPick } from '@/components/predictions/all-predictions-view'
+import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
@@ -57,7 +58,7 @@ export default async function ComprobantePage({ params }: Params) {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href={`/groups/${slug}`} label={group.name} className="mb-4" />
 
-        <Card className="overflow-hidden p-0">
+        <Card id="comprobante-card" className="overflow-hidden bg-card p-0">
           <div className="border-b border-border bg-muted/30 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3">
               <div className="min-w-0">
@@ -150,15 +151,21 @@ export default async function ComprobantePage({ params }: Params) {
         </Card>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
+          <ShareComprobanteButton
+            targetId="comprobante-card"
+            fileName={`mundial-pool-${slug}-${displayName.toLowerCase().replace(/\s+/g, '-')}`}
+            shareTitle={`Mis predicciones · ${group.name}`}
+            shareText={`Mis predicciones del Mundial 2026 para ${group.name} en mundial-pool.`}
+          />
           {!locked && (
             <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
               <Link href={`/groups/${slug}/predict`}>
                 <Pencil className="h-3.5 w-3.5" />
-                Editar predicciones
+                Editar
               </Link>
             </Button>
           )}
-          <Button asChild size="lg" className="w-full sm:flex-1">
+          <Button asChild variant="secondary" size="lg" className="w-full sm:flex-1">
             <Link href={`/groups/${slug}`}>Volver al grupo</Link>
           </Button>
         </div>

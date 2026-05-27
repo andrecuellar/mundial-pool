@@ -1,0 +1,93 @@
+'use client'
+
+import { Share2 } from 'lucide-react'
+import { useState } from 'react'
+import { toast } from 'sonner'
+import { Button } from '@/components/ui/button'
+
+type Props = {
+  targetId: string
+  fileName: string
+  shareTitle: string
+  shareText: string
+}
+
+export function ShareComprobanteButton({
+  targetId,
+  fileName,
+  shareTitle,
+  shareText,
+}: Props) {
+  const [pending, setPending] = useState(false)
+
+  async function handleShare() {
+    const node = document.getElementById(targetId)
+    if (!node) {
+      toast.error('No se pudo encontrar el comprobante.')
+      return
+    }
+    setPending(true)
+    try {
+      // Dynamic import so the ~70KB html-to-image bundle is only paid by users
+      // who actually click "Compartir". Capture follows whatever theme the
+      // user has active, since it renders the live DOM.
+      const { toPng } = await import('html-to-image')
+      const bg = getComputedStyle(document.body).backgroundColor || '#0a0a0a'
+      const dataUrl = await toPng(node, {
+        pixelRatio: 2,
+        backgroundColor: bg,
+        cacheBust: true,
+      })
+      const blob = await fetch(dataUrl).then((r) => r.blob())
+      const file = new File([blob], `${fileName}.png`, { type: 'image/png' })
+
+      // Mobile: try native Web Share with files. iOS 15+ and modern Android
+      // Chrome support this. Falls back to download otherwise.
+      if (
+        typeof navigator !== 'undefined' &&
+        typeof navigator.share === 'function' &&
+        typeof navigator.canShare === 'function' &&
+        navigator.canShare({ files: [file] })
+      ) {
+        try {
+          await navigator.share({
+            files: [file],
+            title: shareTitle,
+            text: shareText,
+          })
+          return
+        } catch (e) {
+          if ((e as Error).name === 'AbortError') return
+          // fall through to download
+        }
+      }
+
+      const a = document.createElement('a')
+      a.href = dataUrl
+      a.download = `${fileName}.png`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      toast.success('Imagen descargada')
+    } catch (e) {
+      console.error('share comprobante failed', e)
+      toast.error('No se pudo generar la imagen.')
+    } finally {
+      setPending(false)
+    }
+  }
+
+  return (
+    <Button
+      onClick={handleShare}
+      disabled={pending}
+      variant="default"
+      size="lg"
+      className="w-full sm:w-auto"
+      type="button"
+    >
+      <Share2 className="h-3.5 w-3.5" />
+      {pending ? 'Generando…' : 'Compartir imagen'}
+    </Button>
+  )
+}
