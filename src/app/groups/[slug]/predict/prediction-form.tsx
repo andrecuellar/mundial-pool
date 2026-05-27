@@ -54,7 +54,7 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
           : '📅 Habrá una última actualización del ranking FIFA el 9 de junio (2 días antes del partido inaugural).'}
       </p>
       <p className="pt-1">
-        <RevelationCriteriaLink kind={kind} />.
+        <RevelationCriteriaLink kind={kind} />
       </p>
     </div>
   )

@@ -64,8 +64,8 @@ export function RevelationCriteriaLink({ kind, className }: LinkProps) {
   const [open, setOpen] = useState(false)
   const label =
     kind === 'revelation'
-      ? 'Haz click aquí para ver cómo decidiremos la selección revelación'
-      : 'Haz click aquí para ver cómo decidiremos la selección decepción'
+      ? 'Haz click aquí para ver cómo decidiremos la selección revelación.'
+      : 'Haz click aquí para ver cómo decidiremos la selección decepción.'
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
