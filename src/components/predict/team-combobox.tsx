@@ -36,6 +36,13 @@ type Props = {
    * if it appears here, otherwise the user can't see what they had picked.
    */
   excludeIds?: string[]
+  /**
+   * Map of team ID → normalized FIFA rank inside the 48 World Cup teams
+   * (1 = best of the 48, 48 = worst of the 48). When provided alongside
+   * showRanking, each row also displays "Mundial #N" so the user sees both
+   * the real global FIFA rank AND the rank used for revelation / decepción.
+   */
+  internalRanks?: Map<string, number>
 }
 
 function rankingLabel(r: number | null | undefined): string {
@@ -50,6 +57,7 @@ export function TeamComboBox({
   disabled,
   showRanking,
   excludeIds,
+  internalRanks,
 }: Props) {
   const [open, setOpen] = useState(false)
   const selected = teams.find((t) => t.id === value)
@@ -87,8 +95,11 @@ export function TeamComboBox({
                 <span className="font-mono text-xs text-muted-foreground">{selected.fifaCode}</span>
               )}
               {showRanking && (
-                <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">
-                  FIFA {rankingLabel(selected.fifaRanking)}
+                <span className="ml-auto flex shrink-0 items-baseline gap-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+                  <span>FIFA {rankingLabel(selected.fifaRanking)}</span>
+                  {internalRanks?.get(selected.id) && (
+                    <span className="text-primary">· M #{internalRanks.get(selected.id)}</span>
+                  )}
                 </span>
               )}
             </span>
@@ -119,8 +130,11 @@ export function TeamComboBox({
                     <span className="font-mono text-xs text-muted-foreground">{t.fifaCode}</span>
                   )}
                   {showRanking && (
-                    <span className="ml-auto font-mono text-[11px] text-muted-foreground tabular-nums">
-                      FIFA {rankingLabel(t.fifaRanking)}
+                    <span className="ml-auto flex shrink-0 items-baseline gap-1.5 font-mono text-[11px] text-muted-foreground tabular-nums">
+                      <span>FIFA {rankingLabel(t.fifaRanking)}</span>
+                      {internalRanks?.get(t.id) && (
+                        <span className="text-primary">· M #{internalRanks.get(t.id)}</span>
+                      )}
                     </span>
                   )}
                   <Check

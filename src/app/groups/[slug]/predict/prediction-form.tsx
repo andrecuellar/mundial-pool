@@ -66,6 +66,11 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
           ? '📅 Estos son los rankings finales pre-Mundial (última actualización: 9 de junio 2026).'
           : '📅 Habrá una última actualización del ranking FIFA el 9 de junio (2 días antes del partido inaugural).'}
       </p>
+      <p>
+        En el selector verás <span className="font-mono text-foreground">FIFA #N</span> (ranking
+        global real) y <span className="font-mono text-primary">M #N</span> (posición entre las
+        48 del Mundial, la que cuenta para esta categoría).
+      </p>
       <p className="pt-1">
         <RevelationCriteriaLink kind={kind} />
       </p>
@@ -265,17 +270,22 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   const sourceCategoryKeys = new Set(['champion', 'runner_up', 'third_place'])
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
 
-  // Pre-tournament FIFA-rank extremes. Used to flag picks that contradict the
-  // category (e.g. selecting Argentina #1 as "revelación" or Haití #84 as
-  // "decepción"). Teams without a ranking are skipped — we don't warn on them.
-  const { topFavoriteIds, bottomFavoriteIds } = useMemo(() => {
+  // Pre-tournament FIFA-rank extremes + normalized 1→48 rank within the
+  // tournament. The normalized rank is the one used to compute revelación /
+  // decepción deltas (sorting teams by their global FIFA rank and assigning
+  // 1 to the best of the 48 WC teams). It's also exposed in the team
+  // combobox so the user can see BOTH numbers (real FIFA + Mundial-internal).
+  const { topFavoriteIds, bottomFavoriteIds, internalRanks } = useMemo(() => {
     const ranked = teams.filter((t) => typeof t.fifaRanking === 'number')
     const ascending = [...ranked].sort(
       (a, b) => (a.fifaRanking as number) - (b.fifaRanking as number),
     )
+    const internal = new Map<string, number>()
+    ascending.forEach((t, i) => internal.set(t.id, i + 1))
     return {
       topFavoriteIds: new Set(ascending.slice(0, 5).map((t) => t.id)),
       bottomFavoriteIds: new Set(ascending.slice(-5).map((t) => t.id)),
+      internalRanks: internal,
     }
   }, [teams])
 
@@ -465,6 +475,9 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       disabled={locked}
                       showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
                       excludeIds={podiumExcludesFor(c.key, draft, sourceIds)}
+                      internalRanks={
+                        FIFA_RANKING_CATEGORIES.has(c.key) ? internalRanks : undefined
+                      }
                     />
                     {warningsFor(c.key, v.teamId, {
                       draft,
