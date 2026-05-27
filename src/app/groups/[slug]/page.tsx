@@ -1,5 +1,5 @@
 import { and, count, eq } from 'drizzle-orm'
-import { ChevronRight, Lock, Share2, Users } from 'lucide-react'
+import { ChevronRight, Lock, Share2, Sparkles, Users } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
@@ -236,28 +236,77 @@ export default async function GroupPage({ params }: Params) {
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <Link href={`/groups/${slug}/predict`}>
-            <Card className="hover-lift p-5">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                    Mis predicciones
-                  </p>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums">
-                    {completedCount} / {totalPredictions}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {locked
-                      ? 'Solo lectura'
-                      : completedCount === totalPredictions
-                        ? 'Completas'
-                        : `${totalPredictions - completedCount} pendientes`}
-                  </p>
-                </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
-              </div>
-            </Card>
-          </Link>
+          {(() => {
+            const progress = completedCount / totalPredictions
+            const state: 'locked' | 'empty' | 'partial' | 'done' = locked
+              ? 'locked'
+              : completedCount === 0
+                ? 'empty'
+                : completedCount === totalPredictions
+                  ? 'done'
+                  : 'partial'
+            const shouldGlow = state === 'empty' || state === 'partial'
+            const heading =
+              state === 'locked'
+                ? 'Mis predicciones'
+                : state === 'empty'
+                  ? '¡Empieza aquí!'
+                  : state === 'partial'
+                    ? 'Continúa donde te quedaste'
+                    : '¡Listo, todo completo!'
+            const helper =
+              state === 'locked'
+                ? 'Solo lectura'
+                : state === 'empty'
+                  ? 'Toca para hacer tus 14 predicciones'
+                  : state === 'partial'
+                    ? `Te faltan ${totalPredictions - completedCount} ${
+                        totalPredictions - completedCount === 1 ? 'categoría' : 'categorías'
+                      }`
+                    : 'Vuelve cuando quieras a revisarlas'
+            return (
+              <Link href={`/groups/${slug}/predict`} className="block">
+                <Card
+                  className={`hover-lift relative overflow-hidden p-5 ${
+                    shouldGlow ? 'mp-glow-border' : ''
+                  }`}
+                >
+                  <div className="relative z-10 flex items-start justify-between gap-3">
+                    <div className="min-w-0">
+                      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        {shouldGlow && <Sparkles className="h-3 w-3 text-primary" />}
+                        {heading}
+                      </p>
+                      <p className="mt-2 text-2xl font-semibold tabular-nums">
+                        {completedCount}{' '}
+                        <span className="text-base text-muted-foreground">/ {totalPredictions}</span>
+                      </p>
+                      <p
+                        className={`mt-1 text-xs ${
+                          shouldGlow ? 'text-primary' : 'text-muted-foreground'
+                        }`}
+                      >
+                        {helper}
+                      </p>
+                    </div>
+                    <ChevronRight
+                      className={`h-5 w-5 ${
+                        shouldGlow ? 'text-primary' : 'text-muted-foreground'
+                      }`}
+                    />
+                  </div>
+                  {!locked && (
+                    <div className="relative z-10 mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                      <div
+                        className="mp-progress-fill h-full rounded-full bg-gradient-to-r from-primary to-accent"
+                        style={{ width: `${Math.max(progress * 100, 6)}%` }}
+                      />
+                    </div>
+                  )}
+                </Card>
+              </Link>
+            )
+          })()}
 
           <Link href={`/groups/${slug}/leaderboard`}>
             <Card className="hover-lift p-5">
