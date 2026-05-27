@@ -267,7 +267,7 @@ export default async function GroupPage({ params }: Params) {
             return (
               <Link href={`/groups/${slug}/predict`} className="block h-full">
                 <Card
-                  className={`hover-lift relative h-full overflow-hidden p-5 ${
+                  className={`hover-lift relative flex h-full flex-col overflow-hidden p-5 ${
                     shouldGlow ? 'mp-glow-border' : ''
                   }`}
                 >
@@ -295,21 +295,21 @@ export default async function GroupPage({ params }: Params) {
                       }`}
                     />
                   </div>
-                  {!locked && (
-                    <div className="relative z-10 mt-4 h-1.5 w-full overflow-hidden rounded-full bg-muted">
+                  <div className="relative z-10 mt-auto pt-4">
+                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
                       <div
                         className="mp-progress-fill h-full rounded-full bg-gradient-to-r from-primary to-accent"
                         style={{ width: `${Math.max(progress * 100, 6)}%` }}
                       />
                     </div>
-                  )}
+                  </div>
                 </Card>
               </Link>
             )
           })()}
 
           <Link href={`/groups/${slug}/leaderboard`} className="block h-full">
-            <Card className="hover-lift h-full p-5">
+            <Card className="hover-lift flex h-full flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -325,6 +325,29 @@ export default async function GroupPage({ params }: Params) {
                   </p>
                 </div>
                 <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div className="mt-auto pt-4">
+                {leaderboard.length > 0 ? (
+                  <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
+                    <span className="text-base leading-none">🏆</span>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                        Líder
+                      </p>
+                      <p className="truncate text-xs font-medium">
+                        {leaderboard[0].displayName}
+                      </p>
+                    </div>
+                    <span className="font-mono text-sm font-semibold tabular-nums">
+                      {leaderboard[0].totalPoints}
+                      <span className="ml-0.5 text-[10px] text-muted-foreground">pts</span>
+                    </span>
+                  </div>
+                ) : (
+                  <div className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-center text-xs text-muted-foreground">
+                    Se llena cuando inicie el Mundial
+                  </div>
+                )}
               </div>
             </Card>
           </Link>
