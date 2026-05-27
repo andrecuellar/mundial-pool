@@ -22,7 +22,7 @@ type Props = {
 export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props) {
   if (!pool.enabled) {
     return (
-      <Card className="p-5">
+      <Card className="h-full p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -43,7 +43,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
   const currency = pool.currency ?? 'BOB'
 
   return (
-    <Card className="overflow-hidden p-0">
+    <Card className="flex h-full flex-col overflow-hidden p-0">
       <div className="border-b border-border bg-gradient-to-br from-gold/5 to-transparent p-5">
         <div className="flex items-start justify-between gap-3">
           <div>

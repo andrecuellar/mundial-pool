@@ -265,9 +265,9 @@ export default async function GroupPage({ params }: Params) {
                       }`
                     : 'Vuelve cuando quieras a revisarlas'
             return (
-              <Link href={`/groups/${slug}/predict`} className="block">
+              <Link href={`/groups/${slug}/predict`} className="block h-full">
                 <Card
-                  className={`hover-lift relative overflow-hidden p-5 ${
+                  className={`hover-lift relative h-full overflow-hidden p-5 ${
                     shouldGlow ? 'mp-glow-border' : ''
                   }`}
                 >
@@ -308,8 +308,8 @@ export default async function GroupPage({ params }: Params) {
             )
           })()}
 
-          <Link href={`/groups/${slug}/leaderboard`}>
-            <Card className="hover-lift p-5">
+          <Link href={`/groups/${slug}/leaderboard`} className="block h-full">
+            <Card className="hover-lift h-full p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
