@@ -1,6 +1,6 @@
 'use client'
 
-import { Check, Info, Lock } from 'lucide-react'
+import { AlertTriangle, Check, Info, Lock } from 'lucide-react'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { PlayerComboBox } from '@/components/predict/player-combobox'
@@ -99,6 +99,20 @@ function isFilled(c: PredictionFormCategory, v: DraftValue): boolean {
   return false
 }
 
+function MismatchWarning({ text }: { text: string }) {
+  return (
+    <div className="rounded-lg border border-warning/40 bg-warning/10 p-3">
+      <div className="flex items-start gap-2">
+        <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-warning" />
+        <p className="text-xs leading-relaxed">
+          <span className="font-medium text-foreground">Alerta:</span>{' '}
+          <span className="text-muted-foreground">{text}</span>
+        </p>
+      </div>
+    </div>
+  )
+}
+
 function getLockedFromSources(
   draft: Record<string, DraftValue>,
   ids: { champion?: string; runnerUp?: string; thirdPlace?: string },
@@ -124,6 +138,20 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   const top5Id = byKey.top_5?.id
   const sourceCategoryKeys = new Set(['champion', 'runner_up', 'third_place'])
   const teamById = useMemo(() => new Map(teams.map((t) => [t.id, t])), [teams])
+
+  // Pre-tournament FIFA-rank extremes. Used to flag picks that contradict the
+  // category (e.g. selecting Argentina #1 as "revelación" or Haití #84 as
+  // "decepción"). Teams without a ranking are skipped — we don't warn on them.
+  const { topFavoriteIds, bottomFavoriteIds } = useMemo(() => {
+    const ranked = teams.filter((t) => typeof t.fifaRanking === 'number')
+    const ascending = [...ranked].sort(
+      (a, b) => (a.fifaRanking as number) - (b.fifaRanking as number),
+    )
+    return {
+      topFavoriteIds: new Set(ascending.slice(0, 5).map((t) => t.id)),
+      bottomFavoriteIds: new Set(ascending.slice(-5).map((t) => t.id)),
+    }
+  }, [teams])
 
   const [draft, setDraft] = useState<Record<string, DraftValue>>(() => {
     const init: Record<string, DraftValue> = {}
@@ -311,6 +339,18 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       disabled={locked}
                       showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
                     />
+                    {c.key === 'revelation' && v.teamId && topFavoriteIds.has(v.teamId) && (
+                      <MismatchWarning
+                        text="No es revelación que esta selección termine entre las mejores — es una de las favoritas según el ranking FIFA. ¿No la estarás confundiendo con Selección decepción?"
+                      />
+                    )}
+                    {c.key === 'disappointment' &&
+                      v.teamId &&
+                      bottomFavoriteIds.has(v.teamId) && (
+                        <MismatchWarning
+                          text="No es decepción que esta selección no destaque — es una de las menos favoritas según el ranking FIFA. ¿No la estarás confundiendo con Selección revelación?"
+                        />
+                      )}
                     {c.key === 'revelation' && <RankingHelper kind="revelation" />}
                     {c.key === 'disappointment' && <RankingHelper kind="disappointment" />}
                   </>
