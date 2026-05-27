@@ -87,50 +87,42 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
         </div>
       </div>
 
-      <div className="flex-1 space-y-1.5 p-5 text-sm">
-        <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-          Si terminara hoy
-        </p>
-        {payoutPreview.length > 0 ? (
-          <>
-            <ul className="space-y-1">
-              {payoutPreview.map((p) => (
-                <li
-                  key={p.userId}
-                  className="flex items-center justify-between gap-3 tabular-nums"
-                >
-                  <span className="flex min-w-0 items-center gap-2">
-                    <span
-                      className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-semibold ${
-                        p.rank === 1
-                          ? 'bg-gold/15 text-gold'
-                          : p.rank === 2
-                            ? 'bg-silver/15 text-silver'
-                            : 'bg-bronze/15 text-bronze'
-                      }`}
-                    >
-                      {p.tied ? `T-${p.rank}` : p.rank}
-                    </span>
-                    <span className="truncate">{p.displayName}</span>
-                  </span>
-                  <span className="font-medium">{formatMoney(p.amount, currency)}</span>
-                </li>
-              ))}
-            </ul>
-            {payoutPreview.some((p) => p.tied) && (
-              <p className="pt-2 text-[11px] text-muted-foreground leading-relaxed">
-                Hay empate. La parte de ese puesto se reparte por igual entre los empatados.
-              </p>
-            )}
-          </>
-        ) : (
-          <p className="text-xs text-muted-foreground leading-relaxed">
-            Aún no hay puntos para repartir.{' '}
-            <span className="text-foreground">El reparto del pozo aparece aquí</span> cuando
-            inicie el Mundial el 11 de junio.
+      {payoutPreview.length > 0 && (
+        <div className="space-y-1.5 p-5 text-sm">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Si terminara hoy
           </p>
-        )}
-      </div>
+          <ul className="space-y-1">
+            {payoutPreview.map((p) => (
+              <li
+                key={p.userId}
+                className="flex items-center justify-between gap-3 tabular-nums"
+              >
+                <span className="flex min-w-0 items-center gap-2">
+                  <span
+                    className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-semibold ${
+                      p.rank === 1
+                        ? 'bg-gold/15 text-gold'
+                        : p.rank === 2
+                          ? 'bg-silver/15 text-silver'
+                          : 'bg-bronze/15 text-bronze'
+                    }`}
+                  >
+                    {p.tied ? `T-${p.rank}` : p.rank}
+                  </span>
+                  <span className="truncate">{p.displayName}</span>
+                </span>
+                <span className="font-medium">{formatMoney(p.amount, currency)}</span>
+              </li>
+            ))}
+          </ul>
+          {payoutPreview.some((p) => p.tied) && (
+            <p className="pt-2 text-[11px] text-muted-foreground leading-relaxed">
+              Hay empate. La parte de ese puesto se reparte por igual entre los empatados.
+            </p>
+          )}
+        </div>
+      )}
 
       {isOwner && (
         <div className="border-t border-border p-3">
