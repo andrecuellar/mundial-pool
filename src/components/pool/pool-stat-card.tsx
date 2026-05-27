@@ -44,7 +44,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
 
   return (
     <Card className="flex h-full flex-col overflow-hidden p-0">
-      <div className="border-b border-border bg-gradient-to-br from-gold/5 to-transparent p-5">
+      <div className="bg-gradient-to-br from-gold/5 to-transparent p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
             <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
