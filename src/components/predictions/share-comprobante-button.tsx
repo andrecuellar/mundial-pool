@@ -83,11 +83,11 @@ export function ShareComprobanteButton({
       disabled={pending}
       variant="default"
       size="lg"
-      className="w-full sm:w-auto"
+      className="w-full"
       type="button"
     >
       <Share2 className="h-3.5 w-3.5" />
-      {pending ? 'Generando…' : 'Compartir imagen'}
+      {pending ? 'Generando imagen…' : 'Compartir como imagen'}
     </Button>
   )
 }

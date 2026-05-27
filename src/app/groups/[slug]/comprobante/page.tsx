@@ -58,6 +58,15 @@ export default async function ComprobantePage({ params }: Params) {
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href={`/groups/${slug}`} label={group.name} className="mb-4" />
 
+        <div className="mb-4">
+          <ShareComprobanteButton
+            targetId="comprobante-card"
+            fileName={`mundial-pool-${slug}-${displayName.toLowerCase().replace(/\s+/g, '-')}`}
+            shareTitle={`Mis predicciones · ${group.name}`}
+            shareText={`Mis predicciones del Mundial 2026 para ${group.name} en mundial-pool.`}
+          />
+        </div>
+
         <Card id="comprobante-card" className="overflow-hidden bg-card p-0">
           <div className="border-b border-border bg-muted/30 p-5 sm:p-6">
             <div className="flex items-start justify-between gap-3">
@@ -151,17 +160,11 @@ export default async function ComprobantePage({ params }: Params) {
         </Card>
 
         <div className="mt-4 flex flex-col gap-2 sm:flex-row">
-          <ShareComprobanteButton
-            targetId="comprobante-card"
-            fileName={`mundial-pool-${slug}-${displayName.toLowerCase().replace(/\s+/g, '-')}`}
-            shareTitle={`Mis predicciones · ${group.name}`}
-            shareText={`Mis predicciones del Mundial 2026 para ${group.name} en mundial-pool.`}
-          />
           {!locked && (
             <Button asChild variant="outline" size="lg" className="w-full sm:w-auto">
               <Link href={`/groups/${slug}/predict`}>
                 <Pencil className="h-3.5 w-3.5" />
-                Editar
+                Editar predicciones
               </Link>
             </Button>
           )}
