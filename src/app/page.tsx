@@ -176,6 +176,38 @@ export default async function Home() {
             </Button>
           </div>
         )}
+
+        <div className="mt-8">
+          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+            Datos del Mundial 2026
+          </p>
+          <div className="mt-2 grid gap-2 sm:grid-cols-2">
+            <Link
+              href="/torneo/selecciones"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+            >
+              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Tabla de las 48 selecciones</p>
+                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                  Ranking 1→48 con desempates por penales, fair play y diferencia de gol.
+                </p>
+              </div>
+            </Link>
+            <Link
+              href="/torneo/jugadores"
+              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+            >
+              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium">Goleadores y asistentes</p>
+                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+                  Top scorers y máximos asistentes según FIFA. Qué cuenta y qué no.
+                </p>
+              </div>
+            </Link>
+          </div>
+        </div>
       </main>
     </>
   )
