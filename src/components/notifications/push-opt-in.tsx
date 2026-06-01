@@ -107,7 +107,7 @@ export function PushOptIn({ vapidPublicKey }: Props) {
 
   if (state === 'denied') {
     return (
-      <Card className="mb-4 border-warning/30 bg-warning/5 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
+      <Card className="mb-4 border-warning/30 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
         <div className="flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning">
             <BellOff className="h-4 w-4" />
@@ -136,7 +136,7 @@ export function PushOptIn({ vapidPublicKey }: Props) {
   if (state !== 'prompt') return null
 
   return (
-    <Card className="mb-4 border-primary/30 bg-primary/5 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
+    <Card className="mb-4 border-primary/30 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
       <div className="flex items-start gap-3">
         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
           <Bell className="h-4 w-4" />
