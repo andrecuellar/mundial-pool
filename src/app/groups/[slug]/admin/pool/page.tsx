@@ -3,6 +3,7 @@ import { Wallet } from 'lucide-react'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
+import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { DepositForm } from '@/components/pool/deposit-form'
 import { PoolConfigForm } from '@/components/pool/pool-config-form'
 import { PoolLedgerTable } from '@/components/pool/pool-ledger-table'
@@ -63,6 +64,8 @@ export default async function AdminPoolPage({ params }: Params) {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-8">
         <BackLink href={`/groups/${slug}`} label={group.name} className="mb-4" />
 
+        <PoolDisclaimer variant="admin" className="mb-6" />
+
         <div className="mb-6 flex flex-col items-stretch gap-4 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -70,10 +73,6 @@ export default async function AdminPoolPage({ params }: Params) {
               Admin · solo el creador
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">Pozo del grupo</h1>
-            <p className="mt-1 max-w-xl text-sm text-muted-foreground">
-              La app no procesa pagos — solo lleva el ledger. Configura cómo se reparte y registra
-              cada depósito.
-            </p>
           </div>
           <Card className="w-full border-gold/30 bg-gradient-to-br from-gold/5 to-transparent p-4 sm:w-auto sm:min-w-[220px]">
             <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">

@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
+import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PoolChip } from '@/components/pool/pool-chip'
@@ -97,6 +98,8 @@ export default async function Home() {
             🤌🏽
           </span>
         </div>
+
+        <PoolDisclaimer variant="home" className="mt-4" />
 
         <div className="mt-4 flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mt-0 sm:w-72 sm:max-w-xs">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />

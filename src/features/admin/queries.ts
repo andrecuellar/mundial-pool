@@ -133,6 +133,7 @@ export async function listAdminUsers() {
       email: profiles.email,
       avatarUrl: profiles.avatarUrl,
       createdAt: profiles.createdAt,
+      bannedAt: profiles.bannedAt,
       groupCount: groupCounts.groupCount,
       predictionCount: predictionCounts.predictionCount,
     })

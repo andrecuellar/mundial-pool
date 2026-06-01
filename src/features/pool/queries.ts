@@ -11,11 +11,30 @@ export type PoolSummary = {
   payoutRule: 'winner_takes_all' | 'top_3_split' | 'manual'
   total: number
   transactionCount: number
+  creatorDisplayName: string | null
+  creatorEmail: string | null
 }
 
 export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
-  const group = await db.query.groups.findFirst({ where: eq(groups.id, groupId) })
-  if (!group) {
+  // Join the creator's profile so we can reveal who exactly is collecting the
+  // money before a member scans the QR. This is the central trust signal for
+  // "you're sending real cash to a real person, not to the app".
+  const [row] = await db
+    .select({
+      poolEnabled: groups.poolEnabled,
+      poolCurrency: groups.poolCurrency,
+      poolBuyInAmount: groups.poolBuyInAmount,
+      poolQrUrl: groups.poolQrUrl,
+      poolPayoutRule: groups.poolPayoutRule,
+      creatorDisplayName: profiles.displayName,
+      creatorEmail: profiles.email,
+    })
+    .from(groups)
+    .leftJoin(profiles, eq(profiles.id, groups.createdBy))
+    .where(eq(groups.id, groupId))
+    .limit(1)
+
+  if (!row) {
     return {
       enabled: false,
       currency: null,
@@ -24,6 +43,8 @@ export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
       payoutRule: 'winner_takes_all',
       total: 0,
       transactionCount: 0,
+      creatorDisplayName: null,
+      creatorEmail: null,
     }
   }
   const [agg] = await db
@@ -35,13 +56,15 @@ export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
     .where(eq(poolTransactions.groupId, groupId))
 
   return {
-    enabled: group.poolEnabled,
-    currency: group.poolCurrency,
-    buyInAmount: Number(group.poolBuyInAmount),
-    qrUrl: group.poolQrUrl,
-    payoutRule: group.poolPayoutRule,
+    enabled: row.poolEnabled,
+    currency: row.poolCurrency,
+    buyInAmount: Number(row.poolBuyInAmount),
+    qrUrl: row.poolQrUrl,
+    payoutRule: row.poolPayoutRule,
     total: Number(agg?.total ?? 0),
     transactionCount: agg?.count ?? 0,
+    creatorDisplayName: row.creatorDisplayName,
+    creatorEmail: row.creatorEmail,
   }
 }
 

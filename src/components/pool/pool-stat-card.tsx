@@ -59,7 +59,15 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
               </span>
             </p>
           </div>
-          {pool.qrUrl && <PoolQrDialog qrUrl={pool.qrUrl} />}
+          {pool.qrUrl && (
+            <PoolQrDialog
+              qrUrl={pool.qrUrl}
+              currency={currency}
+              buyInAmount={pool.buyInAmount}
+              creatorDisplayName={pool.creatorDisplayName}
+              creatorEmail={pool.creatorEmail}
+            />
+          )}
         </div>
       </div>
 

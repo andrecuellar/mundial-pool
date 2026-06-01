@@ -33,6 +33,7 @@ export default async function AdminUsersPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
+              <TableHead>Estado</TableHead>
               <TableHead className="hidden sm:table-cell">Email</TableHead>
               <TableHead className="hidden md:table-cell">Provider</TableHead>
               <TableHead className="text-right">Grupos</TableHead>
@@ -50,6 +51,20 @@ export default async function AdminUsersPage() {
                     <Link href={`/admin/usuarios/${p.id}`} className="font-medium hover:underline">
                       {p.displayName}
                     </Link>
+                  </TableCell>
+                  <TableCell>
+                    {p.bannedAt ? (
+                      <Badge
+                        variant="secondary"
+                        className="border-destructive/40 bg-destructive/10 text-destructive text-[10px]"
+                      >
+                        Baneado
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary" className="text-[10px]">
+                        Activo
+                      </Badge>
+                    )}
                   </TableCell>
                   <TableCell className="hidden sm:table-cell text-xs text-muted-foreground">
                     {auth?.email ?? p.email ?? '—'}

@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { BanUserButton } from '@/components/admin/ban-user-button'
 import { AdminDataTable } from '@/components/admin/data-table'
 import { BackLink } from '@/components/app-shell/back-link'
 import { Badge } from '@/components/ui/badge'
@@ -14,6 +15,7 @@ import {
 } from '@/components/ui/table'
 import { getAuthUser } from '@/features/admin/auth-queries'
 import { getAdminUserDetail } from '@/features/admin/queries'
+import { isSuperAdminEmail } from '@/lib/admin'
 import { formatDayTime } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -30,17 +32,48 @@ export default async function AdminUserDetailPage({ params }: Params) {
     <div className="space-y-6">
       <BackLink href="/admin/usuarios" label="Usuarios" />
 
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{p.displayName}</h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {auth?.email ?? p.email ?? 'Sin email'}{' '}
-          {auth?.provider && (
-            <Badge variant="secondary" className="ml-2 text-[10px]">
-              {auth.provider}
-            </Badge>
-          )}
-        </p>
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">{p.displayName}</h1>
+            {p.bannedAt && (
+              <Badge
+                variant="secondary"
+                className="border-destructive/40 bg-destructive/10 text-destructive"
+              >
+                Baneado
+              </Badge>
+            )}
+          </div>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {auth?.email ?? p.email ?? 'Sin email'}{' '}
+            {auth?.provider && (
+              <Badge variant="secondary" className="ml-2 text-[10px]">
+                {auth.provider}
+              </Badge>
+            )}
+          </p>
+        </div>
+        {!isSuperAdminEmail(p.email ?? auth?.email ?? null) && (
+          <BanUserButton userId={p.id} displayName={p.displayName} isBanned={p.bannedAt !== null} />
+        )}
       </div>
+
+      {p.bannedAt && (
+        <div className="rounded-lg border border-destructive/40 bg-destructive/5 p-4">
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-destructive">
+            Estado del baneo
+          </p>
+          <p className="mt-1 text-sm">
+            Baneado el <span className="font-mono">{formatDayTime(p.bannedAt)}</span>
+          </p>
+          {p.bannedReason && (
+            <p className="mt-2 text-sm">
+              <span className="text-muted-foreground">Motivo:</span> {p.bannedReason}
+            </p>
+          )}
+        </div>
+      )}
 
       <div className="grid gap-3 grid-cols-2 sm:grid-cols-4">
         <Card className="p-4">

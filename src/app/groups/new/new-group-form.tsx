@@ -3,6 +3,7 @@
 import { ArrowRight } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -85,6 +86,9 @@ export function NewGroupForm() {
 
         {poolEnabled && (
           <div className="grid gap-3 sm:grid-cols-2">
+            <div className="sm:col-span-2">
+              <PoolDisclaimer variant="form" />
+            </div>
             <div className="space-y-1.5">
               <Label htmlFor="poolCurrency" className="text-xs">
                 Moneda

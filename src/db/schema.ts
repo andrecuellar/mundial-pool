@@ -43,6 +43,9 @@ export const profiles = pgTable('profiles', {
   avatarUrl: text('avatar_url'),
   email: text('email'),
   onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
+  bannedAt: timestamp('banned_at', { withTimezone: true }),
+  bannedReason: text('banned_reason'),
+  bannedByUserId: uuid('banned_by_user_id'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
