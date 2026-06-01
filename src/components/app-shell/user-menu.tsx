@@ -1,6 +1,8 @@
 'use client'
 
-import { LogOut } from 'lucide-react'
+import { LogOut, ShieldCheck, User as UserIcon } from 'lucide-react'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -15,6 +17,8 @@ type Props = {
   name: string
   email: string | null
   avatarUrl: string | null
+  /** True when the signed-in user is in SUPER_ADMIN_EMAILS. */
+  isAdmin?: boolean
 }
 
 function initials(name: string): string {
@@ -28,7 +32,10 @@ function initials(name: string): string {
   )
 }
 
-export function UserMenu({ name, email, avatarUrl }: Props) {
+export function UserMenu({ name, email, avatarUrl, isAdmin = false }: Props) {
+  const pathname = usePathname()
+  const inAdmin = pathname?.startsWith('/admin') ?? false
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger className="flex items-center gap-2.5 outline-none focus-visible:ring-2 focus-visible:ring-ring rounded-full">
@@ -43,6 +50,26 @@ export function UserMenu({ name, email, avatarUrl }: Props) {
           <div className="text-sm font-medium truncate">{name}</div>
           {email && <div className="text-xs text-muted-foreground truncate">{email}</div>}
         </div>
+        {isAdmin && (
+          <>
+            <DropdownMenuSeparator />
+            <DropdownMenuItem asChild>
+              <Link href={inAdmin ? '/' : '/admin'} className="w-full cursor-pointer">
+                {inAdmin ? (
+                  <>
+                    <UserIcon className="h-4 w-4" />
+                    Volver al modo jugador
+                  </>
+                ) : (
+                  <>
+                    <ShieldCheck className="h-4 w-4 text-warning" />
+                    Modo superadmin
+                  </>
+                )}
+              </Link>
+            </DropdownMenuItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <form action={signOut}>
           <DropdownMenuItem asChild>

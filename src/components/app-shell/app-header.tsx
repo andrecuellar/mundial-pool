@@ -1,5 +1,6 @@
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import Link from 'next/link'
+import { isSuperAdminEmail } from '@/lib/admin'
 import { ThemeToggle } from './theme-toggle'
 import { UserMenu } from './user-menu'
 import { Wordmark } from './wordmark'
@@ -59,7 +60,12 @@ export function AppHeader({ user, breadcrumb }: Props) {
       </div>
       <div className="flex items-center gap-1">
         <ThemeToggle />
-        <UserMenu name={user.name} email={user.email} avatarUrl={user.avatarUrl} />
+        <UserMenu
+          name={user.name}
+          email={user.email}
+          avatarUrl={user.avatarUrl}
+          isAdmin={isSuperAdminEmail(user.email)}
+        />
       </div>
     </header>
   )
