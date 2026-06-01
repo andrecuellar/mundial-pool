@@ -8,7 +8,7 @@ import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { ReactionBar } from '@/components/predictions/reaction-bar'
 import type { AllPredictionsPick } from '@/features/predictions/queries'
-import type { ReactionBucket } from '@/features/reactions/queries'
+import type { ReactionBucket } from '@/features/reactions/types'
 
 function initials(name: string): string {
   return (

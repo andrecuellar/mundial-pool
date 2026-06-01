@@ -4,11 +4,8 @@ import { and, eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { groups, predictionReactions, predictions } from '@/db/schema'
-import {
-  ALLOWED_REACTION_EMOJIS,
-  type ReactionEmoji,
-  isUserInPredictionGroup,
-} from '@/features/reactions/queries'
+import { isUserInPredictionGroup } from '@/features/reactions/queries'
+import { ALLOWED_REACTION_EMOJIS, type ReactionEmoji } from '@/features/reactions/types'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export type ToggleResult = { ok: true; nowReacted: boolean } | { ok: false; error: string }

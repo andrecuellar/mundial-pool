@@ -9,7 +9,7 @@ import {
   ALLOWED_REACTION_EMOJIS,
   type ReactionBucket,
   type ReactionEmoji,
-} from '@/features/reactions/queries'
+} from '@/features/reactions/types'
 
 type Props = {
   predictionId: string

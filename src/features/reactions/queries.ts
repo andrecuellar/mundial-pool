@@ -1,16 +1,8 @@
+import 'server-only'
 import { and, eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
 import { groupMembers, predictionReactions, predictions, profiles } from '@/db/schema'
-
-export const ALLOWED_REACTION_EMOJIS = ['🔥', '😂', '💀', '👀', '🤡', '🤌'] as const
-export type ReactionEmoji = (typeof ALLOWED_REACTION_EMOJIS)[number]
-
-export type ReactionBucket = {
-  emoji: string
-  count: number
-  reactedByMe: boolean
-  reactors: string[] // display names
-}
+import type { ReactionBucket } from '@/features/reactions/types'
 
 export type PredictionReactionsKey = string // `${userId}-${categoryId}`
 
