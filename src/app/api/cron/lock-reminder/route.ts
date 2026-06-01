@@ -18,13 +18,16 @@ function isAuthorized(req: Request): boolean {
 
 const TOTAL_CATEGORIES = 14
 
-type Window = { label: '24h' | '1h' | 'just_locked'; fromMs: number; toMs: number }
+// Hobby plan allows only daily crons, so we widen the windows to make sure
+// each group gets its reminder once. Cron runs at 10:00 UTC.
+type Window = { label: 'tomorrow' | 'just_locked'; fromMs: number; toMs: number }
 
 function nextWindows(now: number): Window[] {
   return [
-    { label: '24h', fromMs: now + 23 * 60 * 60 * 1000, toMs: now + 25 * 60 * 60 * 1000 },
-    { label: '1h', fromMs: now + 30 * 60 * 1000, toMs: now + 70 * 60 * 1000 },
-    { label: 'just_locked', fromMs: now - 70 * 60 * 1000, toMs: now - 30 * 60 * 1000 },
+    // Lock falls between now+10h and now+34h → "your lock is tomorrow-ish".
+    { label: 'tomorrow', fromMs: now + 10 * 60 * 60 * 1000, toMs: now + 34 * 60 * 60 * 1000 },
+    // Lock happened in the last 24h → "predictions are now locked".
+    { label: 'just_locked', fromMs: now - 24 * 60 * 60 * 1000, toMs: now },
   ]
 }
 
@@ -88,16 +91,10 @@ async function handle(req: Request) {
       const pendingUsers = allMembers.map((m) => m.userId).filter((id) => !completedUsers.has(id))
       if (pendingUsers.length === 0) continue
 
-      const copy =
-        window.label === '24h'
-          ? {
-              title: '⏰ Te queda 1 día',
-              body: `No olvides cerrar tus picks de "${g.name}" antes del cierre.`,
-            }
-          : {
-              title: '🚨 Última hora',
-              body: `Tus predicciones de "${g.name}" cierran en menos de 1 hora.`,
-            }
+      const copy = {
+        title: '⏰ Tu lock está cerca',
+        body: `No olvides cerrar tus picks de "${g.name}" antes del cierre.`,
+      }
 
       await sendPushToUsers(pendingUsers, {
         title: copy.title,
