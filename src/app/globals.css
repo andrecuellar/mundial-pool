@@ -212,10 +212,15 @@
 @media (hover: hover) {
   .hover-lift:hover {
     transform: translateY(-2px);
-    border-color: color-mix(in oklch, var(--foreground) 22%, var(--border));
-    background-color: color-mix(in oklch, var(--muted) 40%, var(--card));
-    box-shadow: 0 10px 28px -10px color-mix(in oklch, var(--foreground) 18%, transparent);
+    border-color: hsl(220 60% 55% / 0.45);
+    background-color: hsl(220 30% 18% / 0.35);
+    box-shadow: 0 10px 28px -10px hsl(220 50% 35% / 0.45);
   }
+}
+:root.light .hover-lift:hover,
+:root:not(.dark) .hover-lift:hover {
+  background-color: hsl(220 50% 95% / 0.6);
+  box-shadow: 0 10px 28px -10px hsl(220 60% 40% / 0.18);
 }
 .hover-lift:active {
   transform: translateY(0) scale(0.99);
