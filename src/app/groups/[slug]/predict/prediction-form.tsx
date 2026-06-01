@@ -41,6 +41,68 @@ const PLAYER_MANUAL_CATEGORIES: ReadonlySet<PlayerCategoryKey> = new Set([
   'young_player',
 ])
 
+// Per-category "Sugerencias" surfaced at the top of the player combobox when
+// the user opens it without typing. These are patterns matched against the
+// player's normalized full name; the first hit per pattern wins, and the
+// suggestions also get filtered out of the main list to avoid duplication.
+// Picks are based on form going into the 2026 World Cup — recent goal-scoring,
+// awards, and tournament expectations.
+const PLAYER_SUGGESTIONS: Record<PlayerCategoryKey, string[]> = {
+  top_scorer_player: [
+    'mbappé',
+    'haaland',
+    'harry kane',
+    'lautaro martínez',
+    'julián álvarez',
+    'vinícius',
+    'messi',
+    'cristiano ronaldo',
+    'lamine yamal',
+    'lukaku',
+  ],
+  top_assists_player: [
+    'lamine yamal',
+    'messi',
+    'bruno fernandes',
+    'kevin de bruyne',
+    'bellingham',
+    'bernardo silva',
+    'foden',
+    'pedri',
+    'saka',
+  ],
+  golden_ball: [
+    'mbappé',
+    'bellingham',
+    'rodri',
+    'vinícius',
+    'haaland',
+    'messi',
+    'lamine yamal',
+    'pedri',
+    'musiala',
+  ],
+  golden_glove: [
+    'emiliano martínez',
+    'courtois',
+    'alisson',
+    'maignan',
+    'unai simón',
+    'pickford',
+    'ederson',
+  ],
+  young_player: [
+    'lamine yamal',
+    'endrick',
+    'cubarsí',
+    'estêvão',
+    'doué',
+    'zaïre-emery',
+    'arda güler',
+    'musiala',
+  ],
+}
+
 function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
   const updatePassed = new Date() >= FIFA_FINAL_UPDATE
   return (
@@ -613,6 +675,11 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                           : c.key === 'golden_glove'
                             ? 'Buscar arquero o escribir nombre…'
                             : 'Buscar jugador o escribir nombre…'
+                      }
+                      suggestedNamePatterns={
+                        PLAYER_MANUAL_CATEGORIES.has(c.key as PlayerCategoryKey)
+                          ? PLAYER_SUGGESTIONS[c.key as PlayerCategoryKey]
+                          : undefined
                       }
                     />
                     {c.key === 'young_player' && (
