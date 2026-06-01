@@ -1,10 +1,11 @@
-import { and, count, eq } from 'drizzle-orm'
+import { and, count, desc, eq } from 'drizzle-orm'
 import { ChevronRight, Lock, Share2, Sparkles, Users } from 'lucide-react'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
+import { ResultCelebration } from '@/components/celebrations/result-celebration'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
 import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { ShareButton } from '@/components/groups/share-button'
@@ -13,9 +14,13 @@ import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupMembers, groups, predictions, profiles } from '@/db/schema'
+import { groupMembers, groups, predictions, profiles, results } from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
-import { getLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
+import {
+  getLeaderboard,
+  getNewlyResolvedPicksForUser,
+  getUserCategoryBreakdown,
+} from '@/features/scoring/queries'
 import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -65,6 +70,7 @@ export default async function GroupPage({ params }: Params) {
     allMembers,
     myPredictions,
     myBreakdown,
+    [latestResolution],
   ] = await Promise.all([
     getLeaderboard(group.id),
     getPoolSummary(group.id),
@@ -81,7 +87,25 @@ export default async function GroupPage({ params }: Params) {
       .from(predictions)
       .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
     getUserCategoryBreakdown(group.id, user.id),
+    db
+      .select({ resolvedAt: results.resolvedAt })
+      .from(results)
+      .orderBy(desc(results.resolvedAt))
+      .limit(1),
   ])
+  const latestResolvedAt = latestResolution?.resolvedAt ?? null
+  // All-time wins for the user. The client compares latestResolvedAt against
+  // localStorage to decide whether to celebrate (so this is cheap to send).
+  const recentWins =
+    latestResolvedAt && myBreakdown.length > 0
+      ? myBreakdown
+          .filter((r) => r.status === 'correct' && r.earnedPoints > 0)
+          .map((r) => ({
+            categoryKey: r.key,
+            categoryName: r.name,
+            earnedPoints: r.earnedPoints,
+          }))
+      : []
 
   const locked = new Date() >= group.predictionsLockAt
   const days = daysUntil(group.predictionsLockAt)
@@ -115,6 +139,12 @@ export default async function GroupPage({ params }: Params) {
       <AppHeader
         user={{ name: displayName, email: user.email ?? null, avatarUrl }}
         breadcrumb={[{ label: group.name }]}
+      />
+
+      <ResultCelebration
+        groupId={group.id}
+        latestResolvedAt={latestResolvedAt ? latestResolvedAt.toISOString() : null}
+        recentWins={recentWins}
       />
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">

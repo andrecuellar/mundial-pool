@@ -1,4 +1,4 @@
-import { and, eq, sql } from 'drizzle-orm'
+import { and, eq, gt, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { categories, groupCategories, predictions, results, teams } from '@/db/schema'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
@@ -161,4 +161,96 @@ export async function getUserCategoryBreakdown(
       earnedPoints,
     }
   })
+}
+
+export type RecentCorrectPick = {
+  categoryKey: string
+  categoryName: string
+  earnedPoints: number
+}
+
+/**
+ * Returns the user's picks that became correct since `since`. Used by the
+ * celebration component on the group page to fire confetti when there are
+ * brand-new wins to celebrate.
+ */
+export async function getNewlyResolvedPicksForUser(
+  groupId: string,
+  userId: string,
+  since: Date | null,
+): Promise<RecentCorrectPick[]> {
+  // Only look at results resolved after `since` to keep the comparison cheap.
+  const recentResults = await db
+    .select({
+      categoryId: results.categoryId,
+      teamId: results.teamId,
+      teamSet: results.teamSet,
+      playerText: results.playerText,
+    })
+    .from(results)
+    .where(since ? gt(results.resolvedAt, since) : undefined)
+  if (recentResults.length === 0) return []
+
+  const catIds = recentResults.map((r) => r.categoryId)
+  const [catRows, predRows] = await Promise.all([
+    db
+      .select({
+        id: categories.id,
+        key: categories.key,
+        name: categories.name,
+        valueKind: categories.valueKind,
+        points: groupCategories.points,
+      })
+      .from(categories)
+      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+      .where(eq(groupCategories.groupId, groupId)),
+    db
+      .select({
+        categoryId: predictions.categoryId,
+        teamId: predictions.teamId,
+        teamSet: predictions.teamSet,
+        playerText: predictions.playerText,
+      })
+      .from(predictions)
+      .where(
+        and(eq(predictions.groupId, groupId), eq(predictions.userId, userId)),
+      ),
+  ])
+
+  const catMap = new Map(catRows.map((c) => [c.id, c]))
+  const predMap = new Map(predRows.map((p) => [p.categoryId, p]))
+
+  const wins: RecentCorrectPick[] = []
+  for (const result of recentResults) {
+    if (!catIds.includes(result.categoryId)) continue
+    const cat = catMap.get(result.categoryId)
+    const pick = predMap.get(result.categoryId)
+    if (!cat || !pick) continue
+
+    let correct = false
+    let earned = 0
+    if (cat.valueKind === 'team' && pick.teamId && result.teamId) {
+      correct = pick.teamId === result.teamId
+      if (correct) earned = cat.points
+    } else if (cat.valueKind === 'player' && pick.playerText && result.playerText) {
+      const pickPlayer = pick.playerText.trim().toLowerCase()
+      const resultPlayer = result.playerText.trim().toLowerCase()
+      correct = pickPlayer === resultPlayer
+      if (correct) earned = cat.points
+    } else if (cat.valueKind === 'team_set') {
+      const pickSet = new Set((pick.teamSet as string[] | null) ?? [])
+      const resultSet = new Set((result.teamSet as string[] | null) ?? [])
+      let hits = 0
+      for (const id of pickSet) if (resultSet.has(id)) hits++
+      if (hits > 0) {
+        correct = true
+        earned = hits * cat.points
+      }
+    }
+
+    if (correct && earned > 0) {
+      wins.push({ categoryKey: cat.key, categoryName: cat.name, earnedPoints: earned })
+    }
+  }
+  return wins
 }

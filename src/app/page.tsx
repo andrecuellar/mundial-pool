@@ -4,12 +4,14 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
+import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PoolChip } from '@/components/pool/pool-chip'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupMembers, groups, poolTransactions } from '@/db/schema'
+import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -21,6 +23,12 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const myProfile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id),
+    columns: { onboardedAt: true },
+  })
+  const shouldOnboard = !myProfile?.onboardedAt
 
   const myGroups = await db
     .select({
@@ -68,6 +76,8 @@ export default async function Home() {
   return (
     <>
       <AppHeader user={{ name: displayName, email: user.email ?? null, avatarUrl }} />
+      <OnboardingModal shouldShow={shouldOnboard} />
+      <InstallPrompt />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         <div className="flex items-baseline justify-between gap-3">

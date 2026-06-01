@@ -42,6 +42,7 @@ export const profiles = pgTable('profiles', {
   displayName: text('display_name').notNull(),
   avatarUrl: text('avatar_url'),
   email: text('email'),
+  onboardedAt: timestamp('onboarded_at', { withTimezone: true }),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
