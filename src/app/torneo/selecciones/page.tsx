@@ -97,8 +97,8 @@ export default async function TableSeleccionesPage() {
             <span className="font-medium text-foreground">
               Los goles de la tanda de penales NO cuentan
             </span>{' '}
-            — el shootout es solo un mecanismo de desempate y el marcador oficial del partido queda
-            como empate.
+            — la tanda de penales es solo un mecanismo de desempate y el marcador oficial del
+            partido queda como empate.
           </p>
         </Card>
 

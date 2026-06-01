@@ -49,12 +49,12 @@ export default async function TableJugadoresPage() {
             </li>
             <li>
               <span className="font-medium text-foreground">Goles en la tanda de penales</span>:{' '}
-              <span className="text-destructive font-medium">no cuentan</span>. El shootout es solo
-              un desempate, no parte del partido.
+              <span className="text-destructive font-medium">no cuentan</span>. La tanda de
+              penales es solo un desempate, no parte del partido.
             </li>
             <li>
               <span className="font-medium text-foreground">Asistencias</span>: igual criterio —
-              cuentan las del partido (regulación + prórroga), no las del shootout.
+              cuentan las del partido (regulación + prórroga), no las de la tanda de penales.
             </li>
             <li>
               <span className="font-medium text-foreground">Autogoles</span>: cuentan para el equipo
