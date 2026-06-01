@@ -263,8 +263,8 @@ export default async function GroupPage({ params }: Params) {
             return (
               <Link href={`/groups/${slug}/predict`} className="block h-full">
                 <Card
-                  className={`hover-lift relative flex h-full flex-col overflow-hidden p-5 ${
-                    shouldGlow ? 'mp-glow-border' : ''
+                  className={`relative flex h-full flex-col overflow-hidden p-5 ${
+                    shouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
                   }`}
                 >
                   <div className="relative z-10 flex items-start justify-between gap-3">

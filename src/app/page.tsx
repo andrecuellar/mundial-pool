@@ -184,7 +184,7 @@ export default async function Home() {
           <div className="mt-2 grid gap-2 sm:grid-cols-2">
             <Link
               href="/torneo/selecciones"
-              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+              className="hover-lift group flex items-start gap-3 rounded-xl border border-border bg-card p-4"
             >
               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
               <div className="min-w-0">
@@ -196,7 +196,7 @@ export default async function Home() {
             </Link>
             <Link
               href="/torneo/jugadores"
-              className="group flex items-start gap-3 rounded-xl border border-border bg-card p-4 transition-colors hover:border-primary/40 hover:bg-muted/30"
+              className="hover-lift group flex items-start gap-3 rounded-xl border border-border bg-card p-4"
             >
               <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
               <div className="min-w-0">
