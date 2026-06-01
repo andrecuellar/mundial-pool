@@ -14,13 +14,12 @@ export function ServiceWorkerRegistration() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     if (!('serviceWorker' in navigator)) return
-    // Defer slightly so the page paint isn't blocked.
-    const id = window.setTimeout(() => {
-      navigator.serviceWorker
-        .register('/sw.js')
-        .catch((e) => console.error('SW register failed', e))
-    }, 1500)
-    return () => window.clearTimeout(id)
+    // Register immediately so Chrome's PWA install eligibility (which needs
+    // an active SW) is met as early as possible. Non-blocking — the promise
+    // doesn't gate any other work.
+    navigator.serviceWorker
+      .register('/sw.js')
+      .catch((e) => console.error('SW register failed', e))
   }, [])
   return null
 }

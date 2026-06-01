@@ -105,6 +105,34 @@ export function PushOptIn({ vapidPublicKey }: Props) {
     setState('dismissed')
   }
 
+  if (state === 'denied') {
+    return (
+      <Card className="mb-4 border-warning/30 bg-warning/5 p-4">
+        <div className="flex items-start gap-3">
+          <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning">
+            <BellOff className="h-4 w-4" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-sm font-medium">Notificaciones bloqueadas</p>
+            <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+              Las notificaciones del navegador están desactivadas para este sitio. Para
+              activarlas, abre el candado/icono junto a la URL, busca "Notificaciones" y elige
+              "Permitir". Después recarga la página.
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={dismiss}
+            aria-label="Cerrar"
+            className="shrink-0 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+          >
+            <X className="h-3.5 w-3.5" />
+          </button>
+        </div>
+      </Card>
+    )
+  }
+
   if (state !== 'prompt') return null
 
   return (
