@@ -640,7 +640,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
       </div>
 
       {!locked && (
-        <Card className="mt-5 flex items-center justify-between gap-4 border-primary/20 bg-primary/5 p-5">
+        <Card className="mt-5 hidden items-center justify-between gap-4 border-primary/20 bg-primary/5 p-5 sm:flex">
           <div>
             <p className="text-sm font-medium">Guardar mis predicciones</p>
             <p className="text-xs text-muted-foreground">

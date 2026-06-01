@@ -1,14 +1,8 @@
-import { QrCode, Wallet } from 'lucide-react'
+import { Wallet } from 'lucide-react'
 import Link from 'next/link'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog'
+import { PoolQrDialog } from '@/components/pool/pool-qr-dialog'
 import type { PayoutEntry, PoolSummary } from '@/features/pool/queries'
 import { formatMoney, payoutRuleLabel } from '@/lib/format'
 
@@ -59,31 +53,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
               {payoutRuleLabel(pool.payoutRule)}
             </p>
           </div>
-          {pool.qrUrl && (
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="secondary" size="sm" type="button">
-                  <QrCode className="h-3.5 w-3.5" />
-                  Ver QR
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-sm">
-                <DialogHeader>
-                  <DialogTitle>Aporta al pozo</DialogTitle>
-                </DialogHeader>
-                {/* biome-ignore lint/performance/noImgElement: external QR */}
-                <img
-                  src={pool.qrUrl}
-                  alt="QR de depósito"
-                  className="w-full rounded-lg border border-border"
-                />
-                <p className="text-xs text-muted-foreground">
-                  Escanea con tu app bancaria. Avísale al admin del grupo para que registre tu
-                  depósito.
-                </p>
-              </DialogContent>
-            </Dialog>
-          )}
+          {pool.qrUrl && <PoolQrDialog qrUrl={pool.qrUrl} />}
         </div>
       </div>
 

@@ -2,6 +2,7 @@
 
 import { ArrowRight, Info, Trophy, X } from 'lucide-react'
 import { useState } from 'react'
+import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -27,6 +28,7 @@ type Props = {
 
 export function RevelationCriteriaDialog({ size = 'sm', className }: Props) {
   const [open, setOpen] = useState(false)
+  useDialogBackButton(open, setOpen)
   const iconSize = size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5'
 
   return (
@@ -62,6 +64,7 @@ type LinkProps = {
 
 export function RevelationCriteriaLink({ kind, className }: LinkProps) {
   const [open, setOpen] = useState(false)
+  useDialogBackButton(open, setOpen)
   const label =
     kind === 'revelation'
       ? 'Haz click aquí para ver cómo decidiremos la selección revelación.'

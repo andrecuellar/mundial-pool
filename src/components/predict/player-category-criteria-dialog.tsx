@@ -2,6 +2,7 @@
 
 import { ExternalLink, Info, X } from 'lucide-react'
 import { useState } from 'react'
+import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -87,6 +88,7 @@ type Props = {
 
 export function PlayerCategoryCriteriaDialog({ kind, size = 'sm', className }: Props) {
   const [open, setOpen] = useState(false)
+  useDialogBackButton(open, setOpen)
   const iconSize = size === 'md' ? 'h-4 w-4' : 'h-3.5 w-3.5'
   const c = COPY[kind]
 
