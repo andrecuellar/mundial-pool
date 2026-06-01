@@ -64,8 +64,8 @@ export default async function TableSeleccionesPage() {
           <ol className="list-decimal pl-5 space-y-2 text-foreground">
             <li>
               <span className="font-medium">Etapa alcanzada</span>: campeón → subcampeón → tercero →
-              cuarto → perdedores de cuartos → perdedores de octavos → perdedores de R32 →
-              eliminados en grupos.
+              cuarto → perdedores de cuartos → perdedores de octavos → perdedores de
+              dieciseisavos → eliminados en grupos.
             </li>
             <li>
               <span className="font-medium">Dentro de los brackets de eliminación directa</span> (5-8,
