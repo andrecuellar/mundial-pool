@@ -259,6 +259,30 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
   return { members, categories: cats, picks }
 }
 
+/**
+ * Plain serialisable shape of getAllGroupPredictions, for passing across the
+ * server→client boundary (Maps don't survive RSC props).
+ */
+export type AllPredictionsViewSerialised = {
+  members: AllPredictionsMember[]
+  categories: AllPredictionsCategory[]
+  picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>>
+}
+
+export function serialiseAllPredictionsView(
+  view: AllPredictionsView,
+): AllPredictionsViewSerialised {
+  const picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>> = {}
+  for (const [memberId, byCat] of view.picks) {
+    picksByMemberCategory[memberId] = Object.fromEntries(byCat)
+  }
+  return {
+    members: view.members,
+    categories: view.categories,
+    picksByMemberCategory,
+  }
+}
+
 export type UserComprobante = {
   categories: AllPredictionsCategory[]
   picks: Map<string, AllPredictionsPick>

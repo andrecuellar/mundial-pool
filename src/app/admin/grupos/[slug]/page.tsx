@@ -14,7 +14,10 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getAdminGroupDetail } from '@/features/admin/queries'
-import { getAllGroupPredictions } from '@/features/predictions/queries'
+import {
+  getAllGroupPredictions,
+  serialiseAllPredictionsView,
+} from '@/features/predictions/queries'
 import { formatDayTime } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -28,7 +31,8 @@ export default async function AdminGroupDetailPage({ params }: Params) {
 
   // Reuse the public matrix view so admins see the exact same shape members
   // would after lock.
-  const predictionsView = await getAllGroupPredictions(detail.group.id)
+  const rawPredictionsView = await getAllGroupPredictions(detail.group.id)
+  const predictionsView = serialiseAllPredictionsView(rawPredictionsView)
 
   return (
     <div className="space-y-6">

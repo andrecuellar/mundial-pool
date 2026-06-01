@@ -7,7 +7,10 @@ import { AllPredictionsView } from '@/components/predictions/all-predictions-vie
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
-import { getAllGroupPredictions } from '@/features/predictions/queries'
+import {
+  getAllGroupPredictions,
+  serialiseAllPredictionsView,
+} from '@/features/predictions/queries'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -36,7 +39,8 @@ export default async function PredictionsPage({ params }: Params) {
   const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
 
   const locked = new Date() >= group.predictionsLockAt
-  const view = locked ? await getAllGroupPredictions(group.id) : null
+  const rawView = locked ? await getAllGroupPredictions(group.id) : null
+  const view = rawView ? serialiseAllPredictionsView(rawView) : null
 
   return (
     <>

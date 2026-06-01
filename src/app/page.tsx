@@ -3,6 +3,7 @@ import { ChevronRight, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { PoolChip } from '@/components/pool/pool-chip'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -85,6 +86,24 @@ export default async function Home() {
             🤌🏽
           </span>
         </div>
+
+        {(() => {
+          // Show one countdown — the nearest still-open lock among my groups.
+          const now = Date.now()
+          const next = myGroups
+            .map((g) => ({ name: g.name, ts: g.predictionsLockAt.getTime() }))
+            .filter((g) => g.ts > now)
+            .sort((a, b) => a.ts - b.ts)[0]
+          if (!next) return null
+          return (
+            <div className="mt-4">
+              <CountdownBanner
+                lockAt={new Date(next.ts).toISOString()}
+                groupName={next.name}
+              />
+            </div>
+          )
+        })()}
 
         {myGroups.length === 0 ? (
           <Card className="mt-8 flex flex-col items-center gap-3 p-10 text-center">

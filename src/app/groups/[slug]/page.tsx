@@ -4,7 +4,9 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
+import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
+import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { ShareButton } from '@/components/groups/share-button'
 import { PoolStatCard } from '@/components/pool/pool-stat-card'
 import { Badge } from '@/components/ui/badge'
@@ -13,7 +15,7 @@ import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, predictions, profiles } from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
-import { getLeaderboard } from '@/features/scoring/queries'
+import { getLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
 import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -55,23 +57,31 @@ export default async function GroupPage({ params }: Params) {
   // name. The only entry into a group is via the invite code at /groups/join.
   if (!membership) notFound()
 
-  const [leaderboard, pool, payoutPreview, [memberCountRow], allMembers, myPredictions] =
-    await Promise.all([
-      getLeaderboard(group.id),
-      getPoolSummary(group.id),
-      computePayout(group.id),
-      db.select({ count: count() }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
-      db
-        .select({ displayName: profiles.displayName, avatarUrl: profiles.avatarUrl })
-        .from(groupMembers)
-        .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
-        .where(eq(groupMembers.groupId, group.id))
-        .limit(10),
-      db
-        .select({ count: count() })
-        .from(predictions)
-        .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
-    ])
+  const [
+    leaderboard,
+    pool,
+    payoutPreview,
+    [memberCountRow],
+    allMembers,
+    myPredictions,
+    myBreakdown,
+  ] = await Promise.all([
+    getLeaderboard(group.id),
+    getPoolSummary(group.id),
+    computePayout(group.id),
+    db.select({ count: count() }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
+    db
+      .select({ displayName: profiles.displayName, avatarUrl: profiles.avatarUrl })
+      .from(groupMembers)
+      .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
+      .where(eq(groupMembers.groupId, group.id))
+      .limit(10),
+    db
+      .select({ count: count() })
+      .from(predictions)
+      .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
+    getUserCategoryBreakdown(group.id, user.id),
+  ])
 
   const locked = new Date() >= group.predictionsLockAt
   const days = daysUntil(group.predictionsLockAt)
@@ -109,6 +119,20 @@ export default async function GroupPage({ params }: Params) {
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href="/" label="Mis grupos" className="mb-4" />
+
+        {!locked && (
+          <div className="mb-4">
+            <CountdownBanner
+              lockAt={group.predictionsLockAt.toISOString()}
+              groupName={group.name}
+              context={
+                completedCount === totalPredictions
+                  ? '¡tus picks están listas!'
+                  : `te faltan ${totalPredictions - completedCount} categorías`
+              }
+            />
+          </div>
+        )}
 
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
           <Card className="relative overflow-hidden border-none bg-primary p-6 sm:p-8 text-primary-foreground">
@@ -353,6 +377,16 @@ export default async function GroupPage({ params }: Params) {
             payoutPreview={payoutPreview}
             groupSlug={slug}
             isOwner={membership.role === 'owner'}
+          />
+        </div>
+
+        <div className="mt-4">
+          <PersonalStatsCard
+            rows={myBreakdown}
+            totalPoints={leaderboard.find((r) => r.userId === user.id)?.totalPoints ?? 0}
+            rank={myRank > 0 ? myRank : null}
+            rankLabel={myRank > 0 ? (myTied ? `T-${myRank}` : `#${myRank}`) : null}
+            totalPlayers={leaderboard.length}
           />
         </div>
 
