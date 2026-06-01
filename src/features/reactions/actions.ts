@@ -39,7 +39,7 @@ export async function toggleReaction(
   const { lockAt, groupSlug } = predRow[0]
 
   if (new Date() < lockAt) {
-    return { ok: false, error: 'Solo podés reaccionar después del cierre.' }
+    return { ok: false, error: 'Solo puedes reaccionar después del cierre.' }
   }
 
   const isMember = await isUserInPredictionGroup(predictionId, user.id)

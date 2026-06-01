@@ -4,6 +4,7 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
+import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PoolChip } from '@/components/pool/pool-chip'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
@@ -12,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
+import { env } from '@/lib/env'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -95,6 +97,10 @@ export default async function Home() {
           <span className="animate-chef-kiss" aria-label="chef's kiss">
             🤌🏽
           </span>
+        </div>
+
+        <div className="mt-4">
+          <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </div>
 
         {(() => {

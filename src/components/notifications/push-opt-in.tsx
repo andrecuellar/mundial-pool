@@ -114,14 +114,14 @@ export function PushOptIn({ vapidPublicKey }: Props) {
           <Bell className="h-4 w-4" />
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-medium">Activá las notificaciones del Mundial</p>
+          <p className="text-sm font-medium">Activa las notificaciones del Mundial</p>
           <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-            Recibí avisos cuando se acerque el cierre, cuando se resuelvan resultados y cuando te
-            ganes puntos.
+            Recibe avisos cuando se acerque el cierre, cuando se resuelvan resultados y cuando
+            ganes puntos en cualquiera de tus grupos.
           </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={enable} disabled={busy}>
-              {busy ? 'Activando…' : 'Activar'}
+              {busy ? 'Activando…' : 'Activar notificaciones'}
             </Button>
             <Button size="sm" variant="ghost" onClick={dismiss}>
               <BellOff className="h-3.5 w-3.5" />
