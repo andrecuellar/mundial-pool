@@ -6,6 +6,7 @@ import { getLeaderboard } from '@/features/scoring/queries'
 export type PoolSummary = {
   enabled: boolean
   currency: string | null
+  buyInAmount: number
   qrUrl: string | null
   payoutRule: 'winner_takes_all' | 'top_3_split' | 'manual'
   total: number
@@ -18,6 +19,7 @@ export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
     return {
       enabled: false,
       currency: null,
+      buyInAmount: 100,
       qrUrl: null,
       payoutRule: 'winner_takes_all',
       total: 0,
@@ -35,6 +37,7 @@ export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
   return {
     enabled: group.poolEnabled,
     currency: group.poolCurrency,
+    buyInAmount: Number(group.poolBuyInAmount),
     qrUrl: group.poolQrUrl,
     payoutRule: group.poolPayoutRule,
     total: Number(agg?.total ?? 0),

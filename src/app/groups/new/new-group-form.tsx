@@ -100,6 +100,20 @@ export function NewGroupForm() {
               </Select>
             </div>
             <div className="space-y-1.5">
+              <Label htmlFor="poolBuyInAmount" className="text-xs">
+                Aporte por jugador
+              </Label>
+              <Input
+                id="poolBuyInAmount"
+                name="poolBuyInAmount"
+                type="number"
+                step="0.01"
+                min="0.01"
+                defaultValue="100"
+                className="font-mono tabular-nums"
+              />
+            </div>
+            <div className="space-y-1.5 sm:col-span-2">
               <Label htmlFor="poolPayoutRule" className="text-xs">
                 Regla de reparto
               </Label>
@@ -115,7 +129,7 @@ export function NewGroupForm() {
               </Select>
             </div>
             <p className="text-xs text-muted-foreground sm:col-span-2">
-              El QR de depósito se sube después desde{' '}
+              Todos los miembros aportan el mismo monto. El QR de depósito se sube después desde{' '}
               <span className="font-medium text-foreground">Configurar pozo</span> en el grupo.
             </p>
           </div>

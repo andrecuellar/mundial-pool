@@ -1,8 +1,8 @@
 import { Wallet } from 'lucide-react'
 import Link from 'next/link'
+import { PoolQrDialog } from '@/components/pool/pool-qr-dialog'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
-import { PoolQrDialog } from '@/components/pool/pool-qr-dialog'
 import type { PayoutEntry, PoolSummary } from '@/features/pool/queries'
 import { formatMoney, payoutRuleLabel } from '@/lib/format'
 
@@ -52,6 +52,12 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
               {pool.transactionCount} {pool.transactionCount === 1 ? 'depósito' : 'depósitos'} ·{' '}
               {payoutRuleLabel(pool.payoutRule)}
             </p>
+            <p className="mt-2 text-xs text-muted-foreground">
+              Aporte por jugador:{' '}
+              <span className="font-medium text-foreground">
+                {formatMoney(pool.buyInAmount, currency)}
+              </span>
+            </p>
           </div>
           {pool.qrUrl && <PoolQrDialog qrUrl={pool.qrUrl} />}
         </div>
@@ -64,10 +70,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
           </p>
           <ul className="space-y-1">
             {payoutPreview.map((p) => (
-              <li
-                key={p.userId}
-                className="flex items-center justify-between gap-3 tabular-nums"
-              >
+              <li key={p.userId} className="flex items-center justify-between gap-3 tabular-nums">
                 <span className="flex min-w-0 items-center gap-2">
                   <span
                     className={`grid h-5 min-w-5 place-items-center rounded-full px-1 text-[10px] font-semibold ${

@@ -14,6 +14,7 @@ const createGroupSchema = z.object({
   predictionsLockAt: z.iso.datetime({ offset: true }).or(z.iso.datetime()),
   poolEnabled: z.boolean().optional(),
   poolCurrency: z.string().min(1).max(8).optional(),
+  poolBuyInAmount: z.number().positive().max(9_999_999_999.99).optional(),
   poolPayoutRule: z.enum(['winner_takes_all', 'top_3_split', 'manual']).optional(),
 })
 
@@ -36,11 +37,15 @@ async function requireUserId(): Promise<string> {
 
 export async function createGroup(formData: FormData): Promise<ActionResult<{ slug: string }>> {
   const poolEnabled = formData.get('poolEnabled') === 'on'
+  const rawBuyIn = formData.get('poolBuyInAmount')
+  const buyInNum =
+    typeof rawBuyIn === 'string' && rawBuyIn.length > 0 ? Number.parseFloat(rawBuyIn) : 100
   const parsed = createGroupSchema.safeParse({
     name: formData.get('name'),
     predictionsLockAt: formData.get('predictionsLockAt'),
     poolEnabled,
     poolCurrency: poolEnabled ? (formData.get('poolCurrency') ?? 'BOB') : undefined,
+    poolBuyInAmount: poolEnabled ? buyInNum : undefined,
     poolPayoutRule: poolEnabled
       ? (formData.get('poolPayoutRule') ?? 'winner_takes_all')
       : undefined,
@@ -91,6 +96,7 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
         predictionsLockAt: lockAt,
         poolEnabled: parsed.data.poolEnabled ?? false,
         poolCurrency: parsed.data.poolCurrency ?? null,
+        poolBuyInAmount: (parsed.data.poolBuyInAmount ?? 100).toFixed(2),
         poolPayoutRule: parsed.data.poolPayoutRule ?? 'winner_takes_all',
       })
       .returning()

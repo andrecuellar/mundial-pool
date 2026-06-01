@@ -14,19 +14,20 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { recordPoolTransaction } from '@/features/pool/actions'
+import { formatMoney } from '@/lib/format'
 
 type Member = { userId: string; displayName: string }
 
 type Props = {
   groupId: string
   currency: string
+  buyInAmount: number
   members: Member[]
 }
 
 const ANON_VALUE = '__anon__'
 
-export function DepositForm({ groupId, currency, members }: Props) {
-  const [amount, setAmount] = useState('')
+export function DepositForm({ groupId, currency, buyInAmount, members }: Props) {
   const [contributor, setContributor] = useState<string>(members[0]?.userId ?? ANON_VALUE)
   const [anonLabel, setAnonLabel] = useState('')
   const [note, setNote] = useState('')
@@ -34,23 +35,15 @@ export function DepositForm({ groupId, currency, members }: Props) {
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    const amountNum = Number.parseFloat(amount)
-    if (!Number.isFinite(amountNum) || amountNum <= 0) {
-      toast.error('Monto inválido')
-      return
-    }
     startTransition(async () => {
       const r = await recordPoolTransaction({
         groupId,
-        amount: amountNum,
-        currency,
         contributorUserId: contributor === ANON_VALUE ? null : contributor,
         contributorLabel: contributor === ANON_VALUE ? anonLabel || 'Anónimo' : null,
         note: note.trim() === '' ? null : note.trim(),
       })
       if (r.ok) {
         toast.success('Depósito registrado')
-        setAmount('')
         setNote('')
         setAnonLabel('')
       } else toast.error(r.error)
@@ -61,22 +54,16 @@ export function DepositForm({ groupId, currency, members }: Props) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className="space-y-2">
-        <div className="flex items-center justify-between">
-          <Label htmlFor="amount">Monto</Label>
-          <span className="font-mono text-xs text-muted-foreground">{currency}</span>
-        </div>
-        <Input
-          id="amount"
-          type="number"
-          step="0.01"
-          min="0.01"
-          value={amount}
-          onChange={(e) => setAmount(e.target.value)}
-          required
-          placeholder="200.00"
-          className="font-mono text-lg tabular-nums"
-        />
+      <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
+        <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+          Monto por jugador
+        </p>
+        <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+          {formatMoney(buyInAmount, currency)}
+        </p>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Fijo para todos. Edítalo en la configuración del pozo.
+        </p>
       </div>
 
       <div className="space-y-2">

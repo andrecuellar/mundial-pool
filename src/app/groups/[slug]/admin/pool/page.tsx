@@ -101,6 +101,7 @@ export default async function AdminPoolPage({ params }: Params) {
               initial={{
                 enabled: pool.enabled,
                 currency: pool.currency,
+                buyInAmount: pool.buyInAmount,
                 payoutRule: pool.payoutRule,
               }}
               transactionCount={pool.transactionCount}
@@ -115,7 +116,12 @@ export default async function AdminPoolPage({ params }: Params) {
               <span className="font-mono text-[11px] text-muted-foreground tracking-wider">02</span>
               <h2 className="text-base font-semibold">Registrar depósito</h2>
             </div>
-            <DepositForm groupId={group.id} currency={pool.currency ?? 'BOB'} members={members} />
+            <DepositForm
+              groupId={group.id}
+              currency={pool.currency ?? 'BOB'}
+              buyInAmount={pool.buyInAmount}
+              members={members}
+            />
           </Card>
         </div>
 

@@ -59,6 +59,9 @@ export const groups = pgTable('groups', {
   }).notNull(),
   poolEnabled: boolean('pool_enabled').notNull().default(false),
   poolCurrency: text('pool_currency'),
+  poolBuyInAmount: numeric('pool_buy_in_amount', { precision: 12, scale: 2 })
+    .notNull()
+    .default('100.00'),
   poolQrUrl: text('pool_qr_url'),
   poolPayoutRule: payoutRule('pool_payout_rule').notNull().default('winner_takes_all'),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),

@@ -4,6 +4,7 @@ import { Check } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import {
@@ -21,26 +22,34 @@ type Props = {
   initial: {
     enabled: boolean
     currency: string | null
+    buyInAmount: number
     payoutRule: 'winner_takes_all' | 'top_3_split' | 'manual'
   }
-  /** Number of recorded deposits. Locks the currency picker when > 0. */
+  /** Number of recorded deposits. Locks currency + buy-in once anyone has paid. */
   transactionCount: number
 }
 
 export function PoolConfigForm({ groupId, initial, transactionCount }: Props) {
   const [enabled, setEnabled] = useState(initial.enabled)
   const [currency, setCurrency] = useState(initial.currency ?? 'BOB')
+  const [buyInAmount, setBuyInAmount] = useState(String(initial.buyInAmount))
   const [payoutRule, setPayoutRule] = useState(initial.payoutRule)
   const [pending, startTransition] = useTransition()
-  const currencyLocked = transactionCount > 0
+  const locked = transactionCount > 0
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    const buyInNum = Number.parseFloat(buyInAmount)
+    if (!Number.isFinite(buyInNum) || buyInNum <= 0) {
+      toast.error('Monto del aporte inválido')
+      return
+    }
     startTransition(async () => {
       const r = await updatePoolConfig({
         groupId,
         enabled,
         currency: enabled ? currency : null,
+        buyInAmount: buyInNum,
         payoutRule,
       })
       if (r.ok) toast.success('Configuración guardada')
@@ -62,24 +71,44 @@ export function PoolConfigForm({ groupId, initial, transactionCount }: Props) {
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="currency">Moneda</Label>
-        <Select value={currency} onValueChange={setCurrency} disabled={!enabled || currencyLocked}>
-          <SelectTrigger id="currency">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="BOB">BOB · Bolivianos</SelectItem>
-            <SelectItem value="USDT">USDT · Tether</SelectItem>
-          </SelectContent>
-        </Select>
-        {currencyLocked && (
-          <p className="text-xs text-muted-foreground">
-            🔒 La moneda queda fija después del primer depósito. Para cambiarla, primero elimina los{' '}
-            {transactionCount} {transactionCount === 1 ? 'depósito' : 'depósitos'} registrados.
-          </p>
-        )}
+      <div className="grid gap-3 sm:grid-cols-2">
+        <div className="space-y-2">
+          <Label htmlFor="currency">Moneda</Label>
+          <Select value={currency} onValueChange={setCurrency} disabled={!enabled || locked}>
+            <SelectTrigger id="currency">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="BOB">BOB · Bolivianos</SelectItem>
+              <SelectItem value="USDT">USDT · Tether</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-2">
+          <Label htmlFor="buyInAmount">Aporte por jugador</Label>
+          <Input
+            id="buyInAmount"
+            type="number"
+            step="0.01"
+            min="0.01"
+            value={buyInAmount}
+            onChange={(e) => setBuyInAmount(e.target.value)}
+            disabled={!enabled || locked}
+            className="font-mono tabular-nums"
+          />
+        </div>
       </div>
+      <p className="-mt-2 text-xs text-muted-foreground">
+        Todos los miembros aportan exactamente este monto. Así el premio depende solo del ranking,
+        no de cuánto puso cada uno.
+      </p>
+      {locked && (
+        <p className="text-xs text-muted-foreground">
+          🔒 Moneda y monto quedan fijos después del primer depósito. Para cambiarlos, primero
+          elimina los {transactionCount} {transactionCount === 1 ? 'depósito' : 'depósitos'}{' '}
+          registrados.
+        </p>
+      )}
 
       <div className="space-y-3">
         <Label>Regla de reparto</Label>

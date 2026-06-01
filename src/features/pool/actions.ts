@@ -13,13 +13,12 @@ const configSchema = z.object({
   groupId: z.uuid(),
   enabled: z.boolean(),
   currency: z.string().min(1).max(8).nullable(),
+  buyInAmount: z.number().positive().max(9_999_999_999.99),
   payoutRule: z.enum(['winner_takes_all', 'top_3_split', 'manual']),
 })
 
 const transactionSchema = z.object({
   groupId: z.uuid(),
-  amount: z.number().positive().max(9_999_999_999.99),
-  currency: z.string().min(1).max(8),
   contributorUserId: z.uuid().nullable(),
   contributorLabel: z.string().max(60).nullable(),
   note: z.string().max(280).nullable(),
@@ -69,12 +68,21 @@ export async function updatePoolConfig(input: unknown): Promise<PoolActionResult
       error: `No se puede cambiar la moneda con ${depositCount} depósito${depositCount === 1 ? '' : 's'} registrado${depositCount === 1 ? '' : 's'}. Elimínalos primero.`,
     }
   }
+  // Same defense for the buy-in: once anyone has paid, changing the per-player
+  // amount would create unfair splits. Owner must wipe deposits first.
+  if (depositCount > 0 && current && Number(current.poolBuyInAmount) !== parsed.data.buyInAmount) {
+    return {
+      ok: false,
+      error: `No se puede cambiar el monto del aporte con ${depositCount} depósito${depositCount === 1 ? '' : 's'} registrado${depositCount === 1 ? '' : 's'}. Elimínalos primero.`,
+    }
+  }
 
   await db
     .update(groups)
     .set({
       poolEnabled: parsed.data.enabled,
       poolCurrency: parsed.data.currency,
+      poolBuyInAmount: parsed.data.buyInAmount.toFixed(2),
       poolPayoutRule: parsed.data.payoutRule,
     })
     .where(eq(groups.id, parsed.data.groupId))
@@ -94,10 +102,19 @@ export async function recordPoolTransaction(input: unknown): Promise<PoolActionR
   const auth = await requireOwner(parsed.data.groupId)
   if ('error' in auth) return { ok: false, error: auth.error }
 
+  // Amount and currency come from the group config, not the form — the buy-in
+  // is fixed per group so everyone aporta exactly the same.
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.id, parsed.data.groupId),
+  })
+  if (!group) return { ok: false, error: 'Grupo no encontrado.' }
+  if (!group.poolEnabled) return { ok: false, error: 'El pozo no está activado.' }
+  if (!group.poolCurrency) return { ok: false, error: 'El pozo no tiene moneda configurada.' }
+
   await db.insert(poolTransactions).values({
     groupId: parsed.data.groupId,
-    amount: parsed.data.amount.toFixed(2),
-    currency: parsed.data.currency,
+    amount: group.poolBuyInAmount,
+    currency: group.poolCurrency,
     contributorUserId: parsed.data.contributorUserId,
     contributorLabel: parsed.data.contributorLabel,
     note: parsed.data.note,
