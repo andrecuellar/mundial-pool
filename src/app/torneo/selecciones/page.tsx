@@ -44,7 +44,7 @@ export default async function TableSeleccionesPage() {
     <>
       <AppHeader
         user={{ name: displayName, email: user.email ?? null, avatarUrl }}
-        breadcrumb={[{ label: 'Torneo', href: '/torneo' }, { label: 'Selecciones' }]}
+        breadcrumb={[{ label: 'Selecciones' }]}
       />
 
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-6 sm:px-6 sm:py-10">

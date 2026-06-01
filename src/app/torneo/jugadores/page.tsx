@@ -23,7 +23,7 @@ export default async function TableJugadoresPage() {
     <>
       <AppHeader
         user={{ name: displayName, email: user.email ?? null, avatarUrl }}
-        breadcrumb={[{ label: 'Torneo', href: '/torneo' }, { label: 'Jugadores' }]}
+        breadcrumb={[{ label: 'Jugadores' }]}
       />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
