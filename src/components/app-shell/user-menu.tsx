@@ -1,8 +1,7 @@
 'use client'
 
 import { LogOut, ShieldCheck, User as UserIcon } from 'lucide-react'
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
   DropdownMenu,
@@ -34,6 +33,7 @@ function initials(name: string): string {
 
 export function UserMenu({ name, email, avatarUrl, isAdmin = false }: Props) {
   const pathname = usePathname()
+  const router = useRouter()
   const inAdmin = pathname?.startsWith('/admin') ?? false
 
   return (
@@ -53,20 +53,21 @@ export function UserMenu({ name, email, avatarUrl, isAdmin = false }: Props) {
         {isAdmin && (
           <>
             <DropdownMenuSeparator />
-            <DropdownMenuItem asChild>
-              <Link href={inAdmin ? '/' : '/admin'} className="w-full cursor-pointer">
-                {inAdmin ? (
-                  <>
-                    <UserIcon className="h-4 w-4" />
-                    Volver al modo jugador
-                  </>
-                ) : (
-                  <>
-                    <ShieldCheck className="h-4 w-4 text-warning" />
-                    Modo superadmin
-                  </>
-                )}
-              </Link>
+            <DropdownMenuItem
+              onSelect={() => router.push(inAdmin ? '/' : '/admin')}
+              className="cursor-pointer"
+            >
+              {inAdmin ? (
+                <>
+                  <UserIcon className="h-4 w-4" />
+                  Volver al modo jugador
+                </>
+              ) : (
+                <>
+                  <ShieldCheck className="h-4 w-4 text-warning" />
+                  Modo superadmin
+                </>
+              )}
             </DropdownMenuItem>
           </>
         )}
