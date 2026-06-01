@@ -85,6 +85,13 @@
       "when": 1780341394238,
       "tag": "0011_acoustic_swarm",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1780341950217,
+      "tag": "0012_chunky_amphibian",
+      "breakpoints": true
     }
   ]
 }

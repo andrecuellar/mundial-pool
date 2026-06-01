@@ -204,6 +204,25 @@ export const predictionReactions = pgTable(
   (t) => [unique('prediction_reactions_unique').on(t.predictionId, t.userId, t.emoji)],
 )
 
+// Web Push subscriptions. One row per (user, browser/device) — the unique
+// constraint is the endpoint URL the push service hands back. When sending
+// returns 404/410 we delete the subscription as expired.
+export const pushSubscriptions = pgTable(
+  'push_subscriptions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    endpoint: text('endpoint').notNull(),
+    p256dh: text('p256dh').notNull(),
+    auth: text('auth').notNull(),
+    userAgent: text('user_agent'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [unique('push_subscriptions_endpoint_unique').on(t.userId, t.endpoint)],
+)
+
 // Tiny key/value table for app-wide global state that doesn't fit anywhere
 // else. First user: persisting the magic-link rate-limit deadline so it's
 // shared across devices, not local to a browser.

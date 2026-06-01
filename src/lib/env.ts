@@ -12,6 +12,9 @@ const schema = z.object({
   FOOTBALL_API_BASE_URL: z.string().url().optional(),
   RESOLUTION_CRON_SECRET: z.string().min(1).optional(),
   CRON_SECRET: z.string().min(1).optional(),
+  NEXT_PUBLIC_VAPID_PUBLIC_KEY: z.string().min(1).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(1).optional(),
+  VAPID_SUBJECT: z.string().min(1).default('mailto:acuellaravaroma@gmail.com'),
 })
 
 export const env = schema.parse(process.env)

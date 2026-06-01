@@ -7,6 +7,7 @@ import { BackLink } from '@/components/app-shell/back-link'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { ResultCelebration } from '@/components/celebrations/result-celebration'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
+import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { ShareButton } from '@/components/groups/share-button'
 import { PoolStatCard } from '@/components/pool/pool-stat-card'
@@ -15,6 +16,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, predictions, profiles, results } from '@/db/schema'
+import { env } from '@/lib/env'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
 import {
   getLeaderboard,
@@ -149,6 +151,8 @@ export default async function GroupPage({ params }: Params) {
 
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href="/" label="Mis grupos" className="mb-4" />
+
+        <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
 
         {!locked && (
           <div className="mb-4">

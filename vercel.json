@@ -4,6 +4,10 @@
     {
       "path": "/api/cron/resolve",
       "schedule": "0 8 * * *"
+    },
+    {
+      "path": "/api/cron/lock-reminder",
+      "schedule": "0 * * * *"
     }
   ]
 }

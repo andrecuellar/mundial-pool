@@ -1,9 +1,18 @@
-import { eq } from 'drizzle-orm'
+import { eq, inArray } from 'drizzle-orm'
 import { db } from '@/db'
-import { categories, resolutionRuns, results, teams } from '@/db/schema'
+import {
+  categories,
+  groupCategories,
+  groups,
+  predictions,
+  resolutionRuns,
+  results,
+  teams,
+} from '@/db/schema'
 import { getFootballProvider } from '@/integrations/football'
 import { teamMatchKey } from '@/integrations/football/normalize'
 import type { TournamentSnapshot } from '@/integrations/football/types'
+import { sendPushToUsers } from '@/server/push'
 
 type Outcome =
   | { kind: 'team'; teamName: string }
@@ -74,6 +83,7 @@ export async function runResolution() {
     ])
 
     const summary: Record<string, string> = {}
+    const newlyResolvedCategoryIds: string[] = []
 
     for (const cat of cats) {
       const outcome = planCategory(cat.resolutionStrategy, snapshot)
@@ -103,6 +113,7 @@ export async function runResolution() {
             },
           })
         summary[cat.key] = `team:${team.fifaCode ?? team.name}`
+        newlyResolvedCategoryIds.push(cat.id)
         continue
       }
 
@@ -136,7 +147,16 @@ export async function runResolution() {
             },
           })
         summary[cat.key] = `team_set:${matched.length}`
+        newlyResolvedCategoryIds.push(cat.id)
       }
+    }
+
+    // Notify users who got the resolved categories right. Best-effort —
+    // failures are logged but don't block the resolution from finishing.
+    try {
+      await notifyWinners(newlyResolvedCategoryIds)
+    } catch (e) {
+      console.error('notifyWinners failed', (e as Error).message)
     }
 
     await db
@@ -148,7 +168,7 @@ export async function runResolution() {
       })
       .where(eq(resolutionRuns.id, run.id))
 
-    return { runId: run.id, summary }
+    return { runId: run.id, summary, notifiedCategories: newlyResolvedCategoryIds.length }
   } catch (error) {
     await db
       .update(resolutionRuns)
@@ -159,5 +179,114 @@ export async function runResolution() {
       })
       .where(eq(resolutionRuns.id, run.id))
     throw error
+  }
+}
+
+/**
+ * After categories get resolved, find users who picked them correctly across
+ * any group and ping them with a push notification. Best-effort — only sends
+ * to subscribers that exist (no-op if no one opted in yet).
+ */
+async function notifyWinners(resolvedCategoryIds: string[]) {
+  if (resolvedCategoryIds.length === 0) return
+
+  const [resolvedResults, catRows] = await Promise.all([
+    db
+      .select({
+        categoryId: results.categoryId,
+        teamId: results.teamId,
+        teamSet: results.teamSet,
+        playerText: results.playerText,
+      })
+      .from(results)
+      .where(inArray(results.categoryId, resolvedCategoryIds)),
+    db
+      .select({
+        id: categories.id,
+        key: categories.key,
+        name: categories.name,
+        valueKind: categories.valueKind,
+      })
+      .from(categories)
+      .where(inArray(categories.id, resolvedCategoryIds)),
+  ])
+
+  const catById = new Map(catRows.map((c) => [c.id, c]))
+  const resultByCat = new Map(resolvedResults.map((r) => [r.categoryId, r]))
+
+  // For each resolved category, pull all matching predictions across every
+  // group, plus the group-specific points for the win.
+  const allPredictions = await db
+    .select({
+      userId: predictions.userId,
+      groupId: predictions.groupId,
+      groupSlug: groups.slug,
+      groupName: groups.name,
+      categoryId: predictions.categoryId,
+      categoryPoints: groupCategories.points,
+      teamId: predictions.teamId,
+      teamSet: predictions.teamSet,
+      playerText: predictions.playerText,
+    })
+    .from(predictions)
+    .innerJoin(groups, eq(groups.id, predictions.groupId))
+    .innerJoin(
+      groupCategories,
+      eq(groupCategories.categoryId, predictions.categoryId),
+    )
+    .where(inArray(predictions.categoryId, resolvedCategoryIds))
+
+  // userId → { points, names: string[] }
+  const wins = new Map<string, { totalPoints: number; categoryNames: string[]; groupSlug: string }>()
+
+  for (const p of allPredictions) {
+    const cat = catById.get(p.categoryId)
+    const result = resultByCat.get(p.categoryId)
+    if (!cat || !result) continue
+
+    let earned = 0
+    if (cat.valueKind === 'team' && p.teamId && result.teamId && p.teamId === result.teamId) {
+      earned = p.categoryPoints
+    } else if (
+      cat.valueKind === 'player' &&
+      p.playerText &&
+      result.playerText &&
+      p.playerText.trim().toLowerCase() === result.playerText.trim().toLowerCase()
+    ) {
+      earned = p.categoryPoints
+    } else if (cat.valueKind === 'team_set') {
+      const pickSet = new Set((p.teamSet as string[] | null) ?? [])
+      const resultSet = new Set((result.teamSet as string[] | null) ?? [])
+      let hits = 0
+      for (const id of pickSet) if (resultSet.has(id)) hits++
+      if (hits > 0) earned = hits * p.categoryPoints
+    }
+    if (earned === 0) continue
+
+    const key = p.userId
+    const prev = wins.get(key)
+    if (prev) {
+      prev.totalPoints += earned
+      prev.categoryNames.push(cat.name)
+    } else {
+      wins.set(key, {
+        totalPoints: earned,
+        categoryNames: [cat.name],
+        groupSlug: p.groupSlug,
+      })
+    }
+  }
+
+  for (const [userId, { totalPoints, categoryNames, groupSlug }] of wins) {
+    const body =
+      categoryNames.length === 1
+        ? `Acertaste ${categoryNames[0]}`
+        : `Acertaste ${categoryNames.length} categorías`
+    await sendPushToUsers([userId], {
+      title: `🏆 ¡+${totalPoints} pts!`,
+      body,
+      url: `/groups/${groupSlug}`,
+      tag: `result-${userId}-${Date.now()}`,
+    })
   }
 }
