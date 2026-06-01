@@ -102,7 +102,7 @@ export function InstallPrompt() {
   return (
     <>
       {showSnack && (
-        <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card p-4 shadow-lg sm:bottom-auto sm:left-4 sm:top-20 sm:max-w-xs sm:translate-x-0">
+        <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card p-4 shadow-lg sm:bottom-auto sm:left-4 sm:top-60 sm:max-w-xs sm:translate-x-0">
           <div className="flex items-start gap-3">
             <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
               <Download className="h-4 w-4" />
