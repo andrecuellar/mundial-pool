@@ -17,9 +17,7 @@ export function ServiceWorkerRegistration() {
     // Register immediately so Chrome's PWA install eligibility (which needs
     // an active SW) is met as early as possible. Non-blocking — the promise
     // doesn't gate any other work.
-    navigator.serviceWorker
-      .register('/sw.js')
-      .catch((e) => console.error('SW register failed', e))
+    navigator.serviceWorker.register('/sw.js').catch((e) => console.error('SW register failed', e))
   }, [])
   return null
 }

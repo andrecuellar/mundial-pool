@@ -18,9 +18,7 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
 
   // Best category by earned points.
   const bestCategory =
-    rows.length === 0
-      ? null
-      : [...rows].sort((a, b) => b.earnedPoints - a.earnedPoints)[0]
+    rows.length === 0 ? null : [...rows].sort((a, b) => b.earnedPoints - a.earnedPoints)[0]
   const showBest = bestCategory && bestCategory.earnedPoints > 0
 
   return (
@@ -61,9 +59,7 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
             {accuracy === null ? '—' : `${accuracy}%`}
           </p>
           {resolved.length > 0 && (
-            <p className="mt-0.5 text-[10px] text-muted-foreground">
-              {correct.length} aciertos
-            </p>
+            <p className="mt-0.5 text-[10px] text-muted-foreground">{correct.length} aciertos</p>
           )}
         </div>
       </div>
@@ -76,9 +72,7 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
           </p>
           <p className="mt-1 text-sm font-medium">
             {bestCategory.name}{' '}
-            <span className="font-mono text-xs text-accent">
-              +{bestCategory.earnedPoints} pts
-            </span>
+            <span className="font-mono text-xs text-accent">+{bestCategory.earnedPoints} pts</span>
           </p>
         </div>
       )}

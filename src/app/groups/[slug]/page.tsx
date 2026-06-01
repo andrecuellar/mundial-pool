@@ -4,25 +4,20 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
-import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { ResultCelebration } from '@/components/celebrations/result-celebration'
+import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
-import { PushOptIn } from '@/components/notifications/push-opt-in'
-import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { ShareButton } from '@/components/groups/share-button'
+import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { PoolStatCard } from '@/components/pool/pool-stat-card'
+import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, predictions, profiles, results } from '@/db/schema'
-import { env } from '@/lib/env'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
-import {
-  getLeaderboard,
-  getNewlyResolvedPicksForUser,
-  getUserCategoryBreakdown,
-} from '@/features/scoring/queries'
+import { getLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
+import { env } from '@/lib/env'
 import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -152,7 +147,9 @@ export default async function GroupPage({ params }: Params) {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href="/" label="Mis grupos" className="mb-4" />
 
-        <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        <div className="flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:w-72 sm:max-w-xs">
+          <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+        </div>
 
         {!locked && (
           <div className="mb-4">
@@ -222,9 +219,7 @@ export default async function GroupPage({ params }: Params) {
                     <p className="font-mono text-[11px] uppercase tracking-[0.14em] opacity-75">
                       días para cerrar
                     </p>
-                    <p className="text-sm font-medium">
-                      {formatDayTime(group.predictionsLockAt)}
-                    </p>
+                    <p className="text-sm font-medium">{formatDayTime(group.predictionsLockAt)}</p>
                   </div>
                 </div>
               )}
@@ -333,7 +328,9 @@ export default async function GroupPage({ params }: Params) {
                       </p>
                       <p className="mt-2 text-2xl font-semibold tabular-nums">
                         {completedCount}{' '}
-                        <span className="text-base text-muted-foreground">/ {totalPredictions}</span>
+                        <span className="text-base text-muted-foreground">
+                          / {totalPredictions}
+                        </span>
                       </p>
                       <p
                         className={`mt-1 text-xs ${
@@ -388,9 +385,7 @@ export default async function GroupPage({ params }: Params) {
                       <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Líder
                       </p>
-                      <p className="truncate text-xs font-medium">
-                        {leaderboard[0].displayName}
-                      </p>
+                      <p className="truncate text-xs font-medium">{leaderboard[0].displayName}</p>
                     </div>
                     <span className="font-mono text-sm font-semibold tabular-nums">
                       {leaderboard[0].totalPoints}

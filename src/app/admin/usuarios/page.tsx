@@ -28,10 +28,7 @@ export default async function AdminUsersPage() {
         </p>
       </div>
 
-      <AdminDataTable
-        title={`${profiles.length} usuarios`}
-        empty={profiles.length === 0}
-      >
+      <AdminDataTable title={`${profiles.length} usuarios`} empty={profiles.length === 0}>
         <Table>
           <TableHeader>
             <TableRow>

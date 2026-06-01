@@ -74,12 +74,9 @@ export function PlayerComboBox({
       // Exact whole-name match first, then substring fallback. Without the
       // exact pass, "rodri" would match "Rodrigo De Paul" before the real
       // "Rodri" (Spain), and "saka" would match "Wan-Bissaka" before Bukayo.
-      const exact = eligible.find(
-        (p) => !seen.has(p.id) && normalize(p.fullName) === normPat,
-      )
+      const exact = eligible.find((p) => !seen.has(p.id) && normalize(p.fullName) === normPat)
       const match =
-        exact ??
-        eligible.find((p) => !seen.has(p.id) && normalize(p.fullName).includes(normPat))
+        exact ?? eligible.find((p) => !seen.has(p.id) && normalize(p.fullName).includes(normPat))
       if (match) {
         seen.add(match.id)
         out.push(match)

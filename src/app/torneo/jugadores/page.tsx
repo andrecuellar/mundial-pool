@@ -29,9 +29,7 @@ export default async function TableJugadoresPage() {
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href="/" label="Inicio" className="mb-4" />
 
-        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">
-          Tabla de jugadores
-        </h1>
+        <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Tabla de jugadores</h1>
         <p className="mt-1 text-sm text-muted-foreground">
           Goleadores y asistentes del Mundial 2026 según las estadísticas oficiales de FIFA.
         </p>
@@ -40,17 +38,21 @@ export default async function TableJugadoresPage() {
           <p className="font-medium text-foreground">¿Qué cuenta y qué no cuenta?</p>
           <ul className="mt-2 space-y-1.5">
             <li>
-              <span className="font-medium text-foreground">Goles en los 90 min reglamentarios</span>:
-              cuentan.
+              <span className="font-medium text-foreground">
+                Goles en los 90 min reglamentarios
+              </span>
+              : cuentan.
             </li>
             <li>
-              <span className="font-medium text-foreground">Goles en la prórroga (30 min extra)</span>:
-              cuentan también — son parte del partido.
+              <span className="font-medium text-foreground">
+                Goles en la prórroga (30 min extra)
+              </span>
+              : cuentan también — son parte del partido.
             </li>
             <li>
               <span className="font-medium text-foreground">Goles en la tanda de penales</span>:{' '}
-              <span className="text-destructive font-medium">no cuentan</span>. La tanda de
-              penales es solo un desempate, no parte del partido.
+              <span className="text-destructive font-medium">no cuentan</span>. La tanda de penales
+              es solo un desempate, no parte del partido.
             </li>
             <li>
               <span className="font-medium text-foreground">Asistencias</span>: igual criterio —

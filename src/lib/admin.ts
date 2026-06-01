@@ -4,9 +4,7 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 // Allowlist of emails that get the /admin panel. Everyone else gets a 404
 // (not 403) so non-admins can't discover that the panel exists.
-export const SUPER_ADMIN_EMAILS: ReadonlySet<string> = new Set([
-  'acuellaravaroma@gmail.com',
-])
+export const SUPER_ADMIN_EMAILS: ReadonlySet<string> = new Set(['acuellaravaroma@gmail.com'])
 
 export function isSuperAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false

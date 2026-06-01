@@ -212,9 +212,7 @@ export async function getNewlyResolvedPicksForUser(
         playerText: predictions.playerText,
       })
       .from(predictions)
-      .where(
-        and(eq(predictions.groupId, groupId), eq(predictions.userId, userId)),
-      ),
+      .where(and(eq(predictions.groupId, groupId), eq(predictions.userId, userId))),
   ])
 
   const catMap = new Map(catRows.map((c) => [c.id, c]))

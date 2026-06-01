@@ -45,9 +45,7 @@ async function handle(req: Request) {
     const dueGroups = await db
       .select({ id: groups.id, name: groups.name, slug: groups.slug })
       .from(groups)
-      .where(
-        and(gt(groups.predictionsLockAt, from), lte(groups.predictionsLockAt, to)),
-      )
+      .where(and(gt(groups.predictionsLockAt, from), lte(groups.predictionsLockAt, to)))
 
     let usersTotal = 0
 

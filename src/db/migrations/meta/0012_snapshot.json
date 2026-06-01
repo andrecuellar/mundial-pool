@@ -100,9 +100,7 @@
         "categories_key_unique": {
           "name": "categories_key_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key"
-          ]
+          "columns": ["key"]
         }
       },
       "policies": {},
@@ -145,12 +143,8 @@
           "name": "group_categories_group_id_groups_id_fk",
           "tableFrom": "group_categories",
           "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -158,12 +152,8 @@
           "name": "group_categories_category_id_categories_id_fk",
           "tableFrom": "group_categories",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -171,10 +161,7 @@
       "compositePrimaryKeys": {
         "group_categories_group_id_category_id_pk": {
           "name": "group_categories_group_id_category_id_pk",
-          "columns": [
-            "group_id",
-            "category_id"
-          ]
+          "columns": ["group_id", "category_id"]
         }
       },
       "uniqueConstraints": {},
@@ -220,12 +207,8 @@
           "name": "group_members_group_id_groups_id_fk",
           "tableFrom": "group_members",
           "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -233,12 +216,8 @@
           "name": "group_members_user_id_profiles_id_fk",
           "tableFrom": "group_members",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -246,10 +225,7 @@
       "compositePrimaryKeys": {
         "group_members_group_id_user_id_pk": {
           "name": "group_members_group_id_user_id_pk",
-          "columns": [
-            "group_id",
-            "user_id"
-          ]
+          "columns": ["group_id", "user_id"]
         }
       },
       "uniqueConstraints": {},
@@ -339,12 +315,8 @@
           "name": "groups_created_by_profiles_id_fk",
           "tableFrom": "groups",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "created_by"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -354,16 +326,12 @@
         "groups_slug_unique": {
           "name": "groups_slug_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "slug"
-          ]
+          "columns": ["slug"]
         },
         "groups_invite_code_unique": {
           "name": "groups_invite_code_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "invite_code"
-          ]
+          "columns": ["invite_code"]
         }
       },
       "policies": {},
@@ -418,12 +386,8 @@
           "name": "players_team_id_teams_id_fk",
           "tableFrom": "players",
           "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -433,9 +397,7 @@
         "players_external_id_unique": {
           "name": "players_external_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "external_id"
-          ]
+          "columns": ["external_id"]
         }
       },
       "policies": {},
@@ -509,12 +471,8 @@
           "name": "pool_transactions_group_id_groups_id_fk",
           "tableFrom": "pool_transactions",
           "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -522,12 +480,8 @@
           "name": "pool_transactions_contributor_user_id_profiles_id_fk",
           "tableFrom": "pool_transactions",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "contributor_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["contributor_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -535,12 +489,8 @@
           "name": "pool_transactions_created_by_user_id_profiles_id_fk",
           "tableFrom": "pool_transactions",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "created_by_user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["created_by_user_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -594,12 +544,8 @@
           "name": "prediction_reactions_prediction_id_predictions_id_fk",
           "tableFrom": "prediction_reactions",
           "tableTo": "predictions",
-          "columnsFrom": [
-            "prediction_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["prediction_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -607,12 +553,8 @@
           "name": "prediction_reactions_user_id_profiles_id_fk",
           "tableFrom": "prediction_reactions",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -622,11 +564,7 @@
         "prediction_reactions_unique": {
           "name": "prediction_reactions_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "prediction_id",
-            "user_id",
-            "emoji"
-          ]
+          "columns": ["prediction_id", "user_id", "emoji"]
         }
       },
       "policies": {},
@@ -707,12 +645,8 @@
           "name": "predictions_group_id_groups_id_fk",
           "tableFrom": "predictions",
           "tableTo": "groups",
-          "columnsFrom": [
-            "group_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["group_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -720,12 +654,8 @@
           "name": "predictions_user_id_profiles_id_fk",
           "tableFrom": "predictions",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         },
@@ -733,12 +663,8 @@
           "name": "predictions_category_id_categories_id_fk",
           "tableFrom": "predictions",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -746,12 +672,8 @@
           "name": "predictions_team_id_teams_id_fk",
           "tableFrom": "predictions",
           "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -759,12 +681,8 @@
           "name": "predictions_player_id_players_id_fk",
           "tableFrom": "predictions",
           "tableTo": "players",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -774,11 +692,7 @@
         "predictions_user_category_unique": {
           "name": "predictions_user_category_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "group_id",
-            "user_id",
-            "category_id"
-          ]
+          "columns": ["group_id", "user_id", "category_id"]
         }
       },
       "policies": {},
@@ -890,12 +804,8 @@
           "name": "push_subscriptions_user_id_profiles_id_fk",
           "tableFrom": "push_subscriptions",
           "tableTo": "profiles",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -905,10 +815,7 @@
         "push_subscriptions_endpoint_unique": {
           "name": "push_subscriptions_endpoint_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "user_id",
-            "endpoint"
-          ]
+          "columns": ["user_id", "endpoint"]
         }
       },
       "policies": {},
@@ -1014,12 +921,8 @@
           "name": "results_category_id_categories_id_fk",
           "tableFrom": "results",
           "tableTo": "categories",
-          "columnsFrom": [
-            "category_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["category_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1027,12 +930,8 @@
           "name": "results_team_id_teams_id_fk",
           "tableFrom": "results",
           "tableTo": "teams",
-          "columnsFrom": [
-            "team_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["team_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         },
@@ -1040,12 +939,8 @@
           "name": "results_player_id_players_id_fk",
           "tableFrom": "results",
           "tableTo": "players",
-          "columnsFrom": [
-            "player_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["player_id"],
+          "columnsTo": ["id"],
           "onDelete": "no action",
           "onUpdate": "no action"
         }
@@ -1123,9 +1018,7 @@
         "teams_external_id_unique": {
           "name": "teams_external_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "external_id"
-          ]
+          "columns": ["external_id"]
         }
       },
       "policies": {},
@@ -1137,29 +1030,17 @@
     "public.category_value_kind": {
       "name": "category_value_kind",
       "schema": "public",
-      "values": [
-        "team",
-        "player",
-        "team_set"
-      ]
+      "values": ["team", "player", "team_set"]
     },
     "public.member_role": {
       "name": "member_role",
       "schema": "public",
-      "values": [
-        "owner",
-        "admin",
-        "member"
-      ]
+      "values": ["owner", "admin", "member"]
     },
     "public.payout_rule": {
       "name": "payout_rule",
       "schema": "public",
-      "values": [
-        "winner_takes_all",
-        "top_3_split",
-        "manual"
-      ]
+      "values": ["winner_takes_all", "top_3_split", "manual"]
     },
     "public.resolution_strategy": {
       "name": "resolution_strategy",

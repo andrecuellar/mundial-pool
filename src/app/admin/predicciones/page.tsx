@@ -17,7 +17,9 @@ type SP = { category?: string; group?: string }
 
 export default async function AdminPredictionsPage({
   searchParams,
-}: { searchParams: Promise<SP> }) {
+}: {
+  searchParams: Promise<SP>
+}) {
   const sp = await searchParams
   const rows = await listAdminPredictions({
     categoryKey: sp.category,
@@ -35,10 +37,7 @@ export default async function AdminPredictionsPage({
         </p>
       </div>
 
-      <AdminDataTable
-        title={`${rows.length} predicciones`}
-        empty={rows.length === 0}
-      >
+      <AdminDataTable title={`${rows.length} predicciones`} empty={rows.length === 0}>
         <Table>
           <TableHeader>
             <TableRow>
@@ -61,16 +60,11 @@ export default async function AdminPredictionsPage({
                   </Link>
                 </TableCell>
                 <TableCell>
-                  <Link
-                    href={`/admin/usuarios/${r.userId}`}
-                    className="text-sm hover:underline"
-                  >
+                  <Link href={`/admin/usuarios/${r.userId}`} className="text-sm hover:underline">
                     {r.userName}
                   </Link>
                 </TableCell>
-                <TableCell className="text-xs text-muted-foreground">
-                  {r.categoryName}
-                </TableCell>
+                <TableCell className="text-xs text-muted-foreground">{r.categoryName}</TableCell>
                 <TableCell className="text-sm font-medium">
                   {r.teamName ? (
                     <span className="inline-flex items-center gap-1.5">
@@ -79,9 +73,9 @@ export default async function AdminPredictionsPage({
                     </span>
                   ) : (
                     (r.playerText ??
-                      (Array.isArray(r.teamSet) && r.teamSet.length > 0
-                        ? `${r.teamSet.length} equipos`
-                        : '—'))
+                    (Array.isArray(r.teamSet) && r.teamSet.length > 0
+                      ? `${r.teamSet.length} equipos`
+                      : '—'))
                   )}
                 </TableCell>
                 <TableCell className="hidden text-right font-mono text-xs text-muted-foreground sm:table-cell">

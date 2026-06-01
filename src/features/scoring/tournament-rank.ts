@@ -24,15 +24,7 @@ export type TournamentTeamInput = {
    * 'r32' = lost in round of 32, etc. 'champion' / 'runner_up' / 'third' /
    * 'fourth' for the semis/final outcomes.
    */
-  reached:
-    | 'group'
-    | 'r32'
-    | 'r16'
-    | 'qf'
-    | 'fourth'
-    | 'third'
-    | 'runner_up'
-    | 'champion'
+  reached: 'group' | 'r32' | 'r16' | 'qf' | 'fourth' | 'third' | 'runner_up' | 'champion'
   /** Group-stage stats — used for the 33-48 bracket and as a last-resort tiebreaker. */
   groupPoints: number
   groupGoalDiff: number

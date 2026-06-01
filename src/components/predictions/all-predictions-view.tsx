@@ -2,11 +2,11 @@
 
 import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
+import { ReactionBar } from '@/components/predictions/reaction-bar'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import { ReactionBar } from '@/components/predictions/reaction-bar'
 import type { AllPredictionsPick } from '@/features/predictions/queries'
 import type { ReactionBucket } from '@/features/reactions/types'
 
@@ -59,11 +59,7 @@ function normalize(s: string): string {
     .trim()
 }
 
-export function AllPredictionsView({
-  view,
-  currentUserId,
-  enableReactions = false,
-}: Props) {
+export function AllPredictionsView({ view, currentUserId, enableReactions = false }: Props) {
   const { members, categories } = view
   const [query, setQuery] = useState('')
   const [categoryKey, setCategoryKey] = useState<string>('all')

@@ -6,13 +6,13 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { renderPick } from '@/components/predictions/all-predictions-view'
 import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
-import { formatDayTime } from '@/lib/format'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import { getUserComprobante } from '@/features/predictions/queries'
+import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -50,10 +50,7 @@ export default async function ComprobantePage({ params }: Params) {
     <>
       <AppHeader
         user={{ name: displayName, email: user.email ?? null, avatarUrl }}
-        breadcrumb={[
-          { label: group.name, href: `/groups/${slug}` },
-          { label: 'Comprobante' },
-        ]}
+        breadcrumb={[{ label: group.name, href: `/groups/${slug}` }, { label: 'Comprobante' }]}
       />
 
       <main className="mx-auto w-full max-w-2xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
@@ -80,8 +77,7 @@ export default async function ComprobantePage({ params }: Params) {
                   {group.name}
                 </h1>
                 <p className="mt-1 text-sm text-muted-foreground">
-                  A nombre de{' '}
-                  <span className="font-medium text-foreground">{displayName}</span>
+                  A nombre de <span className="font-medium text-foreground">{displayName}</span>
                 </p>
               </div>
               {isComplete ? (

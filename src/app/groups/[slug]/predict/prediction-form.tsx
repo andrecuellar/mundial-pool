@@ -4,11 +4,11 @@ import { AlertTriangle, Check, Info, Lock } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
-import { PlayerComboBox } from '@/components/predict/player-combobox'
 import {
   PlayerCategoryCriteriaDialog,
   type PlayerCategoryKey,
 } from '@/components/predict/player-category-criteria-dialog'
+import { PlayerComboBox } from '@/components/predict/player-combobox'
 import {
   RevelationCriteriaDialog,
   RevelationCriteriaLink,
@@ -129,8 +129,8 @@ function RankingHelper({ kind }: { kind: 'revelation' | 'disappointment' }) {
       </p>
       <p>
         En el selector verás <span className="font-mono text-foreground">FIFA #N</span> (ranking
-        global real) y <span className="font-mono text-primary">M #N</span> (posición entre las
-        48 del Mundial, la que cuenta para esta categoría).
+        global real) y <span className="font-mono text-primary">M #N</span> (posición entre las 48
+        del Mundial, la que cuenta para esta categoría).
       </p>
       <p className="pt-1">
         <RevelationCriteriaLink kind={kind} />
@@ -235,9 +235,7 @@ function warningsFor(
     )
   }
   if (key === 'third_place' && decPick === teamId) {
-    out.push(
-      'Esta selección también está marcada como decepción. Llegar al podio no es decepción.',
-    )
+    out.push('Esta selección también está marcada como decepción. Llegar al podio no es decepción.')
   }
 
   if (key === 'revelation') {
@@ -555,9 +553,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       disabled={locked}
                       showRanking={FIFA_RANKING_CATEGORIES.has(c.key)}
                       excludeIds={podiumExcludesFor(c.key, draft, sourceIds)}
-                      internalRanks={
-                        FIFA_RANKING_CATEGORIES.has(c.key) ? internalRanks : undefined
-                      }
+                      internalRanks={FIFA_RANKING_CATEGORIES.has(c.key) ? internalRanks : undefined}
                     />
                     {warningsFor(c.key, v.teamId, {
                       draft,
@@ -599,9 +595,9 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                       <p className="text-xs leading-relaxed">
                         <span className="font-medium text-foreground">Falta llenar el podio.</span>{' '}
                         <span className="text-muted-foreground">
-                          Esta categoría se desbloquea cuando elijas tu Campeón, Subcampeón y
-                          Tercer lugar. Esas 3 selecciones se anclan automáticamente al Top 5, y
-                          después podrás elegir las otras 2 manualmente.
+                          Esta categoría se desbloquea cuando elijas tu Campeón, Subcampeón y Tercer
+                          lugar. Esas 3 selecciones se anclan automáticamente al Top 5, y después
+                          podrás elegir las otras 2 manualmente.
                         </span>
                       </p>
                     </div>

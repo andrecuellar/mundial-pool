@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation'
-import { BackLink } from '@/components/app-shell/back-link'
 import { AdminDataTable } from '@/components/admin/data-table'
+import { BackLink } from '@/components/app-shell/back-link'
 import { AllPredictionsView } from '@/components/predictions/all-predictions-view'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -14,10 +14,7 @@ import {
 } from '@/components/ui/table'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { getAdminGroupDetail } from '@/features/admin/queries'
-import {
-  getAllGroupPredictions,
-  serialiseAllPredictionsView,
-} from '@/features/predictions/queries'
+import { getAllGroupPredictions, serialiseAllPredictionsView } from '@/features/predictions/queries'
 import { formatDayTime } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
@@ -56,7 +53,9 @@ export default async function AdminGroupDetailPage({ params }: Params) {
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
             Cierra
           </p>
-          <p className="mt-1 text-sm font-medium">{formatDayTime(detail.group.predictionsLockAt)}</p>
+          <p className="mt-1 text-sm font-medium">
+            {formatDayTime(detail.group.predictionsLockAt)}
+          </p>
         </Card>
         <Card className="p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">

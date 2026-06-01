@@ -166,7 +166,10 @@ export default async function AdminDashboardPage() {
             {summary.recentTransactions.map((t) => (
               <TableRow key={t.id}>
                 <TableCell>
-                  <Link href={`/admin/grupos/${t.groupSlug}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/admin/grupos/${t.groupSlug}`}
+                    className="font-medium hover:underline"
+                  >
                     {t.groupName}
                   </Link>
                 </TableCell>

@@ -63,9 +63,7 @@ export function TeamComboBox({
   const selected = teams.find((t) => t.id === value)
 
   const excludeSet = excludeIds && excludeIds.length > 0 ? new Set(excludeIds) : null
-  const filtered = excludeSet
-    ? teams.filter((t) => t.id === value || !excludeSet.has(t.id))
-    : teams
+  const filtered = excludeSet ? teams.filter((t) => t.id === value || !excludeSet.has(t.id)) : teams
 
   const sortedTeams = showRanking
     ? [...filtered].sort((a, b) => {

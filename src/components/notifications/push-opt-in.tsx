@@ -29,7 +29,11 @@ export function PushOptIn({ vapidPublicKey }: Props) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) {
+    if (
+      !('serviceWorker' in navigator) ||
+      !('PushManager' in window) ||
+      !('Notification' in window)
+    ) {
       setState('unsupported')
       return
     }
@@ -107,7 +111,7 @@ export function PushOptIn({ vapidPublicKey }: Props) {
 
   if (state === 'denied') {
     return (
-      <Card className="mb-4 border-warning/30 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
+      <Card className="border-warning/30 p-4 shadow-lg">
         <div className="flex items-start gap-3">
           <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-warning/10 text-warning">
             <BellOff className="h-4 w-4" />
@@ -115,9 +119,9 @@ export function PushOptIn({ vapidPublicKey }: Props) {
           <div className="min-w-0 flex-1">
             <p className="text-sm font-medium">Notificaciones bloqueadas</p>
             <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-              Las notificaciones del navegador están desactivadas para este sitio. Para
-              activarlas, abre el candado/icono junto a la URL, busca "Notificaciones" y elige
-              "Permitir". Después recarga la página.
+              Las notificaciones del navegador están desactivadas para este sitio. Para activarlas,
+              abre el candado/icono junto a la URL, busca "Notificaciones" y elige "Permitir".
+              Después recarga la página.
             </p>
           </div>
           <button
@@ -136,7 +140,7 @@ export function PushOptIn({ vapidPublicKey }: Props) {
   if (state !== 'prompt') return null
 
   return (
-    <Card className="mb-4 border-primary/30 p-4 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mb-0 sm:max-w-xs sm:shadow-lg">
+    <Card className="border-primary/30 p-4 shadow-lg">
       <div className="flex items-start gap-3">
         <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
           <Bell className="h-4 w-4" />
@@ -144,8 +148,8 @@ export function PushOptIn({ vapidPublicKey }: Props) {
         <div className="min-w-0 flex-1">
           <p className="text-sm font-medium">Activa las notificaciones del Mundial</p>
           <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-            Recibe avisos cuando se acerque el cierre, cuando se resuelvan resultados y cuando
-            ganes puntos en cualquiera de tus grupos.
+            Recibe avisos cuando se acerque el cierre, cuando se resuelvan resultados y cuando ganes
+            puntos en cualquiera de tus grupos.
           </p>
           <div className="mt-3 flex gap-2">
             <Button size="sm" onClick={enable} disabled={busy}>

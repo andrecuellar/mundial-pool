@@ -12,12 +12,7 @@ type Props = {
   shareText: string
 }
 
-export function ShareComprobanteButton({
-  targetId,
-  fileName,
-  shareTitle,
-  shareText,
-}: Props) {
+export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareText }: Props) {
   const [pending, setPending] = useState(false)
 
   async function handleShare() {

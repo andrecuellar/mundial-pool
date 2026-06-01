@@ -64,16 +64,17 @@ export default async function TableSeleccionesPage() {
           <ol className="list-decimal pl-5 space-y-2 text-foreground">
             <li>
               <span className="font-medium">Etapa alcanzada</span>: campeón → subcampeón → tercero →
-              cuarto → perdedores de cuartos → perdedores de octavos → perdedores de
-              dieciseisavos → eliminados en grupos.
+              cuarto → perdedores de cuartos → perdedores de octavos → perdedores de dieciseisavos →
+              eliminados en grupos.
             </li>
             <li>
-              <span className="font-medium">Dentro de los brackets de eliminación directa</span> (5-8,
-              9-16, 17-32) los perdedores se ordenan así:
+              <span className="font-medium">Dentro de los brackets de eliminación directa</span>{' '}
+              (5-8, 9-16, 17-32) los perdedores se ordenan así:
               <ul className="mt-1.5 ml-4 list-[circle] space-y-1 text-muted-foreground">
                 <li>
-                  Primero los que perdieron <span className="font-medium text-foreground">por penales</span>{' '}
-                  (empataron en 90 min + prórroga). Entre ellos, más goles del partido → fair play.
+                  Primero los que perdieron{' '}
+                  <span className="font-medium text-foreground">por penales</span> (empataron en 90
+                  min + prórroga). Entre ellos, más goles del partido → fair play.
                 </li>
                 <li>
                   Después los que perdieron por derrota en tiempo regular o prórroga. Mejor
@@ -131,10 +132,7 @@ export default async function TableSeleccionesPage() {
               </thead>
               <tbody>
                 {ranked.map((t, i) => (
-                  <tr
-                    key={t.id}
-                    className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}
-                  >
+                  <tr key={t.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
                     <td className="px-3 py-2 align-middle">
                       <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
                         {t.mundialRank === 1 && <Trophy className="h-3 w-3 text-gold" />}

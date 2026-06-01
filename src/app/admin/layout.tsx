@@ -1,6 +1,6 @@
 import type * as React from 'react'
-import { AppHeader } from '@/components/app-shell/app-header'
 import { AdminMobileNav, AdminSidebar } from '@/components/admin/admin-sidebar'
+import { AppHeader } from '@/components/app-shell/app-header'
 import { requireSuperAdmin } from '@/lib/admin'
 
 export const dynamic = 'force-dynamic'

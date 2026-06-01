@@ -2,7 +2,6 @@
 
 import { ArrowRight, Info, Trophy, X } from 'lucide-react'
 import { useState } from 'react'
-import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,12 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 
 type Props = {
   /** Visual size of the trigger icon. */
@@ -111,7 +106,9 @@ function CriteriaBody({ onClose }: { onClose: () => void }) {
         </p>
         <p>
           ⚠️ Normalizamos a una escala{' '}
-          <span className="font-medium text-foreground">1 a 48 entre las selecciones del Mundial</span>
+          <span className="font-medium text-foreground">
+            1 a 48 entre las selecciones del Mundial
+          </span>
           : la mejor rankeada del torneo es #1 y la peor es #48. Esto evita que una selección con
           ranking global FIFA muy bajo (ej. #85) suba "injustamente" por terminar en el fondo del
           torneo — su ranking interno también es #48, así que la diferencia queda en 0.
@@ -212,12 +209,7 @@ function ExampleRow({
         {headline}
       </p>
       <div className="flex flex-col items-stretch gap-2 sm:flex-row sm:items-center sm:justify-between">
-        <ScalePill
-          label="Rank FIFA entre las 48"
-          value={fifaRank}
-          sub={fifaSub}
-          tone="muted"
-        />
+        <ScalePill label="Rank FIFA entre las 48" value={fifaRank} sub={fifaSub} tone="muted" />
         <ArrowRight className="hidden h-5 w-5 shrink-0 self-center text-muted-foreground sm:block" />
         <ScalePill
           label="Rank Torneo final"
@@ -369,9 +361,9 @@ function TiebreakersList() {
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground leading-relaxed">
-        Los que perdieron por penales se ordenan{' '}
-        <span className="text-foreground">antes</span> de los que perdieron por derrota dentro de
-        cada bracket (4 perdedores de cuartos, 8 de octavos, 16 de dieciseisavos).
+        Los que perdieron por penales se ordenan <span className="text-foreground">antes</span> de
+        los que perdieron por derrota dentro de cada bracket (4 perdedores de cuartos, 8 de octavos,
+        16 de dieciseisavos).
       </p>
     </section>
   )

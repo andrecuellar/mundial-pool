@@ -35,9 +35,7 @@ export default async function AdminGroupsPage() {
               <TableHead className="hidden sm:table-cell">Owner</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Miembros</TableHead>
-              <TableHead className="hidden text-right md:table-cell">
-                Completos
-              </TableHead>
+              <TableHead className="hidden text-right md:table-cell">Completos</TableHead>
               <TableHead className="hidden text-right md:table-cell">Pozo</TableHead>
               <TableHead className="hidden text-right xl:table-cell">Cierre</TableHead>
             </TableRow>
@@ -48,10 +46,7 @@ export default async function AdminGroupsPage() {
               return (
                 <TableRow key={g.id}>
                   <TableCell>
-                    <Link
-                      href={`/admin/grupos/${g.slug}`}
-                      className="font-medium hover:underline"
-                    >
+                    <Link href={`/admin/grupos/${g.slug}`} className="font-medium hover:underline">
                       {g.name}
                     </Link>
                     <div className="font-mono text-[10px] text-muted-foreground">{g.slug}</div>
@@ -88,9 +83,7 @@ export default async function AdminGroupsPage() {
                     {g.poolEnabled ? (
                       <span>
                         {g.poolTotal.toFixed(2)}{' '}
-                        <span className="text-[10px] text-muted-foreground">
-                          {g.poolCurrency}
-                        </span>
+                        <span className="text-[10px] text-muted-foreground">{g.poolCurrency}</span>
                       </span>
                     ) : (
                       <span className="text-xs text-muted-foreground">—</span>

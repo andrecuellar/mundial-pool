@@ -12,10 +12,7 @@ export async function markOnboarded(): Promise<{ ok: boolean }> {
   } = await supabase.auth.getUser()
   if (!user) return { ok: false }
 
-  await db
-    .update(profiles)
-    .set({ onboardedAt: new Date() })
-    .where(eq(profiles.id, user.id))
+  await db.update(profiles).set({ onboardedAt: new Date() }).where(eq(profiles.id, user.id))
 
   return { ok: true }
 }

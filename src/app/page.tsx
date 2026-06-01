@@ -79,7 +79,6 @@ export default async function Home() {
     <>
       <AppHeader user={{ name: displayName, email: user.email ?? null, avatarUrl }} />
       <OnboardingModal shouldShow={shouldOnboard} />
-      <InstallPrompt />
 
       <main className="mx-auto w-full max-w-3xl flex-1 px-4 py-8 sm:px-6">
         <div className="flex items-baseline justify-between gap-3">
@@ -99,8 +98,9 @@ export default async function Home() {
           </span>
         </div>
 
-        <div className="mt-4">
+        <div className="mt-4 flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mt-0 sm:w-72 sm:max-w-xs">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
+          <InstallPrompt />
         </div>
 
         {(() => {
@@ -113,10 +113,7 @@ export default async function Home() {
           if (!next) return null
           return (
             <div className="mt-4">
-              <CountdownBanner
-                lockAt={new Date(next.ts).toISOString()}
-                groupName={next.name}
-              />
+              <CountdownBanner lockAt={new Date(next.ts).toISOString()} groupName={next.name} />
             </div>
           )
         })()}

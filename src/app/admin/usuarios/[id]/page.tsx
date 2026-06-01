@@ -1,7 +1,7 @@
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
-import { BackLink } from '@/components/app-shell/back-link'
 import { AdminDataTable } from '@/components/admin/data-table'
+import { BackLink } from '@/components/app-shell/back-link'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import {
@@ -61,17 +61,13 @@ export default async function AdminUserDetailPage({ params }: Params) {
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
             Grupos
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {detail.memberships.length}
-          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{detail.memberships.length}</p>
         </Card>
         <Card className="p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
             Predicciones
           </p>
-          <p className="mt-1 text-2xl font-semibold tabular-nums">
-            {detail.predictions.length}
-          </p>
+          <p className="mt-1 text-2xl font-semibold tabular-nums">{detail.predictions.length}</p>
         </Card>
       </div>
 
@@ -91,7 +87,10 @@ export default async function AdminUserDetailPage({ params }: Params) {
             {detail.memberships.map((m) => (
               <TableRow key={m.groupId}>
                 <TableCell>
-                  <Link href={`/admin/grupos/${m.groupSlug}`} className="font-medium hover:underline">
+                  <Link
+                    href={`/admin/grupos/${m.groupSlug}`}
+                    className="font-medium hover:underline"
+                  >
                     {m.groupName}
                   </Link>
                 </TableCell>

@@ -109,12 +109,7 @@ export function OnboardingModal({ shouldShow }: Props) {
             Atrás
           </Button>
           {isLast ? (
-            <Button
-              type="button"
-              disabled={pending}
-              onClick={finish}
-              className="flex-1"
-            >
+            <Button type="button" disabled={pending} onClick={finish} className="flex-1">
               {pending ? 'Cerrando…' : 'Entendido'}
             </Button>
           ) : (

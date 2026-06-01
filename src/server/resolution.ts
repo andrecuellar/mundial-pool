@@ -230,14 +230,14 @@ async function notifyWinners(resolvedCategoryIds: string[]) {
     })
     .from(predictions)
     .innerJoin(groups, eq(groups.id, predictions.groupId))
-    .innerJoin(
-      groupCategories,
-      eq(groupCategories.categoryId, predictions.categoryId),
-    )
+    .innerJoin(groupCategories, eq(groupCategories.categoryId, predictions.categoryId))
     .where(inArray(predictions.categoryId, resolvedCategoryIds))
 
   // userId → { points, names: string[] }
-  const wins = new Map<string, { totalPoints: number; categoryNames: string[]; groupSlug: string }>()
+  const wins = new Map<
+    string,
+    { totalPoints: number; categoryNames: string[]; groupSlug: string }
+  >()
 
   for (const p of allPredictions) {
     const cat = catById.get(p.categoryId)

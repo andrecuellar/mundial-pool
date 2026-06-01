@@ -2,7 +2,6 @@
 
 import { ExternalLink, Info, X } from 'lucide-react'
 import { useState } from 'react'
-import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -12,12 +11,8 @@ import {
   DialogTitle,
   DialogTrigger,
 } from '@/components/ui/dialog'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '@/components/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip'
+import { useDialogBackButton } from '@/hooks/use-dialog-back-button'
 
 export type PlayerCategoryKey =
   | 'top_scorer_player'
@@ -135,9 +130,7 @@ export function PlayerCategoryCriteriaDialog({ kind, size = 'sm', className }: P
           )}
 
           <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">
-              Fuente
-            </p>
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-primary">Fuente</p>
             <p className="mt-1.5 text-sm leading-relaxed">{c.decidedBy}</p>
             <a
               href={FIFA_STATS_URL}
@@ -151,8 +144,10 @@ export function PlayerCategoryCriteriaDialog({ kind, size = 'sm', className }: P
           </div>
 
           <div className="rounded-lg border border-border bg-muted/30 p-3 text-xs text-muted-foreground leading-relaxed">
-            <span className="font-medium text-foreground">Resolución manual al cierre del Mundial</span>:
-            el admin de mundial-pool toma el dato de FIFA y lo registra en la app. Los puntos se
+            <span className="font-medium text-foreground">
+              Resolución manual al cierre del Mundial
+            </span>
+            : el admin de mundial-pool toma el dato de FIFA y lo registra en la app. Los puntos se
             reparten automáticamente a quienes acertaron.
           </div>
         </section>

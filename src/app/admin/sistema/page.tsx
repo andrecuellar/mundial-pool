@@ -90,9 +90,7 @@ export default async function AdminSistemaPage() {
           <TableBody>
             {runs.map((r) => (
               <TableRow key={r.id}>
-                <TableCell className="font-mono text-xs">
-                  {formatDayTime(r.startedAt)}
-                </TableCell>
+                <TableCell className="font-mono text-xs">{formatDayTime(r.startedAt)}</TableCell>
                 <TableCell className="font-mono text-xs text-muted-foreground">
                   {r.finishedAt ? formatDayTime(r.finishedAt) : '—'}
                 </TableCell>

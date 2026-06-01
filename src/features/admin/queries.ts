@@ -227,9 +227,10 @@ export async function listAdminGroups() {
   const groupCompletions = db
     .select({
       groupId: fullCompletions.groupId,
-      completedMembers: sql<number>`SUM(CASE WHEN ${fullCompletions.filled} >= 14 THEN 1 ELSE 0 END)`.as(
-        'completed_members',
-      ),
+      completedMembers:
+        sql<number>`SUM(CASE WHEN ${fullCompletions.filled} >= 14 THEN 1 ELSE 0 END)`.as(
+          'completed_members',
+        ),
     })
     .from(fullCompletions)
     .groupBy(fullCompletions.groupId)
@@ -336,10 +337,7 @@ export async function getAdminGroupDetail(slug: string) {
   }
 }
 
-export async function listAdminPredictions(filters?: {
-  categoryKey?: string
-  groupSlug?: string
-}) {
+export async function listAdminPredictions(filters?: { categoryKey?: string; groupSlug?: string }) {
   const conditions = []
   if (filters?.categoryKey) conditions.push(eq(categories.key, filters.categoryKey))
   if (filters?.groupSlug) conditions.push(eq(groups.slug, filters.groupSlug))
@@ -417,10 +415,7 @@ export async function listAdminCategories() {
 }
 
 export async function listAdminTeams() {
-  return db
-    .select()
-    .from(teams)
-    .orderBy(sql`COALESCE(${teams.fifaRanking}, 999), ${teams.name}`)
+  return db.select().from(teams).orderBy(sql`COALESCE(${teams.fifaRanking}, 999), ${teams.name}`)
 }
 
 export async function listAdminPlayers() {
@@ -456,11 +451,7 @@ export async function listAdminResults() {
 }
 
 export async function listAdminResolutionRuns() {
-  return db
-    .select()
-    .from(resolutionRuns)
-    .orderBy(desc(resolutionRuns.startedAt))
-    .limit(50)
+  return db.select().from(resolutionRuns).orderBy(desc(resolutionRuns.startedAt)).limit(50)
 }
 
 export async function listAdminAppState() {

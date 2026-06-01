@@ -99,38 +99,47 @@ export function InstallPrompt() {
     }
   }
 
+  const content = (
+    <div className="flex items-start gap-3">
+      <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
+        <Download className="h-4 w-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="text-sm font-medium">Instala mundial-pool</p>
+        <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
+          Acceso directo desde tu pantalla de inicio y notificaciones del Mundial.
+        </p>
+        <div className="mt-3 flex gap-2">
+          <Button size="sm" onClick={install}>
+            {isIos() ? 'Ver cómo' : 'Instalar'}
+          </Button>
+          <Button size="sm" variant="ghost" onClick={dismiss}>
+            Más tarde
+          </Button>
+        </div>
+      </div>
+      <button
+        type="button"
+        onClick={dismiss}
+        aria-label="Cerrar"
+        className="shrink-0 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
+      >
+        <X className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  )
+
   return (
     <>
       {showSnack && (
-        <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card p-4 shadow-lg sm:bottom-auto sm:left-4 sm:top-80 sm:max-w-xs sm:translate-x-0">
-          <div className="flex items-start gap-3">
-            <div className="grid h-9 w-9 shrink-0 place-items-center rounded-lg bg-primary/10 text-primary">
-              <Download className="h-4 w-4" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium">Instala mundial-pool</p>
-              <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                Acceso directo desde tu pantalla de inicio y notificaciones del Mundial.
-              </p>
-              <div className="mt-3 flex gap-2">
-                <Button size="sm" onClick={install}>
-                  {isIos() ? 'Ver cómo' : 'Instalar'}
-                </Button>
-                <Button size="sm" variant="ghost" onClick={dismiss}>
-                  Más tarde
-                </Button>
-              </div>
-            </div>
-            <button
-              type="button"
-              onClick={dismiss}
-              aria-label="Cerrar"
-              className="shrink-0 grid h-6 w-6 place-items-center rounded-full text-muted-foreground hover:bg-muted hover:text-foreground"
-            >
-              <X className="h-3.5 w-3.5" />
-            </button>
+        <>
+          <div className="fixed bottom-4 left-1/2 z-40 w-[calc(100%-2rem)] max-w-md -translate-x-1/2 rounded-xl border border-border bg-card p-4 shadow-lg sm:hidden">
+            {content}
           </div>
-        </div>
+          <div className="hidden rounded-xl border border-border bg-card p-4 shadow-lg sm:block">
+            {content}
+          </div>
+        </>
       )}
 
       <Dialog open={showIos} onOpenChange={setShowIos}>

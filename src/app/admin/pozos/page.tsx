@@ -97,18 +97,13 @@ export default async function AdminPoolsPage() {
           QR subidos ({qrUploads.length})
         </h2>
         {qrUploads.length === 0 ? (
-          <Card className="p-5 text-sm text-muted-foreground">
-            Aún no se ha subido ningún QR.
-          </Card>
+          <Card className="p-5 text-sm text-muted-foreground">Aún no se ha subido ningún QR.</Card>
         ) : (
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {qrUploads.map((q) => (
               <Card key={q.slug} className="overflow-hidden p-0">
                 <div className="border-b border-border bg-muted/20 px-3 py-2 text-xs">
-                  <Link
-                    href={`/admin/grupos/${q.slug}`}
-                    className="font-medium hover:underline"
-                  >
+                  <Link href={`/admin/grupos/${q.slug}`} className="font-medium hover:underline">
                     {q.name}
                   </Link>
                   <span className="ml-2 font-mono text-[10px] text-muted-foreground">

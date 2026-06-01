@@ -15,11 +15,7 @@ const magicLinkSchema = z.object({
   next: z.string().optional(),
 })
 
-export type MagicLinkErrorCode =
-  | 'invalid_email'
-  | 'rate_limited'
-  | 'cooldown'
-  | 'other'
+export type MagicLinkErrorCode = 'invalid_email' | 'rate_limited' | 'cooldown' | 'other'
 
 export type MagicLinkResult =
   | { ok: true }
@@ -54,8 +50,7 @@ function classifyAuthError(raw: string): {
   if (msg.includes('rate limit') && msg.includes('email')) {
     return {
       code: 'rate_limited' as const,
-      error:
-        'Servicio de correo saturado. Para entrar sin esperar, usa Continuar con Google.',
+      error: 'Servicio de correo saturado. Para entrar sin esperar, usa Continuar con Google.',
     }
   }
 
