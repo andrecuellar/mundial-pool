@@ -9,8 +9,10 @@ import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
 import {
   getAllGroupPredictions,
+  getPredictionIdsByMemberCategory,
   serialiseAllPredictionsView,
 } from '@/features/predictions/queries'
+import { getGroupReactions } from '@/features/reactions/queries'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -39,8 +41,16 @@ export default async function PredictionsPage({ params }: Params) {
   const avatarUrl = (user.user_metadata?.avatar_url as string | undefined) ?? null
 
   const locked = new Date() >= group.predictionsLockAt
-  const rawView = locked ? await getAllGroupPredictions(group.id) : null
-  const view = rawView ? serialiseAllPredictionsView(rawView) : null
+  const [rawView, predIds, reactionMap] = locked
+    ? await Promise.all([
+        getAllGroupPredictions(group.id),
+        getPredictionIdsByMemberCategory(group.id),
+        getGroupReactions(group.id, user.id),
+      ])
+    : [null, undefined, null]
+  const view = rawView ? serialiseAllPredictionsView(rawView, predIds) : null
+  const reactionsByKey = reactionMap ? Object.fromEntries(reactionMap) : {}
+  const viewWithReactions = view ? { ...view, reactionsByKey } : null
 
   return (
     <>
@@ -58,9 +68,13 @@ export default async function PredictionsPage({ params }: Params) {
             : 'Las apuestas se mantienen ocultas hasta el cierre.'}
         </p>
 
-        {locked && view ? (
+        {locked && viewWithReactions ? (
           <div className="mt-6">
-            <AllPredictionsView view={view} currentUserId={user.id} />
+            <AllPredictionsView
+              view={viewWithReactions}
+              currentUserId={user.id}
+              enableReactions
+            />
           </div>
         ) : (
           <Card className="mt-6 p-8 sm:p-10 text-center">

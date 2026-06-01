@@ -259,6 +259,25 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
   return { members, categories: cats, picks }
 }
 
+export async function getPredictionIdsByMemberCategory(
+  groupId: string,
+): Promise<Record<string, Record<string, string | undefined>>> {
+  const rows = await db
+    .select({
+      id: predictions.id,
+      userId: predictions.userId,
+      categoryId: predictions.categoryId,
+    })
+    .from(predictions)
+    .where(eq(predictions.groupId, groupId))
+  const out: Record<string, Record<string, string | undefined>> = {}
+  for (const r of rows) {
+    if (!out[r.userId]) out[r.userId] = {}
+    out[r.userId][r.categoryId] = r.id
+  }
+  return out
+}
+
 /**
  * Plain serialisable shape of getAllGroupPredictions, for passing across the
  * server→client boundary (Maps don't survive RSC props).
@@ -267,10 +286,12 @@ export type AllPredictionsViewSerialised = {
   members: AllPredictionsMember[]
   categories: AllPredictionsCategory[]
   picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>>
+  predictionIdsByMemberCategory: Record<string, Record<string, string | undefined>>
 }
 
 export function serialiseAllPredictionsView(
   view: AllPredictionsView,
+  predictionIdsByMemberCategory?: Record<string, Record<string, string | undefined>>,
 ): AllPredictionsViewSerialised {
   const picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>> = {}
   for (const [memberId, byCat] of view.picks) {
@@ -280,6 +301,7 @@ export function serialiseAllPredictionsView(
     members: view.members,
     categories: view.categories,
     picksByMemberCategory,
+    predictionIdsByMemberCategory: predictionIdsByMemberCategory ?? {},
   }
 }
 

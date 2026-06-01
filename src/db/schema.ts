@@ -185,6 +185,25 @@ export const resolutionRuns = pgTable('resolution_runs', {
   details: jsonb('details').$type<Record<string, unknown>>(),
 })
 
+// Emoji reactions on individual predictions, post-lock. Limited to a fixed
+// set of emojis on the UI side to avoid moderation. Stored as text so we can
+// expand the set without a schema change.
+export const predictionReactions = pgTable(
+  'prediction_reactions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    predictionId: uuid('prediction_id')
+      .notNull()
+      .references(() => predictions.id, { onDelete: 'cascade' }),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    emoji: text('emoji').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [unique('prediction_reactions_unique').on(t.predictionId, t.userId, t.emoji)],
+)
+
 // Tiny key/value table for app-wide global state that doesn't fit anywhere
 // else. First user: persisting the magic-link rate-limit deadline so it's
 // shared across devices, not local to a browser.

@@ -6,7 +6,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
+import { ReactionBar } from '@/components/predictions/reaction-bar'
 import type { AllPredictionsPick } from '@/features/predictions/queries'
+import type { ReactionBucket } from '@/features/reactions/queries'
 
 function initials(name: string): string {
   return (
@@ -36,11 +38,17 @@ export type ViewData = {
   categories: CategoryRow[]
   /** Flat array of picks indexed via members×categories; missing entries = no pick. */
   picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>>
+  /** Optional prediction ids per (userId, categoryId). Required for reactions. */
+  predictionIdsByMemberCategory?: Record<string, Record<string, string | undefined>>
+  /** Optional reaction buckets keyed "userId-categoryId". */
+  reactionsByKey?: Record<string, ReactionBucket[] | undefined>
 }
 
 type Props = {
   view: ViewData
   currentUserId: string
+  /** When true and reactions are wired in `view`, shows the reaction bar. */
+  enableReactions?: boolean
 }
 
 function normalize(s: string): string {
@@ -51,10 +59,22 @@ function normalize(s: string): string {
     .trim()
 }
 
-export function AllPredictionsView({ view, currentUserId }: Props) {
+export function AllPredictionsView({
+  view,
+  currentUserId,
+  enableReactions = false,
+}: Props) {
   const { members, categories } = view
   const [query, setQuery] = useState('')
   const [categoryKey, setCategoryKey] = useState<string>('all')
+
+  function reactionBarFor(memberId: string, categoryId: string) {
+    if (!enableReactions) return null
+    const predictionId = view.predictionIdsByMemberCategory?.[memberId]?.[categoryId]
+    if (!predictionId) return null
+    const buckets = view.reactionsByKey?.[`${memberId}-${categoryId}`] ?? []
+    return <ReactionBar predictionId={predictionId} initialBuckets={buckets} />
+  }
 
   const filteredMembers = useMemo(() => {
     const q = normalize(query)
@@ -122,23 +142,28 @@ export function AllPredictionsView({ view, currentUserId }: Props) {
               const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
               const isMe = m.userId === currentUserId
               return (
-                <li key={m.userId} className="flex items-center justify-between gap-3 px-5 py-3">
-                  <div className="flex min-w-0 items-center gap-2.5">
-                    <Avatar className="h-8 w-8">
-                      {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
-                      <AvatarFallback className="text-xs">{initials(m.displayName)}</AvatarFallback>
-                    </Avatar>
-                    <span className="truncate text-sm font-medium">{m.displayName}</span>
-                    {isMe && (
-                      <Badge
-                        variant="secondary"
-                        className="border-primary/20 bg-primary/10 text-primary"
-                      >
-                        Tú
-                      </Badge>
-                    )}
+                <li key={m.userId} className="px-5 py-3">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Avatar className="h-8 w-8">
+                        {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
+                        <AvatarFallback className="text-xs">
+                          {initials(m.displayName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <span className="truncate text-sm font-medium">{m.displayName}</span>
+                      {isMe && (
+                        <Badge
+                          variant="secondary"
+                          className="border-primary/20 bg-primary/10 text-primary"
+                        >
+                          Tú
+                        </Badge>
+                      )}
+                    </div>
+                    <div className="text-right text-sm">{renderPick(p)}</div>
                   </div>
-                  <div className="text-right text-sm">{renderPick(p)}</div>
+                  {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
                 </li>
               )
             })}
@@ -172,14 +197,14 @@ export function AllPredictionsView({ view, currentUserId }: Props) {
               </div>
               <ul className="divide-y divide-border">
                 {categories.map((cat) => (
-                  <li
-                    key={cat.id}
-                    className="flex items-start justify-between gap-3 px-5 py-2.5 text-sm"
-                  >
-                    <span className="min-w-0 text-muted-foreground">{cat.name}</span>
-                    <span className="text-right text-foreground">
-                      {renderPick(memberPicks[cat.id])}
-                    </span>
+                  <li key={cat.id} className="px-5 py-2.5 text-sm">
+                    <div className="flex items-start justify-between gap-3">
+                      <span className="min-w-0 text-muted-foreground">{cat.name}</span>
+                      <span className="text-right text-foreground">
+                        {renderPick(memberPicks[cat.id])}
+                      </span>
+                    </div>
+                    {!isMe && reactionBarFor(m.userId, cat.id)}
                   </li>
                 ))}
               </ul>
