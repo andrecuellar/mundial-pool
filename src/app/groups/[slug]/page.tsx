@@ -261,7 +261,7 @@ export default async function GroupPage({ params }: Params) {
                       }`
                     : 'Vuelve cuando quieras a revisarlas'
             return (
-              <Link href={`/groups/${slug}/predict`} className="block h-full">
+              <Link href={`/groups/${slug}/predict`} className="group block h-full">
                 <Card
                   className={`relative flex h-full flex-col overflow-hidden p-5 ${
                     shouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
@@ -286,7 +286,7 @@ export default async function GroupPage({ params }: Params) {
                       </p>
                     </div>
                     <ChevronRight
-                      className={`h-5 w-5 ${
+                      className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:text-primary ${
                         shouldGlow ? 'text-primary' : 'text-muted-foreground'
                       }`}
                     />
@@ -304,7 +304,7 @@ export default async function GroupPage({ params }: Params) {
             )
           })()}
 
-          <Link href={`/groups/${slug}/leaderboard`} className="block h-full">
+          <Link href={`/groups/${slug}/leaderboard`} className="group block h-full">
             <Card className="hover-lift flex h-full flex-col p-5">
               <div className="flex items-start justify-between gap-3">
                 <div>
@@ -320,7 +320,7 @@ export default async function GroupPage({ params }: Params) {
                       : 'Aún sin datos'}
                   </p>
                 </div>
-                <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
               </div>
               <div className="mt-auto pt-4">
                 {leaderboard.length > 0 ? (
@@ -356,7 +356,7 @@ export default async function GroupPage({ params }: Params) {
           />
         </div>
 
-        <Link href={`/groups/${slug}/predictions`} className="mt-4 block">
+        <Link href={`/groups/${slug}/predictions`} className="group mt-4 block">
           <Card className="hover-lift p-5">
             <div className="flex items-start justify-between gap-3">
               <div>
@@ -369,7 +369,7 @@ export default async function GroupPage({ params }: Params) {
                     : `Se revelan el ${formatDayShort(group.predictionsLockAt)}, junto con el cierre.`}
                 </p>
               </div>
-              <ChevronRight className="h-4 w-4 text-muted-foreground" />
+              <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
             </div>
           </Card>
         </Link>

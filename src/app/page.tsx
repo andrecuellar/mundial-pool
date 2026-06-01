@@ -118,7 +118,7 @@ export default async function Home() {
                   className="animate-fade-up"
                   style={{ animationDelay: `${i * 60}ms` }}
                 >
-                  <Link href={`/groups/${g.slug}`} className="block">
+                  <Link href={`/groups/${g.slug}`} className="group block">
                     <Card className="hover-lift p-5">
                       <div className="flex items-start justify-between gap-3">
                         <div className="min-w-0 flex-1">
@@ -153,7 +153,7 @@ export default async function Home() {
                             )}
                           </div>
                         </div>
-                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />
+                        <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                       </div>
                     </Card>
                   </Link>
