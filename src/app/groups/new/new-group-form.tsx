@@ -1,11 +1,18 @@
 'use client'
 
-import { ArrowRight, ImagePlus, Sparkles, X } from 'lucide-react'
+import { ArrowRight, ImagePlus, Maximize2, Sparkles, X } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { Button } from '@/components/ui/button'
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import {
@@ -228,12 +235,36 @@ export function NewGroupForm() {
                     )}
                   </div>
                   {qrPreview && (
-                    // biome-ignore lint/performance/noImgElement: local blob preview
-                    <img
-                      src={qrPreview}
-                      alt="Vista previa del QR"
-                      className="h-20 w-20 shrink-0 rounded-lg border border-border object-cover"
-                    />
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="group relative h-20 w-20 shrink-0 overflow-hidden rounded-lg border border-border focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+                          aria-label="Ver QR a pantalla completa"
+                        >
+                          {/* biome-ignore lint/performance/noImgElement: local blob preview */}
+                          <img
+                            src={qrPreview}
+                            alt="Vista previa del QR"
+                            className="h-full w-full object-cover"
+                          />
+                          <span className="absolute inset-0 grid place-items-center bg-background/0 text-foreground/0 transition-colors group-hover:bg-background/60 group-hover:text-foreground">
+                            <Maximize2 className="h-5 w-5" />
+                          </span>
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-sm">
+                        <DialogHeader>
+                          <DialogTitle>Vista previa del QR</DialogTitle>
+                        </DialogHeader>
+                        {/* biome-ignore lint/performance/noImgElement: local blob preview */}
+                        <img
+                          src={qrPreview}
+                          alt="Vista previa del QR"
+                          className="w-full rounded-lg border border-border"
+                        />
+                      </DialogContent>
+                    </Dialog>
                   )}
                 </div>
                 <p className="text-xs text-muted-foreground">PNG, JPG o WEBP, máximo 5 MB.</p>
