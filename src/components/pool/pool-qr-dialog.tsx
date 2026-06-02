@@ -41,40 +41,46 @@ export function PoolQrDialog({
           Ver QR
         </Button>
       </DialogTrigger>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Aporta al pozo</DialogTitle>
         </DialogHeader>
 
-        <PoolDisclaimer variant="qr" />
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-4">
+            <PoolDisclaimer variant="qr" />
 
-        <div className="rounded-xl border border-border bg-card p-4">
-          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Le estás mandando dinero a
-          </p>
-          <p className="mt-1.5 text-base font-semibold">
-            {creatorDisplayName ?? 'Administrador del grupo'}
-          </p>
-          {creatorEmail && (
-            <p className="mt-0.5 font-mono text-xs text-muted-foreground break-all">
-              {creatorEmail}
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                Le estás mandando dinero a
+              </p>
+              <p className="mt-1.5 text-base font-semibold">
+                {creatorDisplayName ?? 'Administrador del grupo'}
+              </p>
+              {creatorEmail && (
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground break-all">
+                  {creatorEmail}
+                </p>
+              )}
+              <div className="mt-3 border-t border-border pt-3">
+                <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                  Monto a aportar
+                </p>
+                <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">
+                  {formatMoney(buyInAmount, currency)}
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3">
+            <p className="text-xs text-muted-foreground">
+              Escanea con la aplicación de tu banco. Avísale al administrador del grupo para que
+              registre tu depósito.
             </p>
-          )}
-          <div className="mt-3 border-t border-border pt-3">
-            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-              Monto a aportar
-            </p>
-            <p className="mt-1 font-mono text-2xl font-semibold tabular-nums">
-              {formatMoney(buyInAmount, currency)}
-            </p>
+            <QrImage src={qrUrl} alt="QR de depósito" />
           </div>
         </div>
-
-        <p className="text-xs text-muted-foreground">
-          Escanea con la aplicación de tu banco. Avísale al administrador del grupo para que
-          registre tu depósito.
-        </p>
-        <QrImage src={qrUrl} alt="QR de depósito" />
       </DialogContent>
     </Dialog>
   )
