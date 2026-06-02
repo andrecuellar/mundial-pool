@@ -11,15 +11,16 @@ type Props = {
 }
 
 // Shared QR image with a skeleton + spinner while the upstream image loads.
-// Used in PoolQrDialog (member view) and QrUploadCard (owner view) so the load
-// state looks the same everywhere.
+// The wrapper has aspect-square sizing; the image and skeleton are both
+// position:absolute inside so the wrapper alone reserves layout space — no
+// shift when the image swaps in, and nothing escapes into surrounding flow.
 export function QrImage({ src, alt, className }: Props) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
 
   return (
     <div
-      className={`relative aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted/30 ${className ?? ''}`}
+      className={`relative isolate block aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted/30 ${className ?? ''}`}
     >
       {!loaded && !errored && (
         <div className="absolute inset-0 grid place-items-center">
@@ -30,7 +31,7 @@ export function QrImage({ src, alt, className }: Props) {
         </div>
       )}
       {errored ? (
-        <div className="absolute inset-0 grid place-items-center text-center text-xs text-muted-foreground p-4">
+        <div className="absolute inset-0 grid place-items-center p-4 text-center text-xs text-muted-foreground">
           No se pudo cargar el QR.
         </div>
       ) : (
@@ -40,7 +41,7 @@ export function QrImage({ src, alt, className }: Props) {
           alt={alt}
           onLoad={() => setLoaded(true)}
           onError={() => setErrored(true)}
-          className={`h-full w-full object-contain transition-opacity duration-300 ${
+          className={`absolute inset-0 h-full w-full object-contain transition-opacity duration-300 ${
             loaded ? 'opacity-100' : 'opacity-0'
           }`}
         />
