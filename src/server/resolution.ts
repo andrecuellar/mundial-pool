@@ -1,10 +1,11 @@
-import { eq, inArray } from 'drizzle-orm'
+import { eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   categories,
   groupCategories,
   groups,
   predictions,
+  profiles,
   resolutionRuns,
   results,
   teams,
@@ -12,7 +13,7 @@ import {
 import { getFootballProvider } from '@/integrations/football'
 import { teamMatchKey } from '@/integrations/football/normalize'
 import type { TournamentSnapshot } from '@/integrations/football/types'
-import { sendPushToUsers } from '@/server/push'
+import { sendNotificationByType } from '@/server/notifications/send'
 
 type Outcome =
   | { kind: 'team'; teamName: string }
@@ -85,6 +86,12 @@ export async function runResolution() {
     const summary: Record<string, string> = {}
     const newlyResolvedCategoryIds: string[] = []
 
+    // Snapshot who's currently in #1 per group BEFORE writing any results.
+    // After the run completes we diff against the post-snapshot to detect
+    // dethroned leaders. Has to happen before the INSERT loop because the
+    // v_user_scores view reflects results as soon as they're written.
+    const preTops = await getTopUserIdsByGroup()
+
     for (const cat of cats) {
       const outcome = planCategory(cat.resolutionStrategy, snapshot)
 
@@ -151,12 +158,20 @@ export async function runResolution() {
       }
     }
 
-    // Notify users who got the resolved categories right. Best-effort —
-    // failures are logged but don't block the resolution from finishing.
+    // Notify users who got the resolved categories right + anyone who fell
+    // out of #1 because of these results. Best-effort — failures are logged
+    // but don't block the resolution from finishing. Pre-snapshot was taken
+    // before the result INSERTs above so the dethroned diff is meaningful.
     try {
       await notifyWinners(newlyResolvedCategoryIds)
     } catch (e) {
       console.error('notifyWinners failed', (e as Error).message)
+    }
+    try {
+      const postTops = await getTopUserIdsByGroup()
+      await notifyDethroned(preTops, postTops, run.id)
+    } catch (e) {
+      console.error('notifyDethroned failed', (e as Error).message)
     }
 
     await db
@@ -282,11 +297,94 @@ async function notifyWinners(resolvedCategoryIds: string[]) {
       categoryNames.length === 1
         ? `Acertaste ${categoryNames[0]}`
         : `Acertaste ${categoryNames.length} categorías`
-    await sendPushToUsers([userId], {
+    await sendNotificationByType('result_winner', [userId], {
       title: `🏆 ¡+${totalPoints} pts!`,
       body,
       url: `/groups/${groupSlug}`,
       tag: `result-${userId}-${Date.now()}`,
+    })
+  }
+}
+
+// Map<groupId, Set<userId of #1>> using competition ranking against the
+// v_user_scores view. Filters out groups where everyone is tied at 0 points
+// (pre-tournament noise) so the first real resolution doesn't trigger a
+// "dethroned" push for every member.
+async function getTopUserIdsByGroup(): Promise<Map<string, Set<string>>> {
+  const rows = await db.execute<{ group_id: string; user_id: string }>(sql`
+    SELECT group_id, user_id
+    FROM (
+      SELECT group_id, user_id,
+             RANK() OVER (PARTITION BY group_id ORDER BY total_points DESC) AS rk
+      FROM v_user_scores
+      WHERE total_points > 0
+    ) ranked
+    WHERE rk = 1
+  `)
+  const out = new Map<string, Set<string>>()
+  for (const r of rows) {
+    const set = out.get(r.group_id) ?? new Set<string>()
+    set.add(r.user_id)
+    out.set(r.group_id, set)
+  }
+  return out
+}
+
+async function notifyDethroned(
+  pre: Map<string, Set<string>>,
+  post: Map<string, Set<string>>,
+  resolutionRunId: string,
+): Promise<void> {
+  // Collect (groupId, userId) pairs for displaced leaders so we can batch the
+  // group/profile lookups once.
+  type Displaced = { groupId: string; userId: string }
+  const displaced: Displaced[] = []
+  const newTopsByGroup = new Map<string, string[]>()
+  for (const [groupId, preSet] of pre) {
+    if (preSet.size === 0) continue
+    const postSet = post.get(groupId) ?? new Set<string>()
+    for (const uid of preSet) {
+      if (!postSet.has(uid)) displaced.push({ groupId, userId: uid })
+    }
+    if (postSet.size > 0) newTopsByGroup.set(groupId, Array.from(postSet))
+  }
+  if (displaced.length === 0) return
+
+  const affectedGroupIds = [...new Set(displaced.map((d) => d.groupId))]
+  const allNewTopIds = [
+    ...new Set(affectedGroupIds.flatMap((gid) => newTopsByGroup.get(gid) ?? [])),
+  ]
+
+  const [groupRows, topProfileRows] = await Promise.all([
+    db
+      .select({ id: groups.id, slug: groups.slug, name: groups.name })
+      .from(groups)
+      .where(inArray(groups.id, affectedGroupIds)),
+    allNewTopIds.length > 0
+      ? db
+          .select({ id: profiles.id, displayName: profiles.displayName })
+          .from(profiles)
+          .where(inArray(profiles.id, allNewTopIds))
+      : Promise.resolve([] as { id: string; displayName: string }[]),
+  ])
+
+  const groupById = new Map(groupRows.map((g) => [g.id, g]))
+  const nameById = new Map(topProfileRows.map((p) => [p.id, p.displayName]))
+
+  for (const d of displaced) {
+    const group = groupById.get(d.groupId)
+    if (!group) continue
+    const newTopIds = newTopsByGroup.get(d.groupId) ?? []
+    const firstNewTopName = newTopIds.length > 0 ? (nameById.get(newTopIds[0]) ?? 'Otro jugador') : 'Otro jugador'
+    const body =
+      newTopIds.length > 1
+        ? `${firstNewTopName} y ${newTopIds.length - 1} más comparten el #1 en ${group.name}`
+        : `${firstNewTopName} es el nuevo #1 en ${group.name}`
+    await sendNotificationByType('rank_dethroned', [d.userId], {
+      title: '📉 Te pasaron en el ranking',
+      body,
+      url: `/groups/${group.slug}/leaderboard`,
+      tag: `rank-dethroned-${d.groupId}-${resolutionRunId}`,
     })
   }
 }

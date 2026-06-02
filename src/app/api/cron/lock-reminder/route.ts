@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server'
 import { db } from '@/db'
 import { groupMembers, groups, predictions } from '@/db/schema'
 import { env } from '@/lib/env'
-import { sendPushToUsers } from '@/server/push'
+import { sendNotificationByType } from '@/server/notifications/send'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -58,7 +58,7 @@ async function handle(req: Request) {
           .where(eq(groupMembers.groupId, g.id))
         const userIds = members.map((m) => m.userId)
         if (userIds.length === 0) continue
-        await sendPushToUsers(userIds, {
+        await sendNotificationByType('lock_closed', userIds, {
           title: '🔒 Predicciones bloqueadas',
           body: `Las apuestas de "${g.name}" están cerradas. ¡Que empiece el Mundial!`,
           url: `/groups/${g.slug}`,
@@ -94,7 +94,7 @@ async function handle(req: Request) {
         body: `No olvides cerrar tus picks de "${g.name}" antes del cierre.`,
       }
 
-      await sendPushToUsers(pendingUsers, {
+      await sendNotificationByType('lock_reminder', pendingUsers, {
         title: copy.title,
         body: copy.body,
         url: `/groups/${g.slug}/predict`,

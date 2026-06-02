@@ -1,6 +1,6 @@
 'use client'
 
-import { LogOut, ShieldCheck, User as UserIcon } from 'lucide-react'
+import { Bell, LogOut, ShieldCheck, User as UserIcon } from 'lucide-react'
 import { usePathname, useRouter } from 'next/navigation'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import {
@@ -71,6 +71,14 @@ export function UserMenu({ name, email, avatarUrl, isAdmin = false }: Props) {
             </DropdownMenuItem>
           </>
         )}
+        <DropdownMenuSeparator />
+        <DropdownMenuItem
+          onSelect={() => router.push('/settings/notifications')}
+          className="cursor-pointer"
+        >
+          <Bell className="h-4 w-4" />
+          Notificaciones
+        </DropdownMenuItem>
         <DropdownMenuSeparator />
         <form action={signOut}>
           <DropdownMenuItem asChild>

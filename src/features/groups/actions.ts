@@ -1,11 +1,11 @@
 'use server'
 
-import { eq, sql } from 'drizzle-orm'
+import { and, eq, inArray, ne, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
-import { groupMembers, groups } from '@/db/schema'
+import { groupMembers, groups, profiles } from '@/db/schema'
 import {
   CATEGORY_DEFAULTS,
   CATEGORY_KEYS,
@@ -13,6 +13,7 @@ import {
 } from '@/features/predictions/category-defaults'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { sendNotificationByType } from '@/server/notifications/send'
 import { generateInviteCode, slugify } from './helpers'
 
 const QR_BUCKET = 'pool-qr'
@@ -230,13 +231,63 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
     return { ok: false, error: 'No encontramos un grupo con ese código.' }
   }
 
-  await db
+  const inserted = await db
     .insert(groupMembers)
     .values({ groupId: group.id, userId, role: 'member' })
     .onConflictDoNothing()
+    .returning()
+
+  // Only notify when the row was actually inserted (not when the user was
+  // already a member and the onConflictDoNothing absorbed it). Best-effort
+  // — push failures don't abort the join.
+  if (inserted.length > 0) {
+    try {
+      await notifyOwnerOfNewMember(group.id, group.slug, group.name, userId)
+    } catch (e) {
+      console.error('member_joined notification failed', e)
+    }
+  }
 
   revalidatePath('/')
   return { ok: true, data: { slug: group.slug } }
+}
+
+async function notifyOwnerOfNewMember(
+  groupId: string,
+  groupSlug: string,
+  groupName: string,
+  newUserId: string,
+): Promise<void> {
+  // Recipients: owner + admin roles, excluding the joining user (defensive in
+  // case they later get promoted to admin — though right now joins create
+  // role=member so this is a no-op exclusion).
+  const recipients = await db
+    .select({ userId: groupMembers.userId })
+    .from(groupMembers)
+    .where(
+      and(
+        eq(groupMembers.groupId, groupId),
+        inArray(groupMembers.role, ['owner', 'admin']),
+        ne(groupMembers.userId, newUserId),
+      ),
+    )
+  if (recipients.length === 0) return
+  const [joiner] = await db
+    .select({ displayName: profiles.displayName, email: profiles.email })
+    .from(profiles)
+    .where(eq(profiles.id, newUserId))
+    .limit(1)
+  if (!joiner) return
+  await sendNotificationByType(
+    'member_joined',
+    recipients.map((r) => r.userId),
+    {
+      title: `👋 ${joiner.displayName} se unió a ${groupName}`,
+      body: joiner.email ?? '',
+      url: `/groups/${groupSlug}`,
+      tag: `member-joined-${groupId}-${newUserId}`,
+    },
+  )
 }
 
 export async function leaveGroup(groupId: string): Promise<ActionResult> {

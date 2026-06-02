@@ -229,6 +229,22 @@ export const pushSubscriptions = pgTable(
   (t) => [unique('push_subscriptions_endpoint_unique').on(t.userId, t.endpoint)],
 )
 
+// Per-user opt-out granularity for the Web Push notification types. A row
+// exists only when the user explicitly toggles a type off (or back on after
+// a previous off). Absence of a row is interpreted as enabled = true, so
+// the sender helper filters only on rows with enabled = false.
+export const notificationPreferences = pgTable(
+  'notification_preferences',
+  {
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    type: text('type').notNull(),
+    enabled: boolean('enabled').notNull().default(true),
+  },
+  (t) => [primaryKey({ columns: [t.userId, t.type] })],
+)
+
 // Tiny key/value table for app-wide global state that doesn't fit anywhere
 // else. First user: persisting the magic-link rate-limit deadline so it's
 // shared across devices, not local to a browser.

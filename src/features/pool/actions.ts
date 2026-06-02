@@ -4,8 +4,10 @@ import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { z } from 'zod'
 import { db } from '@/db'
-import { groupMembers, groups, poolTransactions } from '@/db/schema'
+import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
+import { formatMoney } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { sendNotificationByType } from '@/server/notifications/send'
 
 export type PoolActionResult = { ok: true } | { ok: false; error: string }
 
@@ -111,20 +113,44 @@ export async function recordPoolTransaction(input: unknown): Promise<PoolActionR
   if (!group.poolEnabled) return { ok: false, error: 'El pozo no está activado.' }
   if (!group.poolCurrency) return { ok: false, error: 'El pozo no tiene moneda configurada.' }
 
-  await db.insert(poolTransactions).values({
-    groupId: parsed.data.groupId,
-    amount: group.poolBuyInAmount,
-    currency: group.poolCurrency,
-    contributorUserId: parsed.data.contributorUserId,
-    contributorLabel: parsed.data.contributorLabel,
-    note: parsed.data.note,
-    createdByUserId: auth.userId,
-  })
+  const [inserted] = await db
+    .insert(poolTransactions)
+    .values({
+      groupId: parsed.data.groupId,
+      amount: group.poolBuyInAmount,
+      currency: group.poolCurrency,
+      contributorUserId: parsed.data.contributorUserId,
+      contributorLabel: parsed.data.contributorLabel,
+      note: parsed.data.note,
+      createdByUserId: auth.userId,
+    })
+    .returning({ id: poolTransactions.id })
 
   const slug = (
     await db.select({ slug: groups.slug }).from(groups).where(eq(groups.id, parsed.data.groupId))
   )[0]?.slug
   if (slug) revalidatePath(`/groups/${slug}`)
+
+  // Confirmation push to the contributor (when they have a userId in the
+  // app). Anonymous tags have no recipient. Best-effort — failures don't
+  // affect the ledger insert.
+  if (parsed.data.contributorUserId && inserted) {
+    try {
+      const [owner] = await db
+        .select({ displayName: profiles.displayName })
+        .from(profiles)
+        .where(eq(profiles.id, auth.userId))
+        .limit(1)
+      await sendNotificationByType('pool_deposit_confirmed', [parsed.data.contributorUserId], {
+        title: `✅ ${owner?.displayName ?? 'El administrador'} confirmó tu aporte`,
+        body: `${formatMoney(Number(group.poolBuyInAmount), group.poolCurrency)} en ${group.name}`,
+        url: `/groups/${group.slug}`,
+        tag: `pool-deposit-${parsed.data.groupId}-${inserted.id}`,
+      })
+    } catch (e) {
+      console.error('pool_deposit_confirmed notification failed', e)
+    }
+  }
   return { ok: true }
 }
 
