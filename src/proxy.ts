@@ -37,12 +37,22 @@ export async function proxy(request: NextRequest) {
     const path = request.nextUrl.pathname
     const exempt = BAN_ALLOWLIST.some((p) => path === p || path.startsWith(p))
     if (!exempt) {
-      const rows = await db
+      // Race the ban check against a short timeout. The proxy shares the
+      // postgres pool with page handlers — when pages run 8+ queries in
+      // parallel and the pool saturates, the proxy used to hang for the full
+      // 300s Lambda timeout, leaving the user stuck on the loading skeleton.
+      // Fail open here: a banned user might slip one request through but the
+      // next request, when load drops, will redirect them.
+      const banCheck = db
         .select({ bannedAt: profiles.bannedAt })
         .from(profiles)
         .where(eq(profiles.id, user.id))
         .limit(1)
-      if (rows[0]?.bannedAt) {
+      const timeout = new Promise<null>((resolve) => setTimeout(() => resolve(null), 1500))
+      const rows = (await Promise.race([banCheck, timeout])) as
+        | Awaited<typeof banCheck>
+        | null
+      if (rows?.[0]?.bannedAt) {
         return NextResponse.redirect(new URL('/banned', request.url))
       }
     }
