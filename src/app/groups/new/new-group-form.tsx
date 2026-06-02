@@ -146,7 +146,6 @@ export function NewGroupForm() {
       />
 
       <form action={handleSubmit} className="mt-6 space-y-5">
-        <fieldset disabled={savePhase !== 'idle'} className="space-y-5 disabled:opacity-100">
         <div className="space-y-2">
           <Label htmlFor="name">Nombre del grupo</Label>
           <Input
@@ -408,7 +407,6 @@ export function NewGroupForm() {
             <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
-        </fieldset>
       </form>
     </>
   )
