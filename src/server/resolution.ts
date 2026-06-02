@@ -170,8 +170,9 @@ export async function runResolution() {
     try {
       const postTops = await getTopUserIdsByGroup()
       await notifyDethroned(preTops, postTops, run.id)
+      await notifyClimbedToTop(preTops, postTops, run.id)
     } catch (e) {
-      console.error('notifyDethroned failed', (e as Error).message)
+      console.error('rank diff notifications failed', (e as Error).message)
     }
 
     await db
@@ -385,6 +386,49 @@ async function notifyDethroned(
       body,
       url: `/groups/${group.slug}/leaderboard`,
       tag: `rank-dethroned-${d.groupId}-${resolutionRunId}`,
+    })
+  }
+}
+
+async function notifyClimbedToTop(
+  pre: Map<string, Set<string>>,
+  post: Map<string, Set<string>>,
+  resolutionRunId: string,
+): Promise<void> {
+  // Users that are in #1 after the run but weren't before. Two cases:
+  //   - solo new top (post size 1, was empty or different user)
+  //   - new arrival in a tied #1 (post has multiple, user wasn't in pre)
+  type Climbed = { groupId: string; userId: string }
+  const climbed: Climbed[] = []
+  for (const [groupId, postSet] of post) {
+    if (postSet.size === 0) continue
+    const preSet = pre.get(groupId) ?? new Set<string>()
+    for (const uid of postSet) {
+      if (!preSet.has(uid)) climbed.push({ groupId, userId: uid })
+    }
+  }
+  if (climbed.length === 0) return
+
+  const affectedGroupIds = [...new Set(climbed.map((c) => c.groupId))]
+  const groupRows = await db
+    .select({ id: groups.id, slug: groups.slug, name: groups.name })
+    .from(groups)
+    .where(inArray(groups.id, affectedGroupIds))
+  const groupById = new Map(groupRows.map((g) => [g.id, g]))
+
+  for (const c of climbed) {
+    const group = groupById.get(c.groupId)
+    if (!group) continue
+    const postSize = (post.get(c.groupId) ?? new Set()).size
+    const body =
+      postSize > 1
+        ? `Empataste con ${postSize - 1} más por el #1 en ${group.name}`
+        : `Llegaste al #1 en ${group.name}`
+    await sendNotificationByType('rank_reached_top', [c.userId], {
+      title: '🥇 Llegaste al primer puesto',
+      body,
+      url: `/groups/${group.slug}/leaderboard`,
+      tag: `rank-top-${c.groupId}-${resolutionRunId}`,
     })
   }
 }

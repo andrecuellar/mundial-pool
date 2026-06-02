@@ -39,6 +39,13 @@ export const NOTIFICATION_TYPES = [
       'Aviso si estabas en el primer puesto de un grupo y alguien te pasó al resolverse una categoría.',
     icon: '📉',
   },
+  {
+    key: 'rank_reached_top',
+    label: 'Cuando llegás al #1',
+    description:
+      'Aviso si pasaste al primer puesto de un grupo al resolverse una categoría (también si entras a un empate por el #1).',
+    icon: '🥇',
+  },
 ] as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]['key']
