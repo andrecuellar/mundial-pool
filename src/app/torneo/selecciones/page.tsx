@@ -69,7 +69,7 @@ export default async function TableSeleccionesPage() {
             </li>
             <li>
               <span className="font-medium">Dentro de los brackets de eliminación directa</span>{' '}
-              (5-8, 9-16, 17-32) los perdedores se ordenan así:
+              (cuartos, octavos y 16vos de final) los perdedores se ordenan así:
               <ul className="mt-1.5 ml-4 list-[circle] space-y-1 text-muted-foreground">
                 <li>
                   Primero los que perdieron{' '}
@@ -83,8 +83,9 @@ export default async function TableSeleccionesPage() {
               </ul>
             </li>
             <li>
-              <span className="font-medium">Fase de grupos</span> (33-48): puntos del grupo →
-              diferencia de gol → goles a favor → fair play (criterio FIFA estándar).
+              <span className="font-medium">Fase de grupos</span> (eliminados antes de los 16vos):
+              puntos del grupo → diferencia de gol → goles a favor → fair play (criterio FIFA
+              estándar).
             </li>
           </ol>
         </Card>
