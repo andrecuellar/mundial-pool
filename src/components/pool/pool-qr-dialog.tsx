@@ -70,11 +70,11 @@ export function PoolQrDialog({
           </div>
         </div>
 
-        <QrImage src={qrUrl} alt="QR de depósito" />
         <p className="text-xs text-muted-foreground">
           Escanea con la aplicación de tu banco. Avísale al administrador del grupo para que
           registre tu depósito.
         </p>
+        <QrImage src={qrUrl} alt="QR de depósito" />
       </DialogContent>
     </Dialog>
   )
