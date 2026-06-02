@@ -1,4 +1,7 @@
+import { eq } from 'drizzle-orm'
 import { NextResponse } from 'next/server'
+import { db } from '@/db'
+import { profiles } from '@/db/schema'
 import { upsertProfileFromAuth } from '@/features/auth/profile-sync'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -35,6 +38,21 @@ export async function GET(request: Request) {
     await upsertProfileFromAuth(data.user)
   } catch (e) {
     console.error('profile upsert failed', e)
+  }
+
+  // One DB hit per login (rare event) — block banned users from completing the
+  // login. The /banned page reads its message from the same column.
+  try {
+    const row = await db
+      .select({ bannedAt: profiles.bannedAt })
+      .from(profiles)
+      .where(eq(profiles.id, data.user.id))
+      .limit(1)
+    if (row[0]?.bannedAt) {
+      return NextResponse.redirect(`${origin}/banned`)
+    }
+  } catch (e) {
+    console.error('ban check failed', e)
   }
 
   return NextResponse.redirect(`${origin}${next}`)

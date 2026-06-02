@@ -6,6 +6,7 @@ import { z } from 'zod'
 import { db } from '@/db'
 import { profiles } from '@/db/schema'
 import { isSuperAdminEmail, requireSuperAdmin } from '@/lib/admin'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 
 export type AdminActionResult = { ok: true } | { ok: false; error: string }
 
@@ -40,6 +41,17 @@ export async function banUser(input: unknown): Promise<AdminActionResult> {
     })
     .where(eq(profiles.id, parsed.data.userId))
 
+  // Force the user out of any active session so the ban takes effect
+  // immediately. Supabase's ban_duration invalidates their existing
+  // refresh tokens. Best-effort — if the service-role key isn't
+  // configured the ban still blocks the next login via the callback.
+  try {
+    const admin = createSupabaseAdminClient()
+    await admin.auth.admin.updateUserById(parsed.data.userId, { ban_duration: '8760h' })
+  } catch (e) {
+    console.error('supabase ban failed', e)
+  }
+
   revalidatePath('/admin/usuarios')
   revalidatePath(`/admin/usuarios/${parsed.data.userId}`)
   return { ok: true }
@@ -55,6 +67,14 @@ export async function unbanUser(userId: string): Promise<AdminActionResult> {
     .update(profiles)
     .set({ bannedAt: null, bannedReason: null, bannedByUserId: null })
     .where(eq(profiles.id, userId))
+
+  // Lift the matching Supabase ban so the user can log in again.
+  try {
+    const admin = createSupabaseAdminClient()
+    await admin.auth.admin.updateUserById(userId, { ban_duration: 'none' })
+  } catch (e) {
+    console.error('supabase unban failed', e)
+  }
 
   revalidatePath('/admin/usuarios')
   revalidatePath(`/admin/usuarios/${userId}`)
