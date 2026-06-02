@@ -73,8 +73,13 @@ export default async function TableSeleccionesPage() {
               <ul className="mt-1.5 ml-4 list-[circle] space-y-1 text-muted-foreground">
                 <li>
                   Primero los que perdieron{' '}
-                  <span className="font-medium text-foreground">por penales</span> (empataron en 90
-                  min + prórroga). Entre ellos, más goles del partido → fair play.
+                  <span className="font-medium text-foreground">por penales</span> (es decir,
+                  empataron en los 90 minutos + la prórroga y recién se definió en la tanda). Entre
+                  ellos, los que <span className="font-medium text-foreground">hicieron más goles</span>{' '}
+                  en ese partido quedan mejor que los que hicieron menos. Si igual están empatados
+                  en goles, gana el de mejor{' '}
+                  <span className="font-medium text-foreground">fair play</span> (menos tarjetas
+                  amarillas + rojas en el torneo).
                 </li>
                 <li>
                   Después los que perdieron por derrota en tiempo regular o prórroga. Mejor
