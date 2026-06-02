@@ -81,6 +81,23 @@ export async function uploadPoolQr(formData: FormData): Promise<UploadResult> {
   })
   if (upErr) return { ok: false, error: upErr.message }
 
+  // Drop any previous QR(s) for this group. We do it after the new upload
+  // succeeds so a failed replace can't leave the owner without a QR. The
+  // folder layout is `{groupId}/qr-{ts}.{ext}`, so list the folder and
+  // remove every entry except the one we just wrote. Best-effort: a failure
+  // here only leaves orphan files behind, the new QR is already live.
+  try {
+    const { data: existing } = await admin.storage.from(BUCKET).list(groupId)
+    const stale = (existing ?? [])
+      .map((f) => `${groupId}/${f.name}`)
+      .filter((p) => p !== path)
+    if (stale.length > 0) {
+      await admin.storage.from(BUCKET).remove(stale)
+    }
+  } catch (e) {
+    console.error('cleanup of previous QR failed', e)
+  }
+
   const { data: pub } = admin.storage.from(BUCKET).getPublicUrl(path)
   await db.update(groups).set({ poolQrUrl: pub.publicUrl }).where(eq(groups.id, groupId))
 
