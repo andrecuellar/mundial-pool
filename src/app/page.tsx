@@ -101,7 +101,7 @@ export default async function Home() {
 
         <PoolDisclaimer variant="home" className="mt-4" />
 
-        <div className="mt-4 flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mt-0 sm:w-72 sm:max-w-xs">
+        <div className="mt-4 flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mt-0 sm:w-[22rem]">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
           <InstallPrompt />
         </div>

@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/dialog'
 
 const DISMISS_KEY = 'mp:pwa-prompt-dismissed-until'
-const DISMISS_MS = 30 * 24 * 60 * 60 * 1000 // 30 días
-const SHOW_AFTER_MS = 30 * 1000 // 30 segundos de uso
+const DISMISS_MS = 7 * 24 * 60 * 60 * 1000 // 7 días — antes 30 días era demasiado agresivo
+const SHOW_AFTER_MS = 5 * 1000 // 5 segundos — antes 30s era invisible para muchos
 
 type BeforeInstallPromptEvent = Event & {
   prompt: () => Promise<void>
@@ -37,7 +37,8 @@ function isStandalone(): boolean {
 export function InstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [showSnack, setShowSnack] = useState(false)
-  const [showIos, setShowIos] = useState(false)
+  const [iosDialogOpen, setIosDialogOpen] = useState(false)
+  const [desktopDialogOpen, setDesktopDialogOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -55,17 +56,19 @@ export function InstallPrompt() {
     const handler = (e: Event) => {
       e.preventDefault()
       savedEvent = e as BeforeInstallPromptEvent
+      // Si el evento llega después del timeout, sincronizamos el estado para
+      // que el botón pueda usarlo en vez de caer al dialog manual.
+      if (mounted) setEvent(savedEvent)
     }
     window.addEventListener('beforeinstallprompt', handler)
 
     const timer = setTimeout(() => {
       if (!mounted) return
-      if (savedEvent) {
-        setEvent(savedEvent)
-        setShowSnack(true)
-      } else if (isIos()) {
-        setShowSnack(true)
-      }
+      if (savedEvent) setEvent(savedEvent)
+      // Ahora mostramos el banner siempre que no esté instalado / no esté
+      // descartado. Si no tenemos el evento al final, el botón Instalar abre
+      // el dialog con instrucciones (similar a iOS Safari).
+      setShowSnack(true)
     }, SHOW_AFTER_MS)
 
     return () => {
@@ -84,20 +87,27 @@ export function InstallPrompt() {
 
   async function install() {
     if (isIos()) {
-      setShowIos(true)
+      setIosDialogOpen(true)
       return
     }
-    if (!event) return
-    await event.prompt()
-    const { outcome } = await event.userChoice
-    if (outcome === 'accepted') {
-      setShowSnack(false)
-      // Don't store dismissal — they installed; the standalone check will
-      // suppress next time.
-    } else {
-      dismiss()
+    if (event) {
+      await event.prompt()
+      const { outcome } = await event.userChoice
+      if (outcome === 'accepted') {
+        setShowSnack(false)
+        // Don't store dismissal — they installed; the standalone check will
+        // suppress next time.
+      } else {
+        dismiss()
+      }
+      return
     }
+    // Fallback desktop: el navegador no nos dio el evento (ya lo manejó
+    // antes, otro browser, etc.) → mostramos instrucciones manuales.
+    setDesktopDialogOpen(true)
   }
+
+  const buttonLabel = isIos() ? 'Ver cómo' : event ? 'Instalar' : 'Cómo instalar'
 
   const content = (
     <div className="flex items-start gap-3">
@@ -111,7 +121,7 @@ export function InstallPrompt() {
         </p>
         <div className="mt-3 flex gap-2">
           <Button size="sm" onClick={install}>
-            {isIos() ? 'Ver cómo' : 'Instalar'}
+            {buttonLabel}
           </Button>
           <Button size="sm" variant="ghost" onClick={dismiss}>
             Más tarde
@@ -142,7 +152,7 @@ export function InstallPrompt() {
         </>
       )}
 
-      <Dialog open={showIos} onOpenChange={setShowIos}>
+      <Dialog open={iosDialogOpen} onOpenChange={setIosDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle>Instalar en iPhone</DialogTitle>
@@ -171,7 +181,59 @@ export function InstallPrompt() {
               <span>Toca "Añadir" en la esquina superior derecha. ¡Listo!</span>
             </li>
           </ol>
-          <Button onClick={() => setShowIos(false)} variant="outline" className="w-full">
+          <Button onClick={() => setIosDialogOpen(false)} variant="outline" className="w-full">
+            Cerrar
+          </Button>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Instalar en tu computadora</DialogTitle>
+            <DialogDescription>
+              El navegador ya tiene un botón de instalación; te explicamos dónde encontrarlo.
+            </DialogDescription>
+          </DialogHeader>
+          <ol className="space-y-3 text-sm">
+            <li className="flex items-start gap-2.5">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+                1
+              </span>
+              <span>
+                En <span className="font-medium text-foreground">Chrome</span> o{' '}
+                <span className="font-medium text-foreground">Edge</span>: mira al final de la barra
+                de direcciones. Vas a ver un ícono pequeño de instalación (una pantalla con una
+                flecha hacia abajo). Hazle clic.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+                2
+              </span>
+              <span>
+                Si no ves el ícono, abre el menú del navegador (⋮ arriba a la derecha) y elige{' '}
+                <span className="font-medium text-foreground">"Instalar mundial-pool"</span> o{' '}
+                <span className="font-medium text-foreground">"Aplicaciones → Instalar este sitio"</span>.
+              </span>
+            </li>
+            <li className="flex items-start gap-2.5">
+              <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+                3
+              </span>
+              <span>
+                Confirma con "Instalar". La app queda accesible desde el escritorio y la barra de
+                tareas, y arranca sin las pestañas del navegador.
+              </span>
+            </li>
+          </ol>
+          <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground leading-relaxed">
+            <span className="font-medium text-foreground">¿No ves el ícono ni la opción?</span>{' '}
+            Puede ser que tu navegador no soporte la instalación (por ejemplo, Firefox de escritorio
+            no la trae), o que la app ya esté instalada. Si ya la instalaste antes, búscala en tus
+            aplicaciones.
+          </p>
+          <Button onClick={() => setDesktopDialogOpen(false)} variant="outline" className="w-full">
             Cerrar
           </Button>
         </DialogContent>

@@ -147,7 +147,7 @@ export default async function GroupPage({ params }: Params) {
       <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-6 sm:px-6 sm:py-10">
         <BackLink href="/" label="Mis grupos" className="mb-4" />
 
-        <div className="flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:w-72 sm:max-w-xs">
+        <div className="flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:w-[22rem]">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </div>
 
