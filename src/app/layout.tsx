@@ -1,5 +1,6 @@
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
+import Link from 'next/link'
 import { NavigationProgress } from '@/components/app-shell/navigation-progress'
 import { ThemeProvider } from '@/components/app-shell/theme-provider'
 import { ServiceWorkerRegistration } from '@/components/notifications/sw-registration'
@@ -53,6 +54,25 @@ export default function RootLayout({
           <TooltipProvider>
             <NavigationProgress />
             {children}
+            <footer className="mt-auto border-t border-border px-4 py-4 text-xs text-muted-foreground sm:px-6">
+              <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
+                <span>mundial-pool · Mundial 2026 entre amigos</span>
+                <nav className="flex items-center gap-4">
+                  <Link
+                    href="/privacy"
+                    className="underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    Política de privacidad
+                  </Link>
+                  <Link
+                    href="/terms"
+                    className="underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    Términos de uso
+                  </Link>
+                </nav>
+              </div>
+            </footer>
             <Toaster />
           </TooltipProvider>
         </ThemeProvider>
