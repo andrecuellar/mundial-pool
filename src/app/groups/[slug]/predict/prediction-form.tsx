@@ -1,6 +1,6 @@
 'use client'
 
-import { AlertTriangle, Check, Info, Lock } from 'lucide-react'
+import { AlertTriangle, Check, Info, Lock, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -13,7 +13,7 @@ import {
   RevelationCriteriaDialog,
   RevelationCriteriaLink,
 } from '@/components/predict/revelation-criteria-dialog'
-import { SavingPredictionsOverlay } from '@/components/predict/saving-predictions-overlay'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'
@@ -472,7 +472,13 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
 
   return (
     <form onSubmit={handleSubmit}>
-      <SavingPredictionsOverlay phase={savePhase} />
+      <SavingOverlay
+        phase={savePhase}
+        icon={Trophy}
+        savingTitle="Guardando tus predicciones"
+        savingSubtitle="Un momento mientras dejamos todo registrado"
+        successSubtitle="Preparando tu comprobante"
+      />
       <div className="sticky top-14 sm:top-16 z-20 -mx-4 sm:-mx-6 mb-5 border-b border-border bg-background/90 px-4 sm:px-6 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">

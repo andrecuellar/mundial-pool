@@ -6,8 +6,51 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
+import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { generateInviteCode, slugify } from './helpers'
+
+const QR_BUCKET = 'pool-qr'
+const QR_MAX_BYTES = 5 * 1024 * 1024
+
+// Best-effort QR upload right after group creation. Mirrors the validation in
+// features/pool/storage.ts but inlined to avoid the redundant auth/owner
+// check that helper does — the caller just inserted the group and knows the
+// user is the owner. Failures here don't roll back the group; the owner can
+// still upload later from Configurar pozo.
+async function tryUploadPoolQrForNewGroup(
+  groupId: string,
+  file: File,
+): Promise<string | null> {
+  if (file.size === 0 || file.size > QR_MAX_BYTES) return null
+  if (!file.type.startsWith('image/')) return null
+  try {
+    const admin = createSupabaseAdminClient()
+    const { data: buckets } = await admin.storage.listBuckets()
+    if (!buckets?.some((b) => b.name === QR_BUCKET)) {
+      await admin.storage.createBucket(QR_BUCKET, {
+        public: true,
+        fileSizeLimit: QR_MAX_BYTES,
+        allowedMimeTypes: ['image/png', 'image/jpeg', 'image/webp', 'image/gif'],
+      })
+    }
+    const ext = (file.name.split('.').pop() ?? 'png').toLowerCase()
+    const safeExt = /^[a-z0-9]+$/.test(ext) ? ext : 'png'
+    const path = `${groupId}/qr-${Date.now()}.${safeExt}`
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const { error: upErr } = await admin.storage.from(QR_BUCKET).upload(path, buffer, {
+      contentType: file.type,
+      upsert: false,
+      cacheControl: '3600',
+    })
+    if (upErr) return null
+    const { data: pub } = admin.storage.from(QR_BUCKET).getPublicUrl(path)
+    return pub.publicUrl
+  } catch (e) {
+    console.error('new-group QR upload failed', e)
+    return null
+  }
+}
 
 const createGroupSchema = z.object({
   name: z.string().min(2).max(60),
@@ -112,6 +155,18 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
 
     return g
   })
+
+  // Optional QR upload, only when the pool is on. Best-effort: a failure here
+  // doesn't roll back the group, the owner can retry from Configurar pozo.
+  if (parsed.data.poolEnabled) {
+    const qrFile = formData.get('poolQr')
+    if (qrFile instanceof File && qrFile.size > 0) {
+      const url = await tryUploadPoolQrForNewGroup(created.id, qrFile)
+      if (url) {
+        await db.update(groups).set({ poolQrUrl: url }).where(eq(groups.id, created.id))
+      }
+    }
+  }
 
   revalidatePath('/')
   return { ok: true, data: { slug: created.slug } }

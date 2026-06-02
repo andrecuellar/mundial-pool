@@ -1,16 +1,31 @@
 'use client'
 
-import { CheckCircle2, Trophy } from 'lucide-react'
+import { CheckCircle2, type LucideIcon } from 'lucide-react'
 
 type Props = {
   phase: 'idle' | 'saving' | 'success'
+  icon: LucideIcon
+  savingTitle: string
+  savingSubtitle?: string
+  successTitle?: string
+  successSubtitle?: string
 }
 
-// Full-screen overlay that covers the prediction form while the server
-// action runs and during the transition into the comprobante page. Has two
-// visible phases: a spinning trophy with concentric rings ('saving') and a
-// scale-in checkmark ('success'). Idle = unmounted.
-export function SavingPredictionsOverlay({ phase }: Props) {
+// Full-screen overlay with two visible phases — 'saving' shows the supplied
+// icon inside a pulsing trophy-style ring stack, 'success' shows a green
+// checkmark with a quick scale-in. Idle = unmounted.
+//
+// Shared across submission flows where the server action runs into a route
+// transition (predict → comprobante, new group → group dashboard, etc.) so the
+// app never feels frozen while data lands and the next page hydrates.
+export function SavingOverlay({
+  phase,
+  icon: Icon,
+  savingTitle,
+  savingSubtitle,
+  successTitle = '¡Listo!',
+  successSubtitle,
+}: Props) {
   if (phase === 'idle') return null
 
   return (
@@ -39,17 +54,17 @@ export function SavingPredictionsOverlay({ phase }: Props) {
                 style={{ animationDelay: '1000ms' }}
               />
               <div className="grid h-20 w-20 place-items-center rounded-full bg-primary/10 text-primary">
-                <Trophy className="h-9 w-9 mp-trophy-spin" aria-hidden />
+                <Icon className="h-9 w-9 mp-trophy-spin" aria-hidden />
               </div>
             </div>
             <div className="space-y-1.5">
               <p className="text-lg font-semibold tracking-tight">
-                Guardando tus predicciones
+                {savingTitle}
                 <span className="mp-ellipsis" aria-hidden />
               </p>
-              <p className="text-sm text-muted-foreground">
-                Un momento mientras dejamos todo registrado
-              </p>
+              {savingSubtitle && (
+                <p className="text-sm text-muted-foreground">{savingSubtitle}</p>
+              )}
             </div>
           </>
         ) : (
@@ -64,8 +79,10 @@ export function SavingPredictionsOverlay({ phase }: Props) {
               </div>
             </div>
             <div className="space-y-1.5 animate-in fade-in slide-in-from-bottom-2 duration-500">
-              <p className="text-2xl font-semibold tracking-tight">¡Listo!</p>
-              <p className="text-sm text-muted-foreground">Preparando tu comprobante</p>
+              <p className="text-2xl font-semibold tracking-tight">{successTitle}</p>
+              {successSubtitle && (
+                <p className="text-sm text-muted-foreground">{successSubtitle}</p>
+              )}
             </div>
           </>
         )}
