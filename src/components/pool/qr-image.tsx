@@ -18,17 +18,29 @@ export function QrImage({ src, alt, className }: Props) {
   const [loaded, setLoaded] = useState(false)
   const [errored, setErrored] = useState(false)
 
+  const showLoadingChrome = !loaded && !errored
+
   return (
     <div
-      className={`relative isolate block aspect-square w-full overflow-hidden rounded-lg border border-border bg-muted/30 ${className ?? ''}`}
+      className={`relative isolate block aspect-square w-full overflow-hidden rounded-lg border-2 bg-muted/30 ${
+        showLoadingChrome ? 'mp-qr-border' : 'border-border'
+      } ${className ?? ''}`}
     >
-      {!loaded && !errored && (
-        <div className="absolute inset-0 grid place-items-center">
-          <div className="animate-pulse text-muted-foreground">
-            <QrCode className="h-10 w-10" aria-hidden />
+      {showLoadingChrome && (
+        <>
+          {/* Scanline traveling top → bottom. */}
+          <div
+            className="mp-qr-scan pointer-events-none absolute inset-x-0 top-0 z-10 h-1/12 bg-gradient-to-b from-transparent via-primary/70 to-transparent"
+            aria-hidden
+          />
+          {/* Icon that breathes in/out. */}
+          <div className="absolute inset-0 grid place-items-center">
+            <div className="mp-qr-icon text-primary/70">
+              <QrCode className="h-12 w-12" aria-hidden strokeWidth={1.5} />
+            </div>
           </div>
           <span className="sr-only">Cargando QR…</span>
-        </div>
+        </>
       )}
       {errored ? (
         <div className="absolute inset-0 grid place-items-center p-4 text-center text-xs text-muted-foreground">

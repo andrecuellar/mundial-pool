@@ -396,12 +396,73 @@
   animation: mp-progress-grow 1.1s cubic-bezier(0.2, 0.8, 0.2, 1) both;
 }
 
+/*
+ * QR loading placeholder. Combines three signals so the user clearly reads
+ * "loading" even on small viewports:
+ *   1. A scanline that travels top → bottom continuously, like a real QR
+ *      reader sweep.
+ *   2. A primary-colored border that gently breathes (opacity pulse).
+ *   3. A subtle zoom-in/out on the icon (delegated via a separate class).
+ */
+@keyframes mp-qr-scan {
+  0% {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(900%);
+    opacity: 0;
+  }
+}
+.mp-qr-scan {
+  animation: mp-qr-scan 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+@keyframes mp-qr-border {
+  0%, 100% {
+    border-color: color-mix(in oklab, var(--primary) 35%, transparent);
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+  50% {
+    border-color: color-mix(in oklab, var(--primary) 70%, transparent);
+    box-shadow: 0 0 18px 4px color-mix(in oklab, var(--primary) 25%, transparent);
+  }
+}
+.mp-qr-border {
+  animation: mp-qr-border 1.6s ease-in-out infinite;
+}
+
+@keyframes mp-qr-icon {
+  0%, 100% {
+    transform: scale(0.92);
+    opacity: 0.6;
+  }
+  50% {
+    transform: scale(1.06);
+    opacity: 1;
+  }
+}
+.mp-qr-icon {
+  animation: mp-qr-icon 1.6s ease-in-out infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .mp-glow-border::before,
   .mp-glow-border::after {
     animation: none;
   }
   .mp-progress-fill {
+    animation: none;
+  }
+  .mp-qr-scan,
+  .mp-qr-border,
+  .mp-qr-icon {
     animation: none;
   }
 }
