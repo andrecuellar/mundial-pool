@@ -34,10 +34,10 @@ export default async function AdminUsersPage() {
             <TableRow>
               <TableHead>Nombre</TableHead>
               <TableHead>Estado</TableHead>
-              <TableHead className="hidden sm:table-cell">Email</TableHead>
-              <TableHead className="hidden md:table-cell">Provider</TableHead>
+              <TableHead className="hidden sm:table-cell">Correo</TableHead>
+              <TableHead className="hidden md:table-cell">Proveedor</TableHead>
               <TableHead className="text-right">Grupos</TableHead>
-              <TableHead className="text-right">Picks</TableHead>
+              <TableHead className="text-right">Predicciones</TableHead>
               <TableHead className="hidden text-right lg:table-cell">Último login</TableHead>
               <TableHead className="hidden text-right xl:table-cell">Creado</TableHead>
             </TableRow>

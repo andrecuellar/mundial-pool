@@ -85,7 +85,7 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
           {rows.map((r) => (
             <div
               key={r.key}
-              title={`${r.name}${r.pickLabel ? ` · pick: ${r.pickLabel}` : ''}${
+              title={`${r.name}${r.pickLabel ? ` · predicción: ${r.pickLabel}` : ''}${
                 r.resultLabel ? ` · resultado: ${r.resultLabel}` : ''
               }`}
               className={`h-2.5 w-2.5 rounded-full ${

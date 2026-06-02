@@ -54,11 +54,11 @@ export default async function AdminDataPage() {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Key</TableHead>
+                  <TableHead>Llave</TableHead>
                   <TableHead>Nombre</TableHead>
                   <TableHead>Tipo</TableHead>
-                  <TableHead>Strategy</TableHead>
-                  <TableHead className="text-right">Default pts</TableHead>
+                  <TableHead>Estrategia</TableHead>
+                  <TableHead className="text-right">Pts por defecto</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,7 +167,7 @@ export default async function AdminDataPage() {
                 <TableRow>
                   <TableHead>Categoría</TableHead>
                   <TableHead>Resultado</TableHead>
-                  <TableHead>Source</TableHead>
+                  <TableHead>Fuente</TableHead>
                   <TableHead className="text-right">Resuelto</TableHead>
                 </TableRow>
               </TableHeader>

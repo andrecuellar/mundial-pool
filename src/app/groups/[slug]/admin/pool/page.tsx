@@ -70,7 +70,7 @@ export default async function AdminPoolPage({ params }: Params) {
           <div>
             <p className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
               <Wallet className="h-3.5 w-3.5 text-gold" />
-              Admin · solo el creador
+              Administrador · solo el creador
             </p>
             <h1 className="mt-1 text-3xl font-semibold tracking-tight">Pozo del grupo</h1>
           </div>
@@ -113,7 +113,7 @@ export default async function AdminPoolPage({ params }: Params) {
           <Card className="p-6 self-start">
             <div className="mb-4 flex items-center gap-2">
               <span className="font-mono text-[11px] text-muted-foreground tracking-wider">02</span>
-              <h2 className="text-base font-semibold">Registrar depósito</h2>
+              <h2 className="text-base font-semibold">Registrar un pago recibido</h2>
             </div>
             <DepositForm
               groupId={group.id}
@@ -127,7 +127,7 @@ export default async function AdminPoolPage({ params }: Params) {
         <div className="mt-6">
           <div className="mb-3 flex items-center gap-2">
             <span className="font-mono text-[11px] text-muted-foreground tracking-wider">03</span>
-            <h2 className="text-base font-semibold">Ledger · todas las transacciones</h2>
+            <h2 className="text-base font-semibold">Historial · todas las transacciones</h2>
           </div>
           <PoolLedgerTable
             rows={ledger}

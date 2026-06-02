@@ -44,7 +44,7 @@ export default async function AdminPredictionsPage({
               <TableHead>Grupo</TableHead>
               <TableHead>Usuario</TableHead>
               <TableHead>Categoría</TableHead>
-              <TableHead>Pick</TableHead>
+              <TableHead>Predicción</TableHead>
               <TableHead className="hidden text-right sm:table-cell">Actualizado</TableHead>
             </TableRow>
           </TableHeader>

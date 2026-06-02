@@ -23,6 +23,7 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
+import { QrImage } from '@/components/pool/qr-image'
 import { removePoolQr, uploadPoolQr } from '@/features/pool/storage'
 
 type Props = {
@@ -148,12 +149,7 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
               <DialogHeader>
                 <DialogTitle>QR de depósito</DialogTitle>
               </DialogHeader>
-              {/* biome-ignore lint/performance/noImgElement: external Supabase Storage URL */}
-              <img
-                src={url}
-                alt="QR de depósito"
-                className="w-full rounded-lg border border-border"
-              />
+              <QrImage src={url} alt="QR de depósito" />
             </DialogContent>
           </Dialog>
         )}

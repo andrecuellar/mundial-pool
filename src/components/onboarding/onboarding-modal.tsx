@@ -23,20 +23,20 @@ type Step = {
 const STEPS: Step[] = [
   {
     icon: Trophy,
-    title: 'Elegís 14 predicciones del Mundial',
+    title: 'Eliges 14 predicciones del Mundial',
     body: 'Campeón, subcampeón, goleador, mejor jugador joven y mucho más. Una sola vez antes del partido inaugural del 11 de junio.',
     tone: 'primary',
   },
   {
     icon: Lock,
-    title: 'Podés editar hasta el cierre',
+    title: 'Puedes editar hasta el cierre',
     body: 'Las predicciones quedan abiertas hasta el partido inaugural. Después del cierre son solo lectura y todos ven qué eligió cada uno.',
     tone: 'warning',
   },
   {
     icon: CheckCircle2,
-    title: 'El cron resuelve solo',
-    body: 'Cuando termine cada fase del torneo, la app cruza los resultados oficiales con tus picks y reparte puntos automático. Solo entrás a ver cómo vas.',
+    title: 'La app resuelve sola',
+    body: 'Cuando termine cada fase del torneo, la app cruza los resultados oficiales con tus predicciones y reparte puntos automático. Solo entras a ver cómo vas.',
     tone: 'accent',
   },
 ]

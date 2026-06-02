@@ -20,9 +20,9 @@ export function PoolDisclaimer({ variant, className }: Props) {
         <div>
           <p className="font-medium">Esto es un pool entre amigos. No es una casa de apuestas.</p>
           <p className="mt-1 text-muted-foreground">
-            La app solo lleva el ledger — el dinero lo manejan ustedes offline y el reparto lo hace
-            cada admin de grupo. Únete solo a grupos de gente que conozcas. No nos hacemos
-            responsables por pérdidas, fraudes o disputas entre miembros.
+            La app solo lleva el registro — el dinero lo manejan ustedes fuera de la app y el
+            reparto lo hace cada administrador de grupo. Únete solo a grupos de gente que conozcas.
+            No nos hacemos responsables por pérdidas, fraudes o disputas entre miembros.
           </p>
         </div>
       </div>
@@ -76,9 +76,9 @@ export function PoolDisclaimer({ variant, className }: Props) {
         <div>
           <p className="font-medium text-destructive">Al activar el pozo declaras que:</p>
           <p className="mt-1 text-muted-foreground">
-            solo invitarás a personas que conoces, tú resuelves los pagos offline, y entiendes que
-            mundial-pool no es una casa de apuestas ni se hace responsable por pérdidas o disputas
-            entre los miembros del grupo.
+            solo invitarás a personas que conoces, tú resuelves los pagos fuera de la app, y
+            entiendes que mundial-pool no es una casa de apuestas ni se hace responsable por
+            pérdidas o disputas entre los miembros del grupo.
           </p>
         </div>
       </div>
@@ -97,10 +97,10 @@ export function PoolDisclaimer({ variant, className }: Props) {
             Tú eres responsable del dinero de este pozo.
           </p>
           <p className="text-muted-foreground">
-            La app lleva el ledger de aportes pero no procesa pagos ni reparte premios. Al final del
-            torneo, tú confirmas con cada miembro y haces las transferencias por tu cuenta.
+            La app lleva el registro de aportes pero no procesa pagos ni reparte premios. Al final
+            del torneo, tú confirmas con cada miembro y haces las transferencias por tu cuenta.
             mundial-pool no es una casa de apuestas y no se hace responsable por disputas, fraudes o
-            pérdidas. Tu nombre y email de Google se muestran a los miembros al ver el QR.
+            pérdidas. Tu nombre y correo de Google se muestran a los miembros al ver el QR.
           </p>
         </div>
       </div>

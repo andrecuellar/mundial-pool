@@ -59,7 +59,7 @@ export default async function AdminDashboardPage() {
 
       <div>
         <p className="mb-2 font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-          Última resolución del cron
+          Última resolución automática
         </p>
         {summary.lastResolution ? (
           <div className="rounded-lg border border-border bg-card p-4 text-sm">
@@ -82,7 +82,7 @@ export default async function AdminDashboardPage() {
           </div>
         ) : (
           <div className="rounded-lg border border-dashed border-border bg-card p-4 text-sm text-muted-foreground">
-            El cron de resolución aún no ha corrido.
+            La resolución automática aún no ha corrido.
           </div>
         )}
       </div>
@@ -96,7 +96,7 @@ export default async function AdminDashboardPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Nombre</TableHead>
-                <TableHead className="hidden sm:table-cell">Email</TableHead>
+                <TableHead className="hidden sm:table-cell">Correo</TableHead>
                 <TableHead className="text-right">Fecha</TableHead>
               </TableRow>
             </TableHeader>

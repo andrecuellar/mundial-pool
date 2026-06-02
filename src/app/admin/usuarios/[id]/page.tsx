@@ -113,7 +113,7 @@ export default async function AdminUserDetailPage({ params }: Params) {
             <TableRow>
               <TableHead>Grupo</TableHead>
               <TableHead>Rol</TableHead>
-              <TableHead className="text-right">Joined</TableHead>
+              <TableHead className="text-right">Se unió</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -150,7 +150,7 @@ export default async function AdminUserDetailPage({ params }: Params) {
             <TableRow>
               <TableHead>Grupo</TableHead>
               <TableHead>Categoría</TableHead>
-              <TableHead>Pick</TableHead>
+              <TableHead>Predicción</TableHead>
               <TableHead className="hidden text-right sm:table-cell">Actualizado</TableHead>
             </TableRow>
           </TableHeader>

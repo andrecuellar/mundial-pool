@@ -158,7 +158,7 @@ export default async function GroupPage({ params }: Params) {
               groupName={group.name}
               context={
                 completedCount === totalPredictions
-                  ? '¡tus picks están listas!'
+                  ? '¡tus predicciones están listas!'
                   : `te faltan ${totalPredictions - completedCount} categorías`
               }
             />

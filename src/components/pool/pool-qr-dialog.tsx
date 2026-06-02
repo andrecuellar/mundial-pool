@@ -3,6 +3,7 @@
 import { QrCode } from 'lucide-react'
 import { useState } from 'react'
 import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
+import { QrImage } from '@/components/pool/qr-image'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -52,7 +53,7 @@ export function PoolQrDialog({
             Le estás mandando dinero a
           </p>
           <p className="mt-1.5 text-base font-semibold">
-            {creatorDisplayName ?? 'Admin del grupo'}
+            {creatorDisplayName ?? 'Administrador del grupo'}
           </p>
           {creatorEmail && (
             <p className="mt-0.5 font-mono text-xs text-muted-foreground break-all">
@@ -69,10 +70,10 @@ export function PoolQrDialog({
           </div>
         </div>
 
-        {/* biome-ignore lint/performance/noImgElement: external QR */}
-        <img src={qrUrl} alt="QR de depósito" className="w-full rounded-lg border border-border" />
+        <QrImage src={qrUrl} alt="QR de depósito" />
         <p className="text-xs text-muted-foreground">
-          Escanea con tu app bancaria. Avísale al admin del grupo para que registre tu depósito.
+          Escanea con la aplicación de tu banco. Avísale al administrador del grupo para que
+          registre tu depósito.
         </p>
       </DialogContent>
     </Dialog>

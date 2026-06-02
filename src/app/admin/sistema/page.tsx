@@ -22,23 +22,23 @@ export default async function AdminSistemaPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Sistema</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Estado del sistema, configuración, app_state global y auditoría del cron.
+          Estado del sistema, configuración, estado global y auditoría de las tareas programadas.
         </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Card className="p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Football provider
+            Proveedor de fútbol
           </p>
           <p className="mt-1 text-sm font-medium">{env.FOOTBALL_API_PROVIDER}</p>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
-            {env.FOOTBALL_API_KEY ? 'API key configurada' : 'Sin API key configurada'}
+            {env.FOOTBALL_API_KEY ? 'Clave de API configurada' : 'Sin clave de API configurada'}
           </p>
         </Card>
         <Card className="p-4">
           <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
-            Cron secret
+            Secreto de tareas programadas
           </p>
           <p className="mt-1 text-sm font-medium">
             {env.CRON_SECRET || env.RESOLUTION_CRON_SECRET ? 'Configurado' : 'No configurado'}
@@ -47,16 +47,16 @@ export default async function AdminSistemaPage() {
       </div>
 
       <AdminDataTable
-        title={`App state (${state.length})`}
-        description="Singletons globales. Útil para revisar el deadline del rate-limit del magic link."
+        title={`Estado global (${state.length})`}
+        description="Singletons globales. Útil para revisar el límite del rate-limit del enlace mágico."
         empty={state.length === 0}
       >
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Key</TableHead>
-              <TableHead>Value</TableHead>
-              <TableHead className="text-right">Updated</TableHead>
+              <TableHead>Llave</TableHead>
+              <TableHead>Valor</TableHead>
+              <TableHead className="text-right">Actualizado</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -74,17 +74,17 @@ export default async function AdminSistemaPage() {
       </AdminDataTable>
 
       <AdminDataTable
-        title={`Resolution runs (${runs.length})`}
-        description="Últimas 50 ejecuciones del cron de resolución."
+        title={`Ejecuciones de resolución (${runs.length})`}
+        description="Últimas 50 ejecuciones de la tarea programada de resolución."
         empty={runs.length === 0}
       >
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Started</TableHead>
-              <TableHead>Finished</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead>Details</TableHead>
+              <TableHead>Iniciada</TableHead>
+              <TableHead>Terminada</TableHead>
+              <TableHead>Estado</TableHead>
+              <TableHead>Detalles</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>

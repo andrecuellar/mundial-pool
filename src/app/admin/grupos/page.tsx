@@ -32,7 +32,7 @@ export default async function AdminGroupsPage() {
           <TableHeader>
             <TableRow>
               <TableHead>Nombre</TableHead>
-              <TableHead className="hidden sm:table-cell">Owner</TableHead>
+              <TableHead className="hidden sm:table-cell">Creador</TableHead>
               <TableHead>Estado</TableHead>
               <TableHead className="text-right">Miembros</TableHead>
               <TableHead className="hidden text-right md:table-cell">Completos</TableHead>

@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation'
 import { AdminDataTable } from '@/components/admin/data-table'
 import { BackLink } from '@/components/app-shell/back-link'
+import { QrImage } from '@/components/pool/qr-image'
 import { AllPredictionsView } from '@/components/predictions/all-predictions-view'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -63,7 +64,7 @@ export default async function AdminGroupDetailPage({ params }: Params) {
           </p>
           <p className="mt-1 text-sm font-medium">
             {detail.group.poolEnabled
-              ? `${detail.transactions.length} tx · ${detail.group.poolCurrency ?? '—'}`
+              ? `${detail.transactions.length} aportes · ${detail.group.poolCurrency ?? '—'}`
               : 'Desactivado'}
           </p>
         </Card>
@@ -89,9 +90,9 @@ export default async function AdminGroupDetailPage({ params }: Params) {
               <TableHeader>
                 <TableRow>
                   <TableHead>Nombre</TableHead>
-                  <TableHead className="hidden sm:table-cell">Email</TableHead>
+                  <TableHead className="hidden sm:table-cell">Correo</TableHead>
                   <TableHead>Rol</TableHead>
-                  <TableHead className="text-right">Joined</TableHead>
+                  <TableHead className="text-right">Se unió</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -132,12 +133,9 @@ export default async function AdminGroupDetailPage({ params }: Params) {
                   <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
                     QR de depósito
                   </p>
-                  {/* biome-ignore lint/performance/noImgElement: external QR */}
-                  <img
-                    src={detail.group.poolQrUrl}
-                    alt="QR del pozo"
-                    className="mt-3 w-full max-w-xs rounded-lg border border-border"
-                  />
+                  <div className="mt-3 max-w-xs">
+                    <QrImage src={detail.group.poolQrUrl} alt="QR del pozo" />
+                  </div>
                 </Card>
               )}
               <AdminDataTable
@@ -189,8 +187,8 @@ export default async function AdminGroupDetailPage({ params }: Params) {
                   <TableHead>Categoría</TableHead>
                   <TableHead>Tipo</TableHead>
                   <TableHead className="text-right">Puntos</TableHead>
-                  <TableHead className="text-right">Default</TableHead>
-                  <TableHead className="text-right">Enabled</TableHead>
+                  <TableHead className="text-right">Por defecto</TableHead>
+                  <TableHead className="text-right">Activa</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

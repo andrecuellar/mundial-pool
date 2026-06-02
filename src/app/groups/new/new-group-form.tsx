@@ -78,7 +78,7 @@ export function NewGroupForm() {
           <div>
             <p className="text-sm font-medium">Activar pozo monetario (opt-in)</p>
             <p className="text-xs text-muted-foreground">
-              La app no procesa pagos — solo lleva el ledger entre ustedes.
+              La app no procesa pagos — solo lleva el registro entre ustedes.
             </p>
           </div>
           <Switch checked={poolEnabled} onCheckedChange={setPoolEnabled} />
