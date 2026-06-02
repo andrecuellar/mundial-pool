@@ -1,4 +1,4 @@
-import { desc, eq, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import { groups, poolTransactions, profiles } from '@/db/schema'
 import { getLeaderboard } from '@/features/scoring/queries'
@@ -105,6 +105,20 @@ export async function listPoolTransactions(groupId: string): Promise<PoolTransac
     createdAt: r.createdAt,
     createdByUserId: r.createdByUserId,
   }))
+}
+
+// Set of user IDs in the group that have at least one pool contribution.
+// Used by the leaderboard to show paid / pending badges next to each member.
+export async function getPoolContributorIds(groupId: string): Promise<Set<string>> {
+  const rows = await db
+    .selectDistinct({ userId: poolTransactions.contributorUserId })
+    .from(poolTransactions)
+    .where(
+      and(eq(poolTransactions.groupId, groupId), isNotNull(poolTransactions.contributorUserId)),
+    )
+  const out = new Set<string>()
+  for (const r of rows) if (r.userId) out.add(r.userId)
+  return out
 }
 
 export type PayoutEntry = {

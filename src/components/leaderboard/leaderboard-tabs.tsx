@@ -12,9 +12,19 @@ type Props = {
   leaderboard: LeaderboardRow[]
   categories: Category[]
   currentUserId: string
+  poolEnabled: boolean
+  paidUserIds: string[]
+  lockAt: string
 }
 
-export function LeaderboardTabs({ leaderboard, categories, currentUserId }: Props) {
+export function LeaderboardTabs({
+  leaderboard,
+  categories,
+  currentUserId,
+  poolEnabled,
+  paidUserIds,
+  lockAt,
+}: Props) {
   const [tab, setTab] = useState('ranking')
   return (
     <Tabs value={tab} onValueChange={setTab}>
@@ -23,7 +33,13 @@ export function LeaderboardTabs({ leaderboard, categories, currentUserId }: Prop
         <TabsTrigger value="breakdown">Detalle por categoría</TabsTrigger>
       </TabsList>
       <TabsContent value="ranking">
-        <RankingTable rows={leaderboard} currentUserId={currentUserId} />
+        <RankingTable
+          rows={leaderboard}
+          currentUserId={currentUserId}
+          poolEnabled={poolEnabled}
+          paidUserIds={paidUserIds}
+          lockAt={lockAt}
+        />
       </TabsContent>
       <TabsContent value="breakdown">
         <CategoryBreakdownTable
