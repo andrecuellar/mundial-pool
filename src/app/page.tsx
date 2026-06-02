@@ -3,6 +3,7 @@ import { ChevronRight, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
+import { NavButton } from '@/components/app-shell/nav-button'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
@@ -10,7 +11,6 @@ import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PoolChip } from '@/components/pool/pool-chip'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
-import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
@@ -131,15 +131,13 @@ export default async function Home() {
               Crea uno e invita a tus amigos con un código de 6 caracteres, o únete a uno existente.
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <Button asChild>
-                <Link href="/groups/new">
-                  <Plus className="h-4 w-4" />
-                  Crear mi primer grupo
-                </Link>
-              </Button>
-              <Button asChild variant="secondary">
-                <Link href="/groups/join">Unirme con código</Link>
-              </Button>
+              <NavButton href="/groups/new">
+                <Plus className="h-4 w-4" />
+                Crear mi primer grupo
+              </NavButton>
+              <NavButton href="/groups/join" variant="secondary">
+                Unirme con código
+              </NavButton>
             </div>
           </Card>
         ) : (
@@ -200,15 +198,13 @@ export default async function Home() {
 
         {myGroups.length > 0 && (
           <div className="mt-6 grid grid-cols-2 gap-2">
-            <Button asChild className="h-12">
-              <Link href="/groups/new">
-                <Plus className="h-4 w-4" />
-                Crear grupo
-              </Link>
-            </Button>
-            <Button asChild variant="secondary" className="h-12">
-              <Link href="/groups/join">Unirme con código</Link>
-            </Button>
+            <NavButton href="/groups/new" className="h-12">
+              <Plus className="h-4 w-4" />
+              Crear grupo
+            </NavButton>
+            <NavButton href="/groups/join" variant="secondary" className="h-12">
+              Unirme con código
+            </NavButton>
           </div>
         )}
 
