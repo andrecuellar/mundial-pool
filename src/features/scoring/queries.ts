@@ -48,7 +48,7 @@ export type UserCategoryBreakdownRow = {
   key: string
   name: string
   points: number
-  status: 'pending' | 'correct' | 'incorrect' | 'no_pick'
+  status: 'pending' | 'correct' | 'partial' | 'incorrect' | 'no_pick'
   pickLabel: string | null
   resultLabel: string | null
   earnedPoints: number
@@ -143,12 +143,14 @@ export async function getUserCategoryBreakdown(
         const resultSet = new Set((result.teamSet as string[] | null) ?? [])
         let hits = 0
         for (const id of pickSet) if (resultSet.has(id)) hits++
+        // Always per-team: the leaderboard view does the same multiplication.
+        // Exact match → 'correct', any partial overlap → 'partial', zero
+        // → 'incorrect'. Earned points come from hits * points either way.
+        earnedPoints = hits * c.points
         if (hits === resultSet.size && pickSet.size === resultSet.size) {
           status = 'correct'
-          earnedPoints = c.points
         } else if (hits > 0) {
-          status = 'correct'
-          earnedPoints = hits * c.points
+          status = 'partial'
         } else {
           status = 'incorrect'
         }

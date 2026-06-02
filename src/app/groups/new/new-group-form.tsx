@@ -1,6 +1,16 @@
 'use client'
 
-import { ArrowRight, ImagePlus, Maximize2, Sparkles, X } from 'lucide-react'
+import {
+  ArrowRight,
+  ChevronDown,
+  ChevronRight,
+  ImagePlus,
+  Maximize2,
+  RotateCcw,
+  Sparkles,
+  Sliders,
+  X,
+} from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { SavingOverlay } from '@/components/app-shell/saving-overlay'
@@ -23,6 +33,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import {
+  CATEGORY_DEFAULTS,
+  CATEGORY_GROUPS,
+  type CategoryKey,
+  defaultPointsRecord,
+} from '@/features/predictions/category-defaults'
 import { createGroup } from '@/features/groups/actions'
 
 export function NewGroupForm() {
@@ -32,6 +48,26 @@ export function NewGroupForm() {
   const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'success'>('idle')
   const [pending, startTransition] = useTransition()
   const qrInputRef = useRef<HTMLInputElement>(null)
+  const [pointsOpen, setPointsOpen] = useState(false)
+  const [points, setPoints] = useState<Record<CategoryKey, number>>(() => defaultPointsRecord())
+
+  function updatePoint(key: CategoryKey, raw: string) {
+    if (raw === '') {
+      // Empty input → fall back to the suggested default rather than 0, so
+      // clearing the field doesn't silently zero out a category.
+      const def = CATEGORY_DEFAULTS.find((c) => c.key === key)?.defaultPoints ?? 0
+      setPoints((p) => ({ ...p, [key]: def }))
+      return
+    }
+    const n = Number.parseInt(raw, 10)
+    if (!Number.isFinite(n)) return
+    setPoints((p) => ({ ...p, [key]: Math.max(0, Math.min(100, n)) }))
+  }
+
+  function resetPoints() {
+    setPoints(defaultPointsRecord())
+    toast.success('Puntos restaurados')
+  }
 
   // Free the object URL when the preview changes or the component unmounts so
   // we don't leak blob URLs across re-renders.
@@ -77,6 +113,12 @@ export function NewGroupForm() {
     // the server already gets `poolQr` correctly. Strip if the user toggled
     // off after picking a file.
     if (!poolEnabled) formData.delete('poolQr')
+    // Serialize the per-category points map. Only send values that differ
+    // from the default so the server keeps the seed default for the rest.
+    for (const c of CATEGORY_DEFAULTS) {
+      const v = points[c.key]
+      if (v !== c.defaultPoints) formData.set(`points:${c.key}`, String(v))
+    }
     setSavePhase('saving')
     startTransition(async () => {
       const result = await createGroup(formData)
@@ -273,6 +315,85 @@ export function NewGroupForm() {
               <p className="text-xs text-muted-foreground sm:col-span-2">
                 Todos los miembros aportan el mismo monto.
               </p>
+            </div>
+          )}
+        </div>
+
+        <div className="rounded-lg border border-border bg-card">
+          <button
+            type="button"
+            onClick={() => setPointsOpen((o) => !o)}
+            aria-expanded={pointsOpen}
+            className="flex w-full items-center justify-between gap-3 px-4 py-3 text-left"
+          >
+            <div className="flex items-center gap-2.5">
+              <Sliders className="h-4 w-4 text-muted-foreground" />
+              <div>
+                <p className="text-sm font-medium">Personalizar puntos por categoría</p>
+                <p className="text-xs text-muted-foreground">
+                  Opcional. Los valores sugeridos son los que usamos por defecto.
+                </p>
+              </div>
+            </div>
+            {pointsOpen ? (
+              <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />
+            ) : (
+              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" />
+            )}
+          </button>
+
+          {pointsOpen && (
+            <div className="border-t border-border px-4 py-4 space-y-5">
+              {CATEGORY_GROUPS.map((g) => {
+                const rows = CATEGORY_DEFAULTS.filter((c) => c.group === g.id)
+                return (
+                  <div key={g.id} className="space-y-2">
+                    <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {g.label}
+                    </p>
+                    <div className="grid gap-3 sm:grid-cols-2">
+                      {rows.map((c) => (
+                        <div key={c.key} className="space-y-1">
+                          <Label htmlFor={`points-${c.key}`} className="text-xs">
+                            {c.name}
+                          </Label>
+                          <div className="flex items-center gap-2">
+                            <Input
+                              id={`points-${c.key}`}
+                              type="number"
+                              min={0}
+                              max={100}
+                              step={1}
+                              value={points[c.key]}
+                              placeholder={String(c.defaultPoints)}
+                              onChange={(e) => updatePoint(c.key, e.target.value)}
+                              className="h-9 w-20 font-mono tabular-nums"
+                            />
+                            <span className="text-[11px] text-muted-foreground">
+                              {c.unit === 'per_team' ? 'pts por acierto' : 'pts'}
+                              {' · sugerido '}
+                              {c.defaultPoints}
+                            </span>
+                          </div>
+                          {c.hint && (
+                            <p className="text-[11px] text-muted-foreground">{c.hint}</p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )
+              })}
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                onClick={resetPoints}
+                className="text-xs"
+              >
+                <RotateCcw className="h-3 w-3" />
+                Restaurar valores sugeridos
+              </Button>
             </div>
           )}
         </div>

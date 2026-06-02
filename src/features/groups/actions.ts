@@ -6,6 +6,11 @@ import { redirect } from 'next/navigation'
 import { z } from 'zod'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
+import {
+  CATEGORY_DEFAULTS,
+  CATEGORY_KEYS,
+  type CategoryKey,
+} from '@/features/predictions/category-defaults'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { generateInviteCode, slugify } from './helpers'
@@ -78,11 +83,30 @@ async function requireUserId(): Promise<string> {
   return user.id
 }
 
+// Scan the form for keys shaped `points:{categoryKey}=value`, validate against
+// CATEGORY_KEYS and a 0-100 range, and produce a record of overrides. Unknown
+// keys and out-of-range values are silently dropped so the create still
+// succeeds with sensible fallbacks.
+function parseCategoryPointOverrides(formData: FormData): Partial<Record<CategoryKey, number>> {
+  const out: Partial<Record<CategoryKey, number>> = {}
+  for (const [rawKey, rawValue] of formData.entries()) {
+    if (!rawKey.startsWith('points:')) continue
+    const key = rawKey.slice('points:'.length)
+    if (!CATEGORY_KEYS.has(key as CategoryKey)) continue
+    const value =
+      typeof rawValue === 'string' ? Number.parseInt(rawValue, 10) : Number.NaN
+    if (!Number.isFinite(value) || value < 0 || value > 100) continue
+    out[key as CategoryKey] = value
+  }
+  return out
+}
+
 export async function createGroup(formData: FormData): Promise<ActionResult<{ slug: string }>> {
   const poolEnabled = formData.get('poolEnabled') === 'on'
   const rawBuyIn = formData.get('poolBuyInAmount')
   const buyInNum =
     typeof rawBuyIn === 'string' && rawBuyIn.length > 0 ? Number.parseFloat(rawBuyIn) : 100
+  const pointOverrides = parseCategoryPointOverrides(formData)
   const parsed = createGroupSchema.safeParse({
     name: formData.get('name'),
     predictionsLockAt: formData.get('predictionsLockAt'),
@@ -152,6 +176,18 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
       SELECT ${g.id}::uuid, id, default_points, true
       FROM categories
     `)
+
+    // Apply per-category point overrides. Each row is a tiny UPDATE that joins
+    // categories by key — small N (≤14) so the cost is acceptable inside the
+    // same transaction.
+    for (const [key, points] of Object.entries(pointOverrides)) {
+      await tx.execute(sql`
+        UPDATE group_categories
+           SET points = ${points}
+         WHERE group_id = ${g.id}::uuid
+           AND category_id = (SELECT id FROM categories WHERE key = ${key})
+      `)
+    }
 
     return g
   })

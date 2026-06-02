@@ -91,11 +91,13 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
               className={`h-2.5 w-2.5 rounded-full ${
                 r.status === 'correct'
                   ? 'bg-accent'
-                  : r.status === 'incorrect'
-                    ? 'bg-destructive/60'
-                    : r.status === 'no_pick'
-                      ? 'bg-muted'
-                      : 'bg-muted-foreground/30'
+                  : r.status === 'partial'
+                    ? 'bg-warning'
+                    : r.status === 'incorrect'
+                      ? 'bg-destructive/60'
+                      : r.status === 'no_pick'
+                        ? 'bg-muted'
+                        : 'bg-muted-foreground/30'
               }`}
             />
           ))}
@@ -103,7 +105,11 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
         <div className="mt-2 flex flex-wrap gap-2.5 text-[10px] text-muted-foreground">
           <span className="inline-flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-accent" />
-            acierto
+            acierto total
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <span className="h-1.5 w-1.5 rounded-full bg-warning" />
+            acierto parcial
           </span>
           <span className="inline-flex items-center gap-1">
             <span className="h-1.5 w-1.5 rounded-full bg-destructive/60" />

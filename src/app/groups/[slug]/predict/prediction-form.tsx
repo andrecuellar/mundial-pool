@@ -532,8 +532,16 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
                 <span className="font-mono text-[11px] text-muted-foreground tracking-wider">
                   {String(idx + 1).padStart(2, '0')} · {kindLabel}
                 </span>
-                <span className="inline-flex items-center rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-primary tracking-wider">
+                <span
+                  className="inline-flex items-center gap-1 rounded-md border border-primary/20 bg-primary/10 px-1.5 py-0.5 font-mono text-[11px] font-medium text-primary tracking-wider"
+                  title={
+                    perItem
+                      ? `${c.points} pts por cada acierto. Ganas puntos por cada equipo que aciertes aunque no aciertes todos.`
+                      : undefined
+                  }
+                >
                   {c.points} PTS{perItem ? '/ACIERTO' : ''}
+                  {perItem && <Info className="h-3 w-3 opacity-70" aria-hidden />}
                 </span>
                 {(isFinalists || (isTop5 && lockedTop5.length > 0)) && (
                   <Badge className="gap-1 border-primary/30 bg-primary/10 text-primary">
