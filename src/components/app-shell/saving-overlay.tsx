@@ -32,7 +32,10 @@ export function SavingOverlay({
     <div
       role="status"
       aria-live="polite"
-      className="fixed inset-0 z-[70] grid place-items-center bg-background/95 backdrop-blur-md animate-in fade-in duration-200"
+      // No fade-in: the overlay needs to feel instant so the user knows the
+      // click registered. The pulse / check animations underneath provide the
+      // sense of motion.
+      className="fixed inset-0 z-[70] grid place-items-center bg-background/95 backdrop-blur-md"
     >
       <div className="relative flex flex-col items-center gap-6 px-6 text-center">
         {phase === 'saving' ? (
