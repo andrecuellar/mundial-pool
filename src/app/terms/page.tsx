@@ -32,6 +32,72 @@ export default function TermsPage() {
           </p>
         </div>
 
+        <div className="mt-6 rounded-xl border border-border bg-card p-4 text-sm leading-relaxed">
+          <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+            Avisos que la aplicación muestra en sus pantallas
+          </p>
+          <p className="mt-3 text-muted-foreground">
+            Estos son los textos exactos que verás dentro de la aplicación al usar el pozo. Forman
+            parte de estos términos:
+          </p>
+
+          <div className="mt-4 space-y-4">
+            <div>
+              <p className="font-medium text-foreground">En la página de inicio:</p>
+              <p className="mt-1 text-muted-foreground">
+                "Esto es un pool entre amigos. No es una casa de apuestas. La app solo lleva el
+                registro — el dinero lo manejan ustedes fuera de la app y el reparto lo hace cada
+                administrador de grupo. Únete solo a grupos de gente que conozcas. No nos hacemos
+                responsables por pérdidas, fraudes o disputas entre miembros."
+              </p>
+            </div>
+
+            <div>
+              <p className="font-medium text-foreground">Al ver el QR para aportar al pozo:</p>
+              <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
+                <li>
+                  La app no procesa pagos. Lo que mandes va directamente al admin del grupo.
+                </li>
+                <li>
+                  El reparto del dinero al final del torneo lo hace el admin del grupo, no
+                  mundial-pool.
+                </li>
+                <li>
+                  Solo aporta si conoces personalmente al admin y confías en él. No nos hacemos
+                  responsables por pérdidas, fraudes ni disputas.
+                </li>
+              </ul>
+            </div>
+
+            <div>
+              <p className="font-medium text-foreground">Al crear un grupo con pozo activo:</p>
+              <p className="mt-1 text-muted-foreground">
+                "Al activar el pozo declaras que: solo invitarás a personas que conoces, tú
+                resuelves los pagos fuera de la app, y entiendes que mundial-pool no es una casa
+                de apuestas ni se hace responsable por pérdidas o disputas entre los miembros del
+                grupo."
+              </p>
+            </div>
+
+            <div>
+              <p className="font-medium text-foreground">
+                En la administración del pozo (visible solo al creador del grupo):
+              </p>
+              <p className="mt-1 text-muted-foreground">
+                "Tú eres responsable del dinero de este pozo. La app lleva el registro de aportes
+                pero no procesa pagos ni reparte premios. Al final del torneo, tú confirmas con
+                cada miembro y haces las transferencias por tu cuenta. mundial-pool no es una casa
+                de apuestas y no se hace responsable por disputas, fraudes o pérdidas. Tu nombre y
+                correo de Google se muestran a los miembros al ver el QR."
+              </p>
+            </div>
+          </div>
+
+          <p className="mt-4 text-xs text-muted-foreground italic">
+            Al usar la aplicación aceptas estos avisos en sus respectivos contextos.
+          </p>
+        </div>
+
         <div className="mt-8 space-y-6 text-sm leading-relaxed">
           <section>
             <h2 className="text-base font-semibold">Aceptación</h2>
