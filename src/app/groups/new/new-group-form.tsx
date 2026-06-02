@@ -100,7 +100,9 @@ export function NewGroupForm() {
     if (qrInputRef.current) qrInputRef.current.value = ''
   }
 
-  function handleSubmit(formData: FormData) {
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault()
+    const formData = new FormData(e.currentTarget)
     if (poolEnabled) formData.set('poolEnabled', 'on')
     const lockRaw = formData.get('predictionsLockAt')
     if (typeof lockRaw === 'string' && lockRaw.length > 0) {
@@ -145,7 +147,7 @@ export function NewGroupForm() {
         successSubtitle="Llevándote al grupo"
       />
 
-      <form action={handleSubmit} className="mt-6 space-y-5">
+      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
         <div className="space-y-2">
           <Label htmlFor="name">Nombre del grupo</Label>
           <Input
