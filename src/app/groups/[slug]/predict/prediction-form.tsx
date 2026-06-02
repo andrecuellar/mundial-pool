@@ -13,6 +13,7 @@ import {
   RevelationCriteriaDialog,
   RevelationCriteriaLink,
 } from '@/components/predict/revelation-criteria-dialog'
+import { SavingPredictionsOverlay } from '@/components/predict/saving-predictions-overlay'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'
@@ -360,6 +361,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     return init
   })
   const [pending, startTransition] = useTransition()
+  const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'success'>('idle')
   const router = useRouter()
 
   function recomputeDerived(next: Record<string, DraftValue>) {
@@ -433,12 +435,19 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
         fd.append(`cat:${c.key}`, v.playerText)
       }
     }
+    setSavePhase('saving')
     startTransition(async () => {
       const r = await submitPredictions(groupSlug, fd)
       if (r.ok) {
         toast.success('Predicciones guardadas')
-        router.push(`/groups/${groupSlug}/comprobante`)
+        // Hold the success animation visible for a beat before navigating, so
+        // the user sees the "¡Listo!" state instead of an abrupt jump.
+        setSavePhase('success')
+        setTimeout(() => {
+          router.push(`/groups/${groupSlug}/comprobante`)
+        }, 900)
       } else {
+        setSavePhase('idle')
         toast.error(r.error)
       }
     })
@@ -463,6 +472,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
 
   return (
     <form onSubmit={handleSubmit}>
+      <SavingPredictionsOverlay phase={savePhase} />
       <div className="sticky top-14 sm:top-16 z-20 -mx-4 sm:-mx-6 mb-5 border-b border-border bg-background/90 px-4 sm:px-6 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">
           <div className="space-y-1">
