@@ -6,7 +6,7 @@ import { UserMenu } from './user-menu'
 import { Wordmark } from './wordmark'
 
 type Props = {
-  user: { name: string; email: string | null; avatarUrl: string | null }
+  user: { name: string; email: string | null; avatarUrl: string | null } | null
   breadcrumb?: { label: string; href?: string }[]
 }
 
@@ -60,12 +60,14 @@ export function AppHeader({ user, breadcrumb }: Props) {
       </div>
       <div className="flex items-center gap-1">
         <ThemeToggle />
-        <UserMenu
-          name={user.name}
-          email={user.email}
-          avatarUrl={user.avatarUrl}
-          isAdmin={isSuperAdminEmail(user.email)}
-        />
+        {user && (
+          <UserMenu
+            name={user.name}
+            email={user.email}
+            avatarUrl={user.avatarUrl}
+            isAdmin={isSuperAdminEmail(user.email)}
+          />
+        )}
       </div>
     </header>
   )
