@@ -1,4 +1,5 @@
 import { and, eq, gt, sql } from 'drizzle-orm'
+import { cache } from 'react'
 import { db } from '@/db'
 import { categories, groupCategories, predictions, results, teams } from '@/db/schema'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
@@ -11,7 +12,10 @@ export type LeaderboardRow = {
   breakdown: Record<string, number>
 }
 
-export async function getLeaderboard(groupId: string): Promise<LeaderboardRow[]> {
+// Wrapped in React cache so it's deduped within a single request: the group
+// page calls it directly via Promise.all and computePayout calls it again
+// internally — without cache that's two DB hits per render.
+export const getLeaderboard = cache(async (groupId: string): Promise<LeaderboardRow[]> => {
   const rows = await db.execute<{
     user_id: string
     display_name: string
@@ -38,7 +42,7 @@ export async function getLeaderboard(groupId: string): Promise<LeaderboardRow[]>
     totalPoints: r.total_points,
     breakdown: r.breakdown,
   }))
-}
+})
 
 export type UserCategoryBreakdownRow = {
   key: string

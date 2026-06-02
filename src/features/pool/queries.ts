@@ -1,4 +1,5 @@
 import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { cache } from 'react'
 import { db } from '@/db'
 import { groups, poolTransactions, profiles } from '@/db/schema'
 import { getLeaderboard } from '@/features/scoring/queries'
@@ -15,7 +16,10 @@ export type PoolSummary = {
   creatorEmail: string | null
 }
 
-export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
+// Wrapped in React cache so a single request that calls getPoolSummary from
+// both the page's Promise.all and computePayout internally only runs the
+// query once. Same below with getLeaderboard.
+export const getPoolSummary = cache(async (groupId: string): Promise<PoolSummary> => {
   // Join the creator's profile so we can reveal who exactly is collecting the
   // money before a member scans the QR. This is the central trust signal for
   // "you're sending real cash to a real person, not to the app".
@@ -66,7 +70,7 @@ export async function getPoolSummary(groupId: string): Promise<PoolSummary> {
     creatorDisplayName: row.creatorDisplayName,
     creatorEmail: row.creatorEmail,
   }
-}
+})
 
 export type PoolTransactionRow = {
   id: string
