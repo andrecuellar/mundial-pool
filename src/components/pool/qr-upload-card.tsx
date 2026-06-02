@@ -145,7 +145,7 @@ export function QrUploadCard({ groupId, initialUrl }: Props) {
                 </span>
               </button>
             </DialogTrigger>
-            <DialogContent className="max-w-sm">
+            <DialogContent className="max-h-[90vh] max-w-sm">
               <DialogHeader>
                 <DialogTitle>QR de depósito</DialogTitle>
               </DialogHeader>

@@ -295,7 +295,7 @@ export function NewGroupForm() {
                           </span>
                         </button>
                       </DialogTrigger>
-                      <DialogContent className="max-w-sm">
+                      <DialogContent className="max-h-[90vh] max-w-sm">
                         <DialogHeader>
                           <DialogTitle>Vista previa del QR</DialogTitle>
                         </DialogHeader>
@@ -303,7 +303,7 @@ export function NewGroupForm() {
                         <img
                           src={qrPreview}
                           alt="Vista previa del QR"
-                          className="w-full rounded-lg border border-border"
+                          className="mx-auto max-h-[70vh] w-auto max-w-full rounded-lg border border-border object-contain"
                         />
                       </DialogContent>
                     </Dialog>
