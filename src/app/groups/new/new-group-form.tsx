@@ -191,7 +191,8 @@ export function NewGroupForm() {
 
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="poolQr" className="text-xs">
-                  QR de depósito (opcional, lo puedes subir ahora)
+                  QR de depósito (opcional, lo puedes subir ahora o más adelante en configuración
+                  del grupo)
                 </Label>
                 <input
                   ref={qrInputRef}
@@ -235,10 +236,7 @@ export function NewGroupForm() {
                     />
                   )}
                 </div>
-                <p className="text-xs text-muted-foreground">
-                  PNG, JPG o WEBP, máximo 5 MB. Si lo dejas vacío, lo puedes subir después desde
-                  Configurar pozo en el grupo.
-                </p>
+                <p className="text-xs text-muted-foreground">PNG, JPG o WEBP, máximo 5 MB.</p>
               </div>
 
               <p className="text-xs text-muted-foreground sm:col-span-2">
