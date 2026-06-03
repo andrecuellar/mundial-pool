@@ -22,6 +22,7 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { submitPredictions } from '@/features/predictions/actions'
 import type { PlayerOption, PredictionFormCategory } from '@/features/predictions/queries'
+import { FIFA_FINAL_UPDATE } from '@/lib/world-cup'
 
 type Team = {
   id: string
@@ -31,9 +32,6 @@ type Team = {
   fifaRanking?: number | null
 }
 
-// Last FIFA ranking update before the World Cup is scheduled for 9 June 2026
-// (2 days before the opening match).
-const FIFA_FINAL_UPDATE = new Date('2026-06-09T00:00:00Z')
 const FIFA_RANKING_CATEGORIES = new Set(['revelation', 'disappointment'])
 const PLAYER_MANUAL_CATEGORIES: ReadonlySet<PlayerCategoryKey> = new Set([
   'top_scorer_player',

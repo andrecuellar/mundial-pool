@@ -1,6 +1,8 @@
 import { env } from '@/lib/env'
 import type {
   FootballProvider,
+  RawMatch,
+  RawMatchStage,
   ResolvedTeam,
   TeamTournamentRun,
   TournamentRound,
@@ -22,13 +24,19 @@ const THIRD_PLACE_ROUND = 180
 
 type TsdbEvent = {
   idEvent: string
+  idHomeTeam?: string | null
+  idAwayTeam?: string | null
   strHomeTeam: string | null
   strAwayTeam: string | null
   intHomeScore: string | null
   intAwayScore: string | null
+  intHomeShootoutScore?: string | null
+  intAwayShootoutScore?: string | null
   intRound: string
   strStatus: string
+  strGroup?: string | null
   dateEvent: string | null
+  strTimestamp?: string | null
 }
 
 function baseUrl(): string {
@@ -124,6 +132,63 @@ function aggregateTeamRuns(
   return Array.from(runs.values())
 }
 
+// Round number → stage tag used by the matches table. Keys match the
+// `r=` query param accepted by TheSportsDB's eventsround.php endpoint.
+const ROUND_TO_STAGE: Record<number, RawMatchStage> = {
+  1: 'group',
+  2: 'group',
+  3: 'group',
+  100: 'r32',
+  125: 'r16',
+  150: 'qf',
+  175: 'sf',
+  180: 'third_place',
+  200: 'final',
+}
+
+function parseIntOrNull(s: string | null | undefined): number | null {
+  if (s == null) return null
+  const n = Number.parseInt(s, 10)
+  return Number.isFinite(n) ? n : null
+}
+
+function parseDateOrNull(s: string | null | undefined): Date | null {
+  if (!s) return null
+  const d = new Date(s)
+  return Number.isNaN(d.getTime()) ? null : d
+}
+
+function groupNameFromStr(strGroup: string | null | undefined): string | null {
+  if (!strGroup) return null
+  // Formats like "Group A" → "A"; if it's already a single letter, return it.
+  const m = strGroup.match(/^\s*Group\s+([A-Z])\s*$/i)
+  if (m) return m[1].toUpperCase()
+  const trimmed = strGroup.trim()
+  return /^[A-Z]$/.test(trimmed) ? trimmed : trimmed || null
+}
+
+function eventToRawMatch(event: TsdbEvent, stage: RawMatchStage): RawMatch {
+  const kickedOffAt =
+    parseDateOrNull(event.strTimestamp) ?? parseDateOrNull(event.dateEvent ?? null)
+  const scoreA = parseIntOrNull(event.intHomeScore)
+  const scoreB = parseIntOrNull(event.intAwayScore)
+  return {
+    externalId: `tsdb-${event.idEvent}`,
+    stage,
+    groupName: stage === 'group' ? groupNameFromStr(event.strGroup) : null,
+    kickedOffAt,
+    finishedAt: isFinished(event) ? kickedOffAt : null,
+    teamAExternalId: event.idHomeTeam ?? null,
+    teamAName: event.strHomeTeam,
+    teamBExternalId: event.idAwayTeam ?? null,
+    teamBName: event.strAwayTeam,
+    scoreA,
+    scoreB,
+    penaltyA: parseIntOrNull(event.intHomeShootoutScore),
+    penaltyB: parseIntOrNull(event.intAwayShootoutScore),
+  }
+}
+
 function findTopByGoals(
   runs: TeamTournamentRun[],
   field: 'goalsFor' | 'goalsAgainst',
@@ -188,5 +253,15 @@ export const thesportsdbProvider: FootballProvider = {
       bestYoungPlayer: null,
       fetchedAt: new Date().toISOString(),
     }
+  },
+  async fetchMatches(): Promise<RawMatch[]> {
+    const rounds = Object.keys(ROUND_TO_STAGE).map(Number)
+    const out: RawMatch[] = []
+    for (const round of rounds) {
+      const events = await fetchRound(round)
+      const stage = ROUND_TO_STAGE[round]
+      for (const e of events) out.push(eventToRawMatch(e, stage))
+    }
+    return out
   },
 }

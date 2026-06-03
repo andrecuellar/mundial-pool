@@ -20,6 +20,16 @@ export const categoryValueKind = pgEnum('category_value_kind', ['team', 'player'
 
 export const payoutRule = pgEnum('payout_rule', ['winner_takes_all', 'top_3_split', 'manual'])
 
+export const matchStage = pgEnum('match_stage', [
+  'group',
+  'r32',
+  'r16',
+  'qf',
+  'sf',
+  'third_place',
+  'final',
+])
+
 export const resolutionStrategy = pgEnum('resolution_strategy', [
   'final_winner',
   'final_loser',
@@ -119,7 +129,45 @@ export const teams = pgTable('teams', {
   preTournamentChampionOdds: integer('pre_tournament_champion_odds'),
   expectedRound: integer('expected_round'),
   fifaRanking: integer('fifa_ranking'),
+  // Tournament state — populated by the daily cron from the football provider.
+  // All nullable / zero-default so pre-Mundial the existing UI still works.
+  reachedRound: text('reached_round'),
+  groupPoints: integer('group_points').notNull().default(0),
+  groupGoalDiff: integer('group_goal_diff').notNull().default(0),
+  groupGoalsFor: integer('group_goals_for').notNull().default(0),
+  groupGoalsAgainst: integer('group_goals_against').notNull().default(0),
+  yellowCards: integer('yellow_cards').notNull().default(0),
+  redCards: integer('red_cards').notNull().default(0),
+  lostInPenalties: boolean('lost_in_penalties').notNull().default(false),
+  elimMatchGoalsFor: integer('elim_match_goals_for'),
+  elimMatchGoalsAgainst: integer('elim_match_goals_against'),
+  elimMatchWentToPenalties: boolean('elim_match_went_to_penalties').notNull().default(false),
 })
+
+export const matches = pgTable(
+  'matches',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    externalId: text('external_id').notNull().unique(),
+    stage: matchStage('stage').notNull(),
+    groupName: text('group_name'),
+    kickedOffAt: timestamp('kicked_off_at', { withTimezone: true }),
+    finishedAt: timestamp('finished_at', { withTimezone: true }),
+    teamAId: uuid('team_a_id').references(() => teams.id),
+    teamBId: uuid('team_b_id').references(() => teams.id),
+    scoreA: integer('score_a'),
+    scoreB: integer('score_b'),
+    penaltyA: integer('penalty_a'),
+    penaltyB: integer('penalty_b'),
+    source: text('source').notNull().default('thesportsdb'),
+    updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_matches_stage').on(t.stage),
+    index('idx_matches_team_a').on(t.teamAId),
+    index('idx_matches_team_b').on(t.teamBId),
+  ],
+)
 
 export const players = pgTable('players', {
   id: uuid('id').defaultRandom().primaryKey(),

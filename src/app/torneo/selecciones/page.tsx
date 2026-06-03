@@ -1,5 +1,5 @@
-import { asc } from 'drizzle-orm'
-import { Trophy } from 'lucide-react'
+import { asc, desc, eq } from 'drizzle-orm'
+import { RefreshCw, Trophy } from 'lucide-react'
 import type { Metadata } from 'next'
 import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
@@ -7,8 +7,13 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { teams } from '@/db/schema'
+import { resolutionRuns, teams } from '@/db/schema'
+import {
+  computeTournamentRanks,
+  type TournamentTeamInput,
+} from '@/features/scoring/tournament-rank'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { CRON_HOUR_UTC, WORLD_CUP_START } from '@/lib/world-cup'
 
 export const dynamic = 'force-dynamic'
 
@@ -18,11 +23,11 @@ export const metadata: Metadata = {
     'Ranking 1→48 con desempates por penales, fair play y diferencia de gol del Mundial 2026.',
 }
 
-const WORLD_CUP_START = new Date('2026-06-11T22:00:00Z')
+type Reached = TournamentTeamInput['reached']
 
-// Same teams for every viewer; data only changes when we re-seed via deploy or
-// call revalidateTag('teams'). Cached cross-request so the FIFA-ranking sort
-// hits the DB once per hour, not once per page load.
+// Same teams for every viewer; tournament state mutates via the daily cron
+// which calls revalidateTag('teams'). Cache TTL is a safety fallback if the
+// cron silently stops.
 const getTeamsForBoard = unstable_cache(
   async () =>
     db
@@ -32,12 +37,75 @@ const getTeamsForBoard = unstable_cache(
         flagEmoji: teams.flagEmoji,
         fifaCode: teams.fifaCode,
         fifaRanking: teams.fifaRanking,
+        reachedRound: teams.reachedRound,
+        groupPoints: teams.groupPoints,
+        groupGoalDiff: teams.groupGoalDiff,
+        groupGoalsFor: teams.groupGoalsFor,
+        yellowCards: teams.yellowCards,
+        redCards: teams.redCards,
+        elimMatchGoalsFor: teams.elimMatchGoalsFor,
+        elimMatchGoalsAgainst: teams.elimMatchGoalsAgainst,
+        elimMatchWentToPenalties: teams.elimMatchWentToPenalties,
       })
       .from(teams)
       .orderBy(asc(teams.fifaRanking)),
-  ['teams-board'],
+  ['teams-board-v2'],
   { revalidate: 3600, tags: ['teams'] },
 )
+
+function reachedLabel(r: string | null, started: boolean): string {
+  if (!started || r === null) return started ? 'Activo' : '—'
+  switch (r) {
+    case 'champion':
+      return 'Campeón'
+    case 'runner_up':
+      return 'Subcampeón'
+    case 'third':
+      return '3er lugar'
+    case 'fourth':
+      return '4to lugar'
+    case 'qf':
+      return 'Cuartos'
+    case 'r16':
+      return 'Octavos'
+    case 'r32':
+      return '16vos'
+    case 'group':
+      return 'Fase de grupos'
+    default:
+      return '—'
+  }
+}
+
+function nextCronAt(): Date {
+  const next = new Date()
+  next.setUTCHours(CRON_HOUR_UTC, 0, 0, 0)
+  if (next.getTime() <= Date.now()) {
+    next.setUTCDate(next.getUTCDate() + 1)
+  }
+  return next
+}
+
+function formatRelative(when: Date): string {
+  const diffMs = Date.now() - when.getTime()
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'hace menos de 1 min'
+  if (min < 60) return `hace ${min} min`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `hace ${hr} ${hr === 1 ? 'hora' : 'horas'}`
+  const days = Math.floor(hr / 24)
+  return `hace ${days} ${days === 1 ? 'día' : 'días'}`
+}
+
+function formatInBolivia(when: Date): string {
+  return new Intl.DateTimeFormat('es-BO', {
+    weekday: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
+    timeZone: 'America/La_Paz',
+    hour12: false,
+  }).format(when)
+}
 
 export default async function TableSeleccionesPage() {
   const supabase = await createSupabaseServerClient()
@@ -46,13 +114,59 @@ export default async function TableSeleccionesPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const rows = await getTeamsForBoard()
-
-  // Internal Mundial rank: position among the 48 WC teams sorted by global
-  // FIFA rank. Stays as a fallback preview until the tournament starts and we
-  // can show the real finish position.
-  const ranked = rows.map((t, i) => ({ ...t, mundialRank: i + 1 }))
   const tournamentStarted = new Date() >= WORLD_CUP_START
+  const [rowsRaw, lastRunRow] = await Promise.all([
+    getTeamsForBoard(),
+    tournamentStarted
+      ? db
+          .select({ finishedAt: resolutionRuns.finishedAt })
+          .from(resolutionRuns)
+          .where(eq(resolutionRuns.status, 'completed'))
+          .orderBy(desc(resolutionRuns.finishedAt))
+          .limit(1)
+      : Promise.resolve([] as { finishedAt: Date | null }[]),
+  ])
+
+  // Normalize global FIFA ranking to 1-48 across only the 48 World Cup teams.
+  // The algorithm expects this normalized rank, not the raw global value.
+  const sortedByFifa = [...rowsRaw].sort(
+    (a, b) => (a.fifaRanking ?? 999) - (b.fifaRanking ?? 999),
+  )
+  const normalizedFifaRank = new Map<string, number>()
+  sortedByFifa.forEach((t, i) => normalizedFifaRank.set(t.id, i + 1))
+
+  const algoInput: TournamentTeamInput[] = rowsRaw.map((t) => ({
+    teamId: t.id,
+    teamName: t.name,
+    fifaRank: normalizedFifaRank.get(t.id) ?? 48,
+    reached: (t.reachedRound ?? 'group') as Reached,
+    groupPoints: t.groupPoints,
+    groupGoalDiff: t.groupGoalDiff,
+    groupGoalsFor: t.groupGoalsFor,
+    yellowCards: t.yellowCards,
+    redCards: t.redCards,
+    eliminationMatch:
+      t.elimMatchGoalsFor != null
+        ? {
+            wentToPenalties: t.elimMatchWentToPenalties,
+            goalsFor: t.elimMatchGoalsFor,
+            goalsAgainst: t.elimMatchGoalsAgainst ?? 0,
+          }
+        : undefined,
+  }))
+
+  const algoRanks = computeTournamentRanks(algoInput)
+  const teamById = new Map(rowsRaw.map((t) => [t.id, t]))
+  const ranked = algoRanks.map((r) => {
+    const t = teamById.get(r.teamId)
+    return {
+      ...(t as (typeof rowsRaw)[number]),
+      mundialRank: r.tournamentRank,
+    }
+  })
+
+  const lastFinishedAt = lastRunRow[0]?.finishedAt ?? null
+  const nextRun = nextCronAt()
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
@@ -74,6 +188,29 @@ export default async function TableSeleccionesPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Ranking general del Mundial 2026 (1 = mejor del torneo, 48 = última).
         </p>
+
+        {tournamentStarted && (
+          <Card className="mt-3 border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed">
+            <div className="flex flex-wrap items-center gap-2">
+              <RefreshCw className="h-3.5 w-3.5 text-primary" />
+              <span className="text-foreground">
+                <span className="font-medium">Última actualización:</span>{' '}
+                {lastFinishedAt ? formatRelative(lastFinishedAt) : 'pendiente'}
+              </span>
+              <span className="text-muted-foreground">·</span>
+              <span className="text-muted-foreground">
+                Próxima: <span className="font-medium text-foreground">{formatInBolivia(nextRun)}</span>{' '}
+                (hora de Bolivia)
+              </span>
+            </div>
+            <p className="mt-1.5 text-muted-foreground">
+              La tabla se actualiza automáticamente cuando termina el cron. Si un equipo todavía
+              está en carrera, aparece como{' '}
+              <span className="font-medium text-foreground">Activo</span> y se reposiciona
+              recién cuando se decide su eliminación.
+            </p>
+          </Card>
+        )}
 
         <Card className="mt-5 p-5 text-sm leading-relaxed space-y-3">
           <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
@@ -150,6 +287,11 @@ export default async function TableSeleccionesPage() {
                     {tournamentStarted ? 'Mundial' : 'M (pre)'}
                   </th>
                   <th className="px-3 py-2 text-left font-medium">Selección</th>
+                  {tournamentStarted && (
+                    <th className="hidden px-3 py-2 text-left font-medium md:table-cell">
+                      Etapa
+                    </th>
+                  )}
                   <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">
                     FIFA global
                   </th>
@@ -160,7 +302,9 @@ export default async function TableSeleccionesPage() {
                   <tr key={t.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
                     <td className="px-3 py-2 align-middle">
                       <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
-                        {t.mundialRank === 1 && <Trophy className="h-3 w-3 text-gold" />}
+                        {t.mundialRank === 1 && tournamentStarted && (
+                          <Trophy className="h-3 w-3 text-gold" />
+                        )}
                         {t.mundialRank}
                       </span>
                     </td>
@@ -175,6 +319,11 @@ export default async function TableSeleccionesPage() {
                         )}
                       </span>
                     </td>
+                    {tournamentStarted && (
+                      <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground md:table-cell">
+                        {reachedLabel(t.reachedRound, tournamentStarted)}
+                      </td>
+                    )}
                     <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
                       #{t.fifaRanking ?? '—'}
                     </td>

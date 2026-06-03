@@ -4,6 +4,7 @@ import { Wordmark } from '@/components/app-shell/wordmark'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { getMagicLinkBlockedUntil } from '@/features/auth/rate-limit'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { WORLD_CUP_START } from '@/lib/world-cup'
 import { LoginForm } from './login-form'
 
 export const dynamic = 'force-dynamic'
@@ -12,8 +13,6 @@ export const metadata: Metadata = {
   title: 'Inicia sesión',
   description: 'Entra a mundial-pool para crear o unirte a un pool del Mundial 2026.',
 }
-
-const WORLD_CUP_START = new Date('2026-06-11T22:00:00Z')
 
 function daysUntilOpener(): number {
   const ms = WORLD_CUP_START.getTime() - Date.now()

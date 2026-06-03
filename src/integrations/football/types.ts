@@ -38,7 +38,26 @@ export type TournamentSnapshot = {
   fetchedAt: string
 }
 
+export type RawMatchStage = 'group' | 'r32' | 'r16' | 'qf' | 'sf' | 'third_place' | 'final'
+
+export type RawMatch = {
+  externalId: string
+  stage: RawMatchStage
+  groupName: string | null
+  kickedOffAt: Date | null
+  finishedAt: Date | null
+  teamAExternalId: string | null
+  teamAName: string | null
+  teamBExternalId: string | null
+  teamBName: string | null
+  scoreA: number | null
+  scoreB: number | null
+  penaltyA: number | null
+  penaltyB: number | null
+}
+
 export interface FootballProvider {
   readonly id: string
   fetchTournamentSnapshot(): Promise<TournamentSnapshot>
+  fetchMatches(): Promise<RawMatch[]>
 }

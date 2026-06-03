@@ -1,4 +1,4 @@
-import type { FootballProvider, TournamentSnapshot } from './types'
+import type { FootballProvider, RawMatch, TournamentSnapshot } from './types'
 
 export const mockProvider: FootballProvider = {
   id: 'mock',
@@ -18,5 +18,8 @@ export const mockProvider: FootballProvider = {
       bestYoungPlayer: null,
       fetchedAt: new Date().toISOString(),
     }
+  },
+  async fetchMatches(): Promise<RawMatch[]> {
+    return []
   },
 }

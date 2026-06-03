@@ -10,6 +10,7 @@ import {
   results,
   teams,
 } from '@/db/schema'
+import { updateTeamStandings } from '@/features/tournament/standings'
 import { getFootballProvider } from '@/integrations/football'
 import { teamMatchKey } from '@/integrations/football/normalize'
 import type { TournamentSnapshot } from '@/integrations/football/types'
@@ -173,6 +174,16 @@ export async function runResolution() {
       await notifyClimbedToTop(preTops, postTops, run.id)
     } catch (e) {
       console.error('rank diff notifications failed', (e as Error).message)
+    }
+
+    // Tournament standings: fetch matches from the provider and update the
+    // teams table so /torneo/selecciones reflects current positions. Mock
+    // provider returns []; the function is idempotent on empty input.
+    try {
+      const rawMatches = await provider.fetchMatches()
+      await updateTeamStandings(rawMatches)
+    } catch (e) {
+      console.error('updateTeamStandings failed', (e as Error).message)
     }
 
     await db
