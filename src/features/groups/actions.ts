@@ -13,6 +13,7 @@ import {
   CATEGORY_KEYS,
   type CategoryKey,
 } from '@/features/predictions/category-defaults'
+import { isSuperAdminEmail } from '@/lib/admin'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { sendNotificationByType } from '@/server/notifications/send'
@@ -125,6 +126,23 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
     userId = await requireUserId()
   } catch {
     return { ok: false, error: 'Necesitas estar autenticado.' }
+  }
+
+  // Capability gate: only superadmins or users who were approved can create
+  // groups. The home page UI hides the button for everyone else, this is the
+  // defense-in-depth check against direct POSTs to the server action.
+  const creatorProfile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, userId),
+    columns: { canCreateGroups: true, email: true },
+  })
+  const creatorIsAdmin = creatorProfile?.email
+    ? isSuperAdminEmail(creatorProfile.email)
+    : false
+  if (!creatorIsAdmin && !creatorProfile?.canCreateGroups) {
+    return {
+      ok: false,
+      error: 'Aún no tienes permiso para crear grupos. Pide permiso primero desde el inicio.',
+    }
   }
 
   const baseSlug = slugify(parsed.data.name) || 'grupo'

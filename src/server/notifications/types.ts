@@ -46,6 +46,24 @@ export const NOTIFICATION_TYPES = [
       'Aviso si pasaste al primer puesto de un grupo al resolverse una categoría (también si entras a un empate por el #1).',
     icon: '🥇',
   },
+  {
+    key: 'group_creation_requested',
+    label: 'Solicitudes de crear grupo (solo admin)',
+    description: 'Solo si sos superadmin: cuando un usuario pide permiso para crear un grupo.',
+    icon: '📝',
+  },
+  {
+    key: 'group_creation_approved',
+    label: 'Cuando aprueban tu solicitud de crear grupo',
+    description: 'Aviso si el admin te dio permiso para crear grupos.',
+    icon: '✅',
+  },
+  {
+    key: 'group_creation_rejected',
+    label: 'Cuando rechazan tu solicitud de crear grupo',
+    description: 'Aviso si el admin rechazó tu pedido (con razón opcional).',
+    icon: '🚫',
+  },
 ] as const
 
 export type NotificationType = (typeof NOTIFICATION_TYPES)[number]['key']

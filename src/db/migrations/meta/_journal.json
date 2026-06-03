@@ -127,6 +127,13 @@
       "when": 1780501184262,
       "tag": "0017_true_microbe",
       "breakpoints": true
+    },
+    {
+      "idx": 18,
+      "version": "7",
+      "when": 1780515385911,
+      "tag": "0018_slow_lady_deathstrike",
+      "breakpoints": true
     }
   ]
 }

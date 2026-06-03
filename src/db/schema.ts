@@ -57,8 +57,35 @@ export const profiles = pgTable('profiles', {
   bannedAt: timestamp('banned_at', { withTimezone: true }),
   bannedReason: text('banned_reason'),
   bannedByUserId: uuid('banned_by_user_id'),
+  // Group creation is gated by superadmin approval. Default false; flipped to
+  // true once the user is granted via the request flow (or grandfathered via
+  // the migration for users who already created groups before this gate).
+  canCreateGroups: boolean('can_create_groups').notNull().default(false),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
+
+// Audit log of group-creation permission requests. One pending row per user
+// (enforced via a partial unique index, see migration). Approved/rejected
+// rows are kept for history.
+export const groupCreationRequests = pgTable(
+  'group_creation_requests',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => profiles.id, { onDelete: 'cascade' }),
+    message: text('message'),
+    status: text('status').notNull().default('pending'),
+    reviewedByUserId: uuid('reviewed_by_user_id').references(() => profiles.id),
+    reviewedAt: timestamp('reviewed_at', { withTimezone: true }),
+    rejectionReason: text('rejection_reason'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_gcr_status').on(t.status),
+    index('idx_gcr_user').on(t.userId),
+  ],
+)
 
 export const groups = pgTable('groups', {
   id: uuid('id').defaultRandom().primaryKey(),
