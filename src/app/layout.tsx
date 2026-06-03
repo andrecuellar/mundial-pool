@@ -6,6 +6,7 @@ import Link from 'next/link'
 import { NavigationProgress } from '@/components/app-shell/navigation-progress'
 import { ThemeProvider } from '@/components/app-shell/theme-provider'
 import { ServiceWorkerRegistration } from '@/components/notifications/sw-registration'
+import { InstallAppLink } from '@/components/pwa/install-app-link'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
 import './globals.css'
@@ -107,7 +108,8 @@ export default function RootLayout({
             <footer className="mt-auto border-t border-border px-4 py-4 text-xs text-muted-foreground sm:px-6">
               <div className="mx-auto flex w-full max-w-5xl flex-wrap items-center justify-between gap-2">
                 <span>mundial-pool · Mundial 2026 entre amigos</span>
-                <nav className="flex items-center gap-4">
+                <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
+                  <InstallAppLink />
                   <Link
                     href="/privacy"
                     className="underline-offset-2 hover:text-foreground hover:underline"
