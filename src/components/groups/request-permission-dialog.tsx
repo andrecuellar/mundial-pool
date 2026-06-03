@@ -3,6 +3,7 @@
 import { Send } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import {
   Dialog,
   DialogContent,
@@ -28,24 +29,40 @@ export function RequestPermissionDialog({ trigger, variant = 'first' }: Props) {
   const [open, setOpen] = useState(false)
   const [message, setMessage] = useState('')
   const [pending, startTransition] = useTransition()
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'success'>('idle')
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
+    setPhase('saving')
     startTransition(async () => {
       const r = await requestGroupCreation({
         message: message.trim() === '' ? null : message.trim(),
       })
       if (r.ok) {
-        toast.success('Solicitud enviada. Te avisaremos por notificación cuando la revisen.')
-        setMessage('')
-        setOpen(false)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success('Solicitud enviada. Te avisaremos por notificación cuando la revisen.')
+          setMessage('')
+          setOpen(false)
+          setPhase('idle')
+        }, 800)
       } else {
+        setPhase('idle')
         toast.error(r.error)
       }
     })
   }
 
   return (
+    <>
+    <SavingOverlay
+      phase={phase}
+      icon={Send}
+      savingTitle="Enviando solicitud"
+      savingSubtitle="Notificando al admin"
+      successTitle="Solicitud enviada"
+      successSubtitle="Te avisamos cuando responda"
+    />
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>{trigger}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
@@ -57,8 +74,8 @@ export function RequestPermissionDialog({ trigger, variant = 'first' }: Props) {
           </DialogTitle>
           <DialogDescription>
             {variant === 'retry'
-              ? 'Mandá una nueva solicitud al admin. Si quieres, cuéntale qué cambió desde la anterior.'
-              : 'Para evitar spam, todos los nuevos grupos pasan por aprobación. Mandá una solicitud al admin y te avisamos cuando responda.'}
+              ? 'Envía una nueva solicitud al admin. Si quieres, cuéntale qué cambió desde la anterior.'
+              : 'Para evitar spam, todos los nuevos grupos pasan por aprobación. Envía una solicitud al admin y te avisamos cuando responda.'}
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -94,5 +111,6 @@ export function RequestPermissionDialog({ trigger, variant = 'first' }: Props) {
         </form>
       </DialogContent>
     </Dialog>
+    </>
   )
 }

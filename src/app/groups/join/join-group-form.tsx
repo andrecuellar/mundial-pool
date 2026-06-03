@@ -1,7 +1,8 @@
 'use client'
 
-import { AlertTriangle } from 'lucide-react'
+import { AlertTriangle, UserPlus } from 'lucide-react'
 import { useState, useTransition } from 'react'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { joinGroup } from '@/features/groups/actions'
@@ -13,6 +14,7 @@ export function JoinGroupForm() {
   const [code, setCode] = useState('')
   const [error, setError] = useState<string | null>(null)
   const [pending, startTransition] = useTransition()
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'success'>('idle')
 
   function sanitize(raw: string): string {
     return raw.toUpperCase().replace(ALPHABET, '').slice(0, CODE_LEN)
@@ -25,19 +27,33 @@ export function JoinGroupForm() {
       setError('Completa los 6 caracteres.')
       return
     }
+    setPhase('saving')
     startTransition(async () => {
       const fd = new FormData()
       fd.set('inviteCode', clean)
       const r = await joinGroup(fd)
       if (r.ok) {
-        window.location.href = `/groups/${r.data.slug}`
+        setPhase('success')
+        setTimeout(() => {
+          window.location.href = `/groups/${r.data.slug}`
+        }, 800)
       } else {
+        setPhase('idle')
         setError(r.error)
       }
     })
   }
 
   return (
+    <>
+    <SavingOverlay
+      phase={phase}
+      icon={UserPlus}
+      savingTitle="Uniéndote al grupo"
+      savingSubtitle="Verificando el código"
+      successTitle="¡Listo!"
+      successSubtitle="Te llevamos a tu nuevo grupo"
+    />
     <form onSubmit={handleSubmit} className="space-y-5">
       <Input
         value={code}
@@ -93,5 +109,6 @@ export function JoinGroupForm() {
         </Button>
       </div>
     </form>
+    </>
   )
 }

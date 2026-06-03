@@ -41,8 +41,8 @@ export default async function NotificationsSettingsPage() {
         <BackLink href="/" label="Inicio" className="mb-4" />
         <h1 className="text-2xl sm:text-3xl font-semibold tracking-tight">Notificaciones</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Elegí qué tipos de aviso querés recibir. Si tu navegador todavía no tiene permiso para
-          notificaciones, primero activalas desde el banner "Activa las notificaciones del Mundial"
+          Elige qué tipos de aviso quieres recibir. Si tu navegador todavía no tiene permiso para
+          notificaciones, primero actívalas desde el banner "Activa las notificaciones del Mundial"
           en el inicio.
         </p>
         <div className="mt-6">

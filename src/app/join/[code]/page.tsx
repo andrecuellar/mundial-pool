@@ -10,8 +10,8 @@ import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups } from '@/db/schema'
-import { joinGroupAndRedirect } from '@/features/groups/actions'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { JoinConfirmForm } from './join-confirm-form'
 
 export const dynamic = 'force-dynamic'
 
@@ -162,15 +162,7 @@ export default async function JoinByCodePage({ params }: Params) {
             líderes del grupo.
           </p>
 
-          <form action={joinGroupAndRedirect} className="mt-6 space-y-2">
-            <input type="hidden" name="inviteCode" value={codeUpper} />
-            <Button type="submit" size="lg" className="w-full">
-              Unirme al grupo
-            </Button>
-            <Button asChild variant="ghost" size="lg" className="w-full">
-              <Link href="/">Cancelar</Link>
-            </Button>
-          </form>
+          <JoinConfirmForm inviteCode={codeUpper} />
 
           <p className="mt-4 text-center text-[11px] text-muted-foreground">
             Código de invitación: <span className="font-mono text-foreground">{codeUpper}</span>

@@ -1,8 +1,9 @@
 'use client'
 
-import { Plus } from 'lucide-react'
+import { Plus, Wallet } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -46,6 +47,7 @@ export function DepositForm({ groupId, currency, buyInAmount, members, paidUserI
   const [confirmOpen, setConfirmOpen] = useState(false)
   const [dupeOpen, setDupeOpen] = useState(false)
   const [pending, startTransition] = useTransition()
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'success'>('idle')
 
   const isAnon = contributor === ANON_VALUE
   const contributorName = isAnon
@@ -62,6 +64,9 @@ export function DepositForm({ groupId, currency, buyInAmount, members, paidUserI
   }
 
   function save(confirmDuplicate: boolean) {
+    setConfirmOpen(false)
+    setDupeOpen(false)
+    setPhase('saving')
     startTransition(async () => {
       const r = await recordPoolTransaction({
         groupId,
@@ -71,15 +76,18 @@ export function DepositForm({ groupId, currency, buyInAmount, members, paidUserI
         confirmDuplicate,
       })
       if (r.ok) {
-        toast.success('Pago registrado')
-        setNote('')
-        setAnonLabel('')
-        setConfirmOpen(false)
-        setDupeOpen(false)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success('Pago registrado')
+          setNote('')
+          setAnonLabel('')
+          setPhase('idle')
+        }, 800)
       } else if (r.code === 'duplicate') {
-        setConfirmOpen(false)
+        setPhase('idle')
         setDupeOpen(true)
       } else {
+        setPhase('idle')
         toast.error(r.error)
       }
     })
@@ -95,6 +103,13 @@ export function DepositForm({ groupId, currency, buyInAmount, members, paidUserI
 
   return (
     <>
+      <SavingOverlay
+        phase={phase}
+        icon={Wallet}
+        savingTitle="Registrando el pago"
+        savingSubtitle="Confirmando en la base"
+        successTitle="¡Pago registrado!"
+      />
       <form onSubmit={handleSubmit} className="space-y-4">
         <div className="rounded-lg border border-primary/30 bg-primary/5 p-3">
           <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
@@ -201,7 +216,7 @@ export function DepositForm({ groupId, currency, buyInAmount, members, paidUserI
             <AlertDialogDescription>
               <span className="font-semibold text-foreground">{contributorName}</span> ya tiene un
               aporte registrado en este grupo. Revisa el nombre — si seleccionaste al equivocado,
-              cancela. Si realmente recibiste un segundo pago de esta persona, registralo igual y
+              cancela. Si realmente recibiste un segundo pago de esta persona, regístralo igual y
               devuélvele lo extra cuando puedas.
             </AlertDialogDescription>
           </AlertDialogHeader>
