@@ -1,4 +1,4 @@
-import { and, eq, inArray, ne, sql } from 'drizzle-orm'
+import { and, eq, sql } from 'drizzle-orm'
 import { Download, Lock } from 'lucide-react'
 import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
@@ -45,54 +45,35 @@ export default async function PredictPage({ params }: Params) {
   if (!membership) notFound()
 
   const locked = new Date() >= group.predictionsLockAt
-  const [form, allTeams, allPlayers, otherGroupsRaw, myPredCount] = await Promise.all([
+  // One pass over all the user's groups (current + others) with their
+  // prediction count via LEFT JOIN — feeds the import-from-other-group dialog
+  // *and* the count for the current group in one round-trip.
+  const [form, allTeams, allPlayers, myGroupsWithCount] = await Promise.all([
     getPredictionForm(group.id, user.id),
     listAllTeams(),
     listAllPlayers(),
-    // Other groups the user belongs to — needed so the in-group "Importar" button
-    // can offer them as copy sources. Excludes the current group.
     db
       .select({
         id: groups.id,
         name: groups.name,
         slug: groups.slug,
         predictionsLockAt: groups.predictionsLockAt,
+        predictionsCount: sql<number>`COUNT(${predictions.id})::int`,
       })
       .from(groupMembers)
       .innerJoin(groups, eq(groups.id, groupMembers.groupId))
-      .where(and(eq(groupMembers.userId, user.id), ne(groups.id, group.id))),
-    db
-      .select({ n: sql<number>`COUNT(*)::int` })
-      .from(predictions)
-      .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
+      .leftJoin(
+        predictions,
+        and(eq(predictions.groupId, groups.id), eq(predictions.userId, user.id)),
+      )
+      .where(eq(groupMembers.userId, user.id))
+      .groupBy(groups.id, groups.name, groups.slug, groups.predictionsLockAt),
   ])
 
-  // Per-group prediction counts for the OTHER groups, so the dialog can show
-  // "ya tiene X predicciones" next to each option.
-  const otherCountsRows =
-    otherGroupsRaw.length > 0
-      ? await db
-          .select({
-            groupId: predictions.groupId,
-            n: sql<number>`COUNT(*)::int`,
-          })
-          .from(predictions)
-          .where(
-            and(
-              inArray(
-                predictions.groupId,
-                otherGroupsRaw.map((g) => g.id),
-              ),
-              eq(predictions.userId, user.id),
-            ),
-          )
-          .groupBy(predictions.groupId)
-      : []
-  const otherCountByGroup = new Map(otherCountsRows.map((r) => [r.groupId, r.n]))
-  const currentPredCount = myPredCount[0]?.n ?? 0
-  const anyOtherHasPredictions = otherGroupsRaw.some(
-    (g) => (otherCountByGroup.get(g.id) ?? 0) > 0,
-  )
+  const currentRow = myGroupsWithCount.find((g) => g.id === group.id)
+  const otherGroupsWithCount = myGroupsWithCount.filter((g) => g.id !== group.id)
+  const currentPredCount = currentRow?.predictionsCount ?? 0
+  const anyOtherHasPredictions = otherGroupsWithCount.some((g) => g.predictionsCount > 0)
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
@@ -140,12 +121,12 @@ export default async function PredictPage({ params }: Params) {
                   locked: false,
                   predictionsCount: currentPredCount,
                 },
-                ...otherGroupsRaw.map((g) => ({
+                ...otherGroupsWithCount.map((g) => ({
                   id: g.id,
                   name: g.name,
                   slug: g.slug,
                   locked: new Date() >= g.predictionsLockAt,
-                  predictionsCount: otherCountByGroup.get(g.id) ?? 0,
+                  predictionsCount: g.predictionsCount,
                 })),
               ]}
               trigger={
