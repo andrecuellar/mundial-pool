@@ -2,14 +2,23 @@
 
 import { ChevronDown, ChevronRight, Database } from 'lucide-react'
 import Link from 'next/link'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 
-// Collapsible 'Datos del Mundial 2026' section for the home page. Default
-// collapsed so the home isn't visually overloaded on mobile. The expand
-// affordance is explicit (chevron + "Ver más" label) so users understand
-// there's content behind it.
+// Collapsible 'Datos del Mundial 2026' section for the home page. Mobile
+// defaults closed to keep the page light; desktop (lg breakpoint and up)
+// defaults open since there's plenty of vertical room and the section is
+// useful at-a-glance. The expand affordance stays explicit on both so the
+// user can collapse on desktop too.
 export function DataMundialSection() {
+  // SSR + first mobile paint: closed. On client mount we flip to open if
+  // the viewport is desktop. Brief flash on desktop is acceptable.
   const [open, setOpen] = useState(false)
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    const mq = window.matchMedia('(min-width: 1024px)')
+    if (mq.matches) setOpen(true)
+  }, [])
 
   return (
     <div className="mt-8 overflow-hidden rounded-xl border border-border bg-card">
