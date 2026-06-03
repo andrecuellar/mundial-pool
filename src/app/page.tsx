@@ -1,11 +1,14 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
-import { ChevronRight, Users } from 'lucide-react'
+import { ChevronRight, Copy, Users } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
 import { CreateGroupCTA } from '@/components/groups/create-group-cta'
+import { GroupCardChips } from '@/components/groups/group-card-chips'
 import { DataMundialSection } from '@/components/home/data-mundial-section'
+import { CopyPredictionsDialog } from '@/components/predictions/copy-predictions-dialog'
+import { Button } from '@/components/ui/button'
 import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
@@ -15,7 +18,14 @@ import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupCreationRequests, groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
+import {
+  groupCreationRequests,
+  groupMembers,
+  groups,
+  poolTransactions,
+  predictions,
+  profiles,
+} from '@/db/schema'
 import { env } from '@/lib/env'
 import { isSuperAdminEmail } from '@/lib/admin'
 import { formatDayTime } from '@/lib/format'
@@ -74,7 +84,7 @@ export default async function Home() {
     .orderBy(desc(groups.createdAt))
 
   const poolGroupIds = myGroups.filter((g) => g.poolEnabled).map((g) => g.id)
-  const [poolTotals, myPaidRows] = await Promise.all([
+  const [poolTotals, myPaidRows, myPredCountRows] = await Promise.all([
     myGroups.length > 0
       ? db
           .select({
@@ -101,9 +111,28 @@ export default async function Home() {
             ),
           )
       : Promise.resolve([] as { groupId: string }[]),
+    myGroups.length > 0
+      ? db
+          .select({
+            groupId: predictions.groupId,
+            n: sql<number>`COUNT(*)::int`,
+          })
+          .from(predictions)
+          .where(
+            and(
+              inArray(
+                predictions.groupId,
+                myGroups.map((g) => g.id),
+              ),
+              eq(predictions.userId, user.id),
+            ),
+          )
+          .groupBy(predictions.groupId)
+      : Promise.resolve([] as { groupId: string; n: number }[]),
   ])
   const totalsByGroup = new Map(poolTotals.map((p) => [p.groupId, Number(p.total)]))
   const paidGroupIdsForMe = new Set(myPaidRows.map((p) => p.groupId))
+  const predCountByGroup = new Map(myPredCountRows.map((r) => [r.groupId, r.n]))
   const pendingPaymentGroups = myGroups
     .filter((g) => g.poolEnabled && !paidGroupIdsForMe.has(g.id))
     .map((g) => ({ id: g.id, name: g.name, slug: g.slug, isOwner: g.role === 'owner' }))
@@ -219,6 +248,13 @@ export default async function Home() {
                               </>
                             )}
                           </div>
+                          <GroupCardChips
+                            predictionsCompleted={predCountByGroup.get(g.id) ?? 0}
+                            totalPredictions={14}
+                            locked={locked}
+                            poolEnabled={g.poolEnabled}
+                            hasPaid={paidGroupIdsForMe.has(g.id)}
+                          />
                         </div>
                         <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
                       </div>
@@ -242,6 +278,24 @@ export default async function Home() {
               Unirme con código
             </NavButton>
           </div>
+        )}
+
+        {myGroups.length >= 2 && (
+          <CopyPredictionsDialog
+            myGroups={myGroups.map((g) => ({
+              id: g.id,
+              name: g.name,
+              slug: g.slug,
+              locked: new Date() >= g.predictionsLockAt,
+              predictionsCount: predCountByGroup.get(g.id) ?? 0,
+            }))}
+            trigger={
+              <Button variant="outline" className="mt-2 h-11 w-full">
+                <Copy className="h-4 w-4" />
+                Copiar mi predicción a otros grupos
+              </Button>
+            }
+          />
         )}
 
         <DataMundialSection />
