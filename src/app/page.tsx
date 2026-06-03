@@ -4,8 +4,8 @@ import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
-import { CountdownBanner } from '@/components/countdown/countdown-banner'
-import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
+import { DataMundialSection } from '@/components/home/data-mundial-section'
+import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PendingPaymentsBanner } from '@/components/pool/pending-payments-banner'
@@ -117,7 +117,7 @@ export default async function Home() {
           </span>
         </div>
 
-        <PoolDisclaimer variant="home" className="mt-4" />
+        <PoolDisclaimerHome className="mt-4" />
 
         {pendingPaymentGroups.length > 0 && (
           <PendingPaymentsBanner groups={pendingPaymentGroups} className="mt-4" />
@@ -127,21 +127,6 @@ export default async function Home() {
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
           <InstallPrompt />
         </div>
-
-        {(() => {
-          // Show one countdown — the nearest still-open lock among my groups.
-          const now = Date.now()
-          const next = myGroups
-            .map((g) => ({ name: g.name, ts: g.predictionsLockAt.getTime() }))
-            .filter((g) => g.ts > now)
-            .sort((a, b) => a.ts - b.ts)[0]
-          if (!next) return null
-          return (
-            <div className="mt-4">
-              <CountdownBanner lockAt={new Date(next.ts).toISOString()} groupName={next.name} />
-            </div>
-          )
-        })()}
 
         {myGroups.length === 0 ? (
           <Card className="mt-8 flex flex-col items-center gap-3 p-10 text-center">
@@ -230,37 +215,7 @@ export default async function Home() {
           </div>
         )}
 
-        <div className="mt-8">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-            Datos del Mundial 2026
-          </p>
-          <div className="mt-2 grid gap-2 sm:grid-cols-2">
-            <Link
-              href="/torneo/selecciones"
-              className="hover-lift group flex items-start gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Tabla de las 48 selecciones</p>
-                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                  Ranking 1→48 con desempates por penales, fair play y diferencia de gol.
-                </p>
-              </div>
-            </Link>
-            <Link
-              href="/torneo/jugadores"
-              className="hover-lift group flex items-start gap-3 rounded-xl border border-border bg-card p-4"
-            >
-              <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
-              <div className="min-w-0">
-                <p className="text-sm font-medium">Goleadores y asistentes</p>
-                <p className="mt-0.5 text-xs text-muted-foreground leading-relaxed">
-                  Top scorers y máximos asistentes según FIFA. Qué cuenta y qué no.
-                </p>
-              </div>
-            </Link>
-          </div>
-        </div>
+        <DataMundialSection />
       </main>
     </>
   )
