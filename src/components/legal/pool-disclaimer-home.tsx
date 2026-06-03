@@ -35,7 +35,7 @@ export function PoolDisclaimerHome({ className }: Props) {
 
   return (
     <div
-      className={`rounded-xl border border-warning/30 bg-warning/5 text-xs leading-relaxed text-foreground ${className ?? ''}`}
+      className={`overflow-hidden rounded-xl border border-warning/30 bg-warning/5 text-xs leading-relaxed text-foreground ${className ?? ''}`}
     >
       <button
         type="button"
@@ -47,22 +47,32 @@ export function PoolDisclaimerHome({ className }: Props) {
         <span className="min-w-0 flex-1 font-medium">
           Esto es un pool entre amigos. No es una casa de apuestas.
         </span>
-        <ChevronDown
-          aria-hidden
-          className={`mt-0.5 h-4 w-4 shrink-0 text-muted-foreground transition-transform ${
-            collapsed ? '' : 'rotate-180'
-          }`}
-        />
+        <span className="mt-0.5 flex shrink-0 items-center gap-1.5 text-[11px] font-normal text-muted-foreground">
+          {collapsed ? 'Ver más' : 'Ocultar'}
+          <ChevronDown
+            aria-hidden
+            className={`h-4 w-4 transition-transform duration-300 ${
+              collapsed ? '' : 'rotate-180'
+            }`}
+          />
+        </span>
       </button>
-      {!collapsed && (
-        <div className="px-4 pb-3 pl-[2.375rem] text-muted-foreground">
-          <p>
-            La app solo lleva el registro — el dinero lo manejan ustedes fuera de la app y el
-            reparto lo hace cada administrador de grupo. Únete solo a grupos de gente que conozcas.
-            No nos hacemos responsables por pérdidas, fraudes o disputas entre miembros.
-          </p>
+      <div
+        aria-hidden={collapsed}
+        className={`grid motion-safe:transition-[grid-template-rows,opacity] duration-300 ease-out ${
+          collapsed ? 'grid-rows-[0fr] opacity-0' : 'grid-rows-[1fr] opacity-100'
+        }`}
+      >
+        <div className={`min-h-0 overflow-hidden ${collapsed ? 'pointer-events-none' : ''}`}>
+          <div className="px-4 pb-3 pl-[2.375rem] text-muted-foreground">
+            <p>
+              La app solo lleva el registro — el dinero lo manejan ustedes fuera de la app y el
+              reparto lo hace cada administrador de grupo. Únete solo a grupos de gente que conozcas.
+              No nos hacemos responsables por pérdidas, fraudes o disputas entre miembros.
+            </p>
+          </div>
         </div>
-      )}
+      </div>
     </div>
   )
 }
