@@ -1,9 +1,13 @@
+import { eq } from 'drizzle-orm'
 import { Bolt } from 'lucide-react'
 import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { Card } from '@/components/ui/card'
+import { db } from '@/db'
+import { profiles } from '@/db/schema'
+import { isSuperAdminEmail } from '@/lib/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { NewGroupForm } from './new-group-form'
 
@@ -20,6 +24,15 @@ export default async function NewGroupPage() {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  // Capability gate: users without permission are bounced back home where the
+  // CTA shows the "Pedir permiso" path. Superadmins are exempt.
+  const profile = await db.query.profiles.findFirst({
+    where: eq(profiles.id, user.id),
+    columns: { canCreateGroups: true, email: true },
+  })
+  const isAdmin = profile?.email ? isSuperAdminEmail(profile.email) : false
+  if (!isAdmin && !profile?.canCreateGroups) redirect('/')
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'

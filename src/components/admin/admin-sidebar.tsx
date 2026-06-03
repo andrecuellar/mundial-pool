@@ -5,6 +5,7 @@ import {
   Layers,
   LayoutDashboard,
   ShieldCheck,
+  UserCheck,
   User as UserIcon,
   Users,
   Vote,
@@ -16,6 +17,7 @@ import { usePathname } from 'next/navigation'
 
 const LINKS = [
   { href: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { href: '/admin/solicitudes', label: 'Solicitudes', icon: UserCheck },
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/grupos', label: 'Grupos', icon: Layers },
   { href: '/admin/predicciones', label: 'Predicciones', icon: Vote },

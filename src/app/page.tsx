@@ -1,9 +1,10 @@
 import { and, desc, eq, inArray, sql } from 'drizzle-orm'
-import { ChevronRight, Plus, Users } from 'lucide-react'
+import { ChevronRight, Users } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
+import { CreateGroupCTA } from '@/components/groups/create-group-cta'
 import { DataMundialSection } from '@/components/home/data-mundial-section'
 import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
@@ -14,8 +15,9 @@ import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
+import { groupCreationRequests, groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
 import { env } from '@/lib/env'
+import { isSuperAdminEmail } from '@/lib/admin'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -30,9 +32,31 @@ export default async function Home() {
 
   const myProfile = await db.query.profiles.findFirst({
     where: eq(profiles.id, user.id),
-    columns: { onboardedAt: true },
+    columns: { onboardedAt: true, canCreateGroups: true, email: true },
   })
   const shouldOnboard = !myProfile?.onboardedAt
+  const isAdminMe = myProfile?.email ? isSuperAdminEmail(myProfile.email) : false
+  const canCreateGroups = isAdminMe || myProfile?.canCreateGroups || false
+
+  // For users without the capability, peek at their most recent request to
+  // tune the CTA between "pendiente" / "volver a pedir" / "pedir".
+  let pendingRequestId: string | null = null
+  let lastRejectedAt: Date | null = null
+  if (!canCreateGroups) {
+    const recent = await db
+      .select({
+        id: groupCreationRequests.id,
+        status: groupCreationRequests.status,
+        reviewedAt: groupCreationRequests.reviewedAt,
+      })
+      .from(groupCreationRequests)
+      .where(eq(groupCreationRequests.userId, user.id))
+      .orderBy(desc(groupCreationRequests.createdAt))
+      .limit(1)
+    const last = recent[0]
+    if (last?.status === 'pending') pendingRequestId = last.id
+    else if (last?.status === 'rejected') lastRejectedAt = last.reviewedAt
+  }
 
   const myGroups = await db
     .select({
@@ -138,10 +162,13 @@ export default async function Home() {
               Crea uno e invita a tus amigos con un código de 6 caracteres, o únete a uno existente.
             </p>
             <div className="mt-3 flex flex-wrap justify-center gap-2">
-              <NavButton href="/groups/new">
-                <Plus className="h-4 w-4" />
-                Crear mi primer grupo
-              </NavButton>
+              <CreateGroupCTA
+                canCreate={canCreateGroups}
+                pendingRequestId={pendingRequestId}
+                lastRejectedAt={lastRejectedAt}
+                variant="primary"
+                isFirstGroup
+              />
               <NavButton href="/groups/join" variant="secondary">
                 Unirme con código
               </NavButton>
@@ -205,10 +232,12 @@ export default async function Home() {
 
         {myGroups.length > 0 && (
           <div className="mt-6 grid grid-cols-2 gap-2">
-            <NavButton href="/groups/new" className="h-12">
-              <Plus className="h-4 w-4" />
-              Crear grupo
-            </NavButton>
+            <CreateGroupCTA
+              canCreate={canCreateGroups}
+              pendingRequestId={pendingRequestId}
+              lastRejectedAt={lastRejectedAt}
+              variant="grid"
+            />
             <NavButton href="/groups/join" variant="secondary" className="h-12">
               Unirme con código
             </NavButton>
