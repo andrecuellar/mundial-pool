@@ -118,8 +118,15 @@ export function AndroidInstallDialog({ open, onOpenChange }: DialogProps) {
             </span>
           </li>
         </ol>
+        <p className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground leading-relaxed">
+          💡{' '}
+          <span className="font-medium text-foreground">
+            ¿Ves "Abrir mundial-pool" en lugar de "Instalar"?
+          </span>{' '}
+          Ya tienes la app instalada. Tócala y se abre directamente — listo.
+        </p>
         <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground leading-relaxed">
-          <span className="font-medium text-foreground">¿No ves la opción "Instalar app"?</span>{' '}
+          <span className="font-medium text-foreground">¿No ves "Instalar" ni "Abrir"?</span>{' '}
           Algunos navegadores (Firefox, ciertos custom browsers) solo ofrecen{' '}
           <span className="font-medium text-foreground">"Añadir a pantalla principal"</span> —
           funciona casi igual. Si no aparece ninguna, prueba con Chrome o Edge.
@@ -177,11 +184,17 @@ export function DesktopInstallDialog({ open, onOpenChange }: DialogProps) {
             </span>
           </li>
         </ol>
+        <p className="rounded-lg border border-primary/30 bg-primary/5 p-3 text-xs text-muted-foreground leading-relaxed">
+          💡{' '}
+          <span className="font-medium text-foreground">
+            ¿En el menú ves "Abrir mundial-pool" en lugar de "Instalar"?
+          </span>{' '}
+          Ya tienes la app instalada. Hazle clic ahí y se abre directamente — listo.
+        </p>
         <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground leading-relaxed">
-          <span className="font-medium text-foreground">¿No ves el ícono ni la opción?</span>{' '}
-          Puede ser que tu navegador no soporte la instalación (por ejemplo, Firefox de escritorio
-          no la trae), o que la app ya esté instalada. Si ya la instalaste antes, búscala en tus
-          aplicaciones.
+          <span className="font-medium text-foreground">¿No ves el ícono ni "Instalar" ni "Abrir"?</span>{' '}
+          Puede ser que tu navegador no soporte la instalación (Firefox de escritorio no la trae).
+          Prueba con Chrome o Edge.
         </p>
         <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full">
           Cerrar
