@@ -163,24 +163,36 @@ export async function recordPoolTransaction(input: unknown): Promise<PoolActionR
   )
 
   // Confirmation push to the contributor (when they have a userId in the
-  // app). Anonymous tags have no recipient. Best-effort — failures don't
-  // affect the ledger insert.
+  // app). Anonymous tags have no recipient. Fired after the response so the
+  // admin sees the deposit row appear immediately even if FCM/APNs are slow.
   if (parsed.data.contributorUserId && inserted) {
-    try {
-      const [owner] = await db
-        .select({ displayName: profiles.displayName })
-        .from(profiles)
-        .where(eq(profiles.id, auth.userId))
-        .limit(1)
-      await sendNotificationByType('pool_deposit_confirmed', [parsed.data.contributorUserId], {
-        title: `✅ ${owner?.displayName ?? 'El administrador'} confirmó tu aporte`,
-        body: `${formatMoney(Number(group.poolBuyInAmount), group.poolCurrency)} en ${group.name}`,
-        url: `/groups/${group.slug}`,
-        tag: `pool-deposit-${parsed.data.groupId}-${inserted.id}`,
-      })
-    } catch (e) {
-      console.error('pool_deposit_confirmed notification failed', e)
-    }
+    const contributorUserId = parsed.data.contributorUserId
+    const groupId = parsed.data.groupId
+    const insertedId = inserted.id
+    // Capture concrete values so the callback's closure keeps the narrowed
+    // types (TypeScript doesn't carry narrowing into async callbacks).
+    const poolCurrency: string = group.poolCurrency
+    const buyInAmount = Number(group.poolBuyInAmount)
+    const groupName = group.name
+    const groupSlug = group.slug
+    const ownerUserId = auth.userId
+    after(async () => {
+      try {
+        const [owner] = await db
+          .select({ displayName: profiles.displayName })
+          .from(profiles)
+          .where(eq(profiles.id, ownerUserId))
+          .limit(1)
+        await sendNotificationByType('pool_deposit_confirmed', [contributorUserId], {
+          title: `✅ ${owner?.displayName ?? 'El administrador'} confirmó tu aporte`,
+          body: `${formatMoney(buyInAmount, poolCurrency)} en ${groupName}`,
+          url: `/groups/${groupSlug}`,
+          tag: `pool-deposit-${groupId}-${insertedId}`,
+        })
+      } catch (e) {
+        console.error('pool_deposit_confirmed notification failed', e)
+      }
+    })
   }
   return { ok: true }
 }

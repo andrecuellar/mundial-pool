@@ -259,24 +259,27 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
     .onConflictDoNothing()
     .returning()
 
-  // Only notify when the row was actually inserted (not when the user was
-  // already a member and the onConflictDoNothing absorbed it). Best-effort
-  // — push failures don't abort the join.
-  if (inserted.length > 0) {
-    try {
-      await notifyOwnerOfNewMember(group.id, group.slug, group.name, userId)
-    } catch (e) {
-      console.error('member_joined notification failed', e)
-    }
-  }
-
   revalidatePath('/')
+
+  // Push notification + analytics run AFTER the response. Doing this inline
+  // with `await` (as we used to) blocked the action by several seconds in
+  // production while web-push hit external services like FCM/APNs — users
+  // pressed the button multiple times thinking it had hung. `after()` keeps
+  // the function execution alive on Vercel until these finish, but the
+  // browser already got the redirect.
   if (inserted.length > 0) {
-    after(() =>
-      track('group_joined', { via: 'code' }).catch((e) =>
-        console.error('analytics group_joined failed', e),
-      ),
-    )
+    after(async () => {
+      try {
+        await notifyOwnerOfNewMember(group.id, group.slug, group.name, userId)
+      } catch (e) {
+        console.error('member_joined notification failed', e)
+      }
+      try {
+        await track('group_joined', { via: 'code' })
+      } catch (e) {
+        console.error('analytics group_joined failed', e)
+      }
+    })
   }
   return { ok: true, data: { slug: group.slug } }
 }
