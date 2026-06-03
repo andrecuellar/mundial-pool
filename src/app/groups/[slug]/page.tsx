@@ -323,7 +323,7 @@ export default async function GroupPage({ params }: Params) {
                 </p>
               </div>
               <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
-                <CopyCodeButton code={group.inviteCode} />
+                <CopyCodeButton code={group.inviteCode} groupName={group.name} />
                 <ShareButton code={group.inviteCode} groupName={group.name} />
               </div>
             </div>
