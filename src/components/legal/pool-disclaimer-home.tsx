@@ -3,15 +3,15 @@
 import { AlertTriangle, ChevronDown } from 'lucide-react'
 import { useEffect, useState } from 'react'
 
-const STORAGE_KEY = 'mp:pool-disclaimer-collapsed'
+const STORAGE_KEY = 'mp:pool-disclaimer-seen'
 
 type Props = { className?: string }
 
 // Client wrapper around the 'home' variant of <PoolDisclaimer>. First-time
-// visitors see the full text. Once they've seen it (per-device localStorage
-// flag), the body collapses on subsequent visits and they can re-expand with
-// the chevron. The toggle is always visible so the user can collapse it
-// after reading, or expand it again later if they want a refresher.
+// visitors see the full text. The flag flips to "seen" on the first mount,
+// so every subsequent visit (this device) starts collapsed. The user can
+// expand again any time to refresh memory; the next visit will collapse
+// it again — we treat the warning as "shown once, then ambient".
 export function PoolDisclaimerHome({ className }: Props) {
   // SSR renders expanded so first-time users see the full text without
   // waiting for hydration. The first useEffect tick may flip it to collapsed
@@ -21,16 +21,20 @@ export function PoolDisclaimerHome({ className }: Props) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const v = window.localStorage.getItem(STORAGE_KEY)
-    if (v === '1') setCollapsed(true)
+    const seen = window.localStorage.getItem(STORAGE_KEY)
+    if (seen === '1') {
+      setCollapsed(true)
+    } else {
+      // First visit: leave expanded so they read it, but mark as seen so
+      // the next visit lands collapsed.
+      window.localStorage.setItem(STORAGE_KEY, '1')
+    }
   }, [])
 
+  // Toggle is local-only: we don't overwrite the "seen" flag, so re-expanding
+  // is temporary (next visit goes back to collapsed by default).
   function toggle() {
-    const next = !collapsed
-    setCollapsed(next)
-    if (typeof window !== 'undefined') {
-      window.localStorage.setItem(STORAGE_KEY, next ? '1' : '0')
-    }
+    setCollapsed((c) => !c)
   }
 
   return (
