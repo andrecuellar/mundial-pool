@@ -98,7 +98,7 @@ export function PoolDisclaimer({ variant, className }: Props) {
           </p>
           <p className="text-muted-foreground">
             Tu palabra es lo que sostiene este pozo. Cada vez que recibas un pago (Yape, Tigo Money,
-            transferencia, efectivo), revisa tu cuenta y luego registralo en esta misma página con
+            transferencia, efectivo), revisa tu cuenta y luego regístralo en esta misma página con
             el botón <span className="font-medium text-foreground">"Registrar un pago nuevo"</span>.
             Sin ese registro el jugador queda como pendiente y puede ser eliminado del reparto.
           </p>

@@ -3,6 +3,7 @@
 import { Check, X } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -26,39 +27,69 @@ type Props = {
 
 // Inline approve/reject controls for the admin /solicitudes table. Approve is
 // a single-step confirm (1-line dialog); reject opens a dialog with an
-// optional reason textarea.
+// optional reason textarea. Both wrap the server action in a full-screen
+// SavingOverlay so the admin sees progress + a success animation while push
+// notifications go out in the background.
 export function GroupRequestActions({ requestId, displayName }: Props) {
   const [approveOpen, setApproveOpen] = useState(false)
   const [rejectOpen, setRejectOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [pending, startTransition] = useTransition()
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'success'>('idle')
+  const [intent, setIntent] = useState<'approve' | 'reject'>('approve')
 
   function handleApprove() {
+    setApproveOpen(false)
+    setIntent('approve')
+    setPhase('saving')
     startTransition(async () => {
       const r = await approveGroupCreationRequest({ requestId })
       if (r.ok) {
-        toast.success(`Aprobaste a ${displayName}`)
-        setApproveOpen(false)
-      } else toast.error(r.error)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success(`Aprobaste a ${displayName}`)
+          setPhase('idle')
+        }, 800)
+      } else {
+        setPhase('idle')
+        toast.error(r.error)
+      }
     })
   }
 
   function handleReject() {
+    setRejectOpen(false)
+    setIntent('reject')
+    setPhase('saving')
     startTransition(async () => {
       const r = await rejectGroupCreationRequest({
         requestId,
         reason: reason.trim() === '' ? null : reason.trim(),
       })
       if (r.ok) {
-        toast.success(`Rechazaste a ${displayName}`)
-        setRejectOpen(false)
-        setReason('')
-      } else toast.error(r.error)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success(`Rechazaste a ${displayName}`)
+          setReason('')
+          setPhase('idle')
+        }, 800)
+      } else {
+        setPhase('idle')
+        toast.error(r.error)
+      }
     })
   }
 
   return (
     <div className="flex flex-wrap items-center gap-1.5">
+      <SavingOverlay
+        phase={phase}
+        icon={intent === 'approve' ? Check : X}
+        savingTitle={intent === 'approve' ? 'Aprobando solicitud' : 'Rechazando solicitud'}
+        savingSubtitle="Notificando al usuario"
+        successTitle={intent === 'approve' ? '¡Aprobada!' : 'Rechazada'}
+      />
+
       <Dialog open={approveOpen} onOpenChange={setApproveOpen}>
         <Button size="sm" onClick={() => setApproveOpen(true)}>
           <Check className="h-3.5 w-3.5" />
@@ -108,7 +139,7 @@ export function GroupRequestActions({ requestId, displayName }: Props) {
               disabled={pending}
             />
             <p className="text-xs text-muted-foreground">
-              Si lo dejás vacío, el usuario solo recibe el aviso genérico de rechazo.
+              Si lo dejas vacío, el usuario solo recibe el aviso genérico de rechazo.
             </p>
           </div>
           <DialogFooter>

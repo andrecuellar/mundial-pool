@@ -290,7 +290,7 @@ export default async function Home() {
               predictionsCount: predCountByGroup.get(g.id) ?? 0,
             }))}
             trigger={
-              <Button variant="outline" className="mt-2 h-11 w-full">
+              <Button variant="outline" className="mp-pulse-soft mt-2 h-11 w-full">
                 <Copy className="h-4 w-4" />
                 Copiar mi predicción a otros grupos
               </Button>

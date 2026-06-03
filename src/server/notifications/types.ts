@@ -17,13 +17,13 @@ export const NOTIFICATION_TYPES = [
   {
     key: 'lock_closed',
     label: 'Cuando se cierra un grupo',
-    description: 'Aviso cuando un grupo del que sos miembro acaba de bloquear sus predicciones.',
+    description: 'Aviso cuando un grupo del que eres miembro acaba de bloquear sus predicciones.',
     icon: '🔒',
   },
   {
     key: 'member_joined',
     label: 'Nuevo miembro a tu grupo',
-    description: 'Solo si sos administrador: cuando alguien se une via código de invitación.',
+    description: 'Solo si eres administrador: cuando alguien se une via código de invitación.',
     icon: '👋',
   },
   {
@@ -49,7 +49,7 @@ export const NOTIFICATION_TYPES = [
   {
     key: 'group_creation_requested',
     label: 'Solicitudes de crear grupo (solo admin)',
-    description: 'Solo si sos superadmin: cuando un usuario pide permiso para crear un grupo.',
+    description: 'Solo si eres superadmin: cuando un usuario pide permiso para crear un grupo.',
     icon: '📝',
   },
   {

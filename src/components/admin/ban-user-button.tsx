@@ -3,6 +3,7 @@
 import { Ban, ShieldCheck } from 'lucide-react'
 import { useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { Button } from '@/components/ui/button'
 import {
   Dialog,
@@ -26,30 +27,54 @@ export function BanUserButton({ userId, displayName, isBanned }: Props) {
   const [open, setOpen] = useState(false)
   const [reason, setReason] = useState('')
   const [pending, startTransition] = useTransition()
+  const [phase, setPhase] = useState<'idle' | 'saving' | 'success'>('idle')
 
   function handleBan() {
+    setOpen(false)
+    setPhase('saving')
     startTransition(async () => {
       const r = await banUser({ userId, reason: reason.trim() === '' ? null : reason.trim() })
       if (r.ok) {
-        toast.success(`${displayName} fue baneado`)
-        setOpen(false)
-        setReason('')
-      } else toast.error(r.error)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success(`${displayName} fue baneado`)
+          setReason('')
+          setPhase('idle')
+        }, 800)
+      } else {
+        setPhase('idle')
+        toast.error(r.error)
+      }
     })
   }
 
   function handleUnban() {
+    setOpen(false)
+    setPhase('saving')
     startTransition(async () => {
       const r = await unbanUser(userId)
       if (r.ok) {
-        toast.success(`${displayName} fue desbaneado`)
-        setOpen(false)
-      } else toast.error(r.error)
+        setPhase('success')
+        setTimeout(() => {
+          toast.success(`${displayName} fue desbaneado`)
+          setPhase('idle')
+        }, 800)
+      } else {
+        setPhase('idle')
+        toast.error(r.error)
+      }
     })
   }
 
   if (isBanned) {
     return (
+      <>
+      <SavingOverlay
+        phase={phase}
+        icon={ShieldCheck}
+        savingTitle="Desbaneando"
+        successTitle="¡Desbaneado!"
+      />
       <Dialog open={open} onOpenChange={setOpen}>
         <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
           <ShieldCheck className="h-3.5 w-3.5" />
@@ -72,10 +97,18 @@ export function BanUserButton({ userId, displayName, isBanned }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      </>
     )
   }
 
   return (
+    <>
+    <SavingOverlay
+      phase={phase}
+      icon={Ban}
+      savingTitle="Baneando usuario"
+      successTitle="¡Listo, baneado!"
+    />
     <Dialog open={open} onOpenChange={setOpen}>
       <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
         <Ban className="h-3.5 w-3.5" />
@@ -113,5 +146,6 @@ export function BanUserButton({ userId, displayName, isBanned }: Props) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+    </>
   )
 }
