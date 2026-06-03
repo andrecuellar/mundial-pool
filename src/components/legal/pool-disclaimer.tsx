@@ -94,13 +94,22 @@ export function PoolDisclaimer({ variant, className }: Props) {
         <AlertTriangle className="mt-0.5 h-5 w-5 shrink-0 text-destructive" />
         <div className="space-y-2 text-sm leading-relaxed">
           <p className="font-semibold text-destructive">
-            Tú eres responsable del dinero de este pozo.
+            Tu responsabilidad: cobrar y registrar cada aporte.
           </p>
           <p className="text-muted-foreground">
-            La app lleva el registro de aportes pero no procesa pagos ni reparte premios. Al final
-            del torneo, tú confirmas con cada miembro y haces las transferencias por tu cuenta.
+            Tu palabra es lo que sostiene este pozo. Cada vez que recibas un pago (Yape, Tigo Money,
+            transferencia, efectivo), revisa tu cuenta y luego registralo en esta misma página con
+            el botón <span className="font-medium text-foreground">"Registrar un pago nuevo"</span>.
+            Sin ese registro el jugador queda como pendiente y puede ser eliminado del reparto.
+          </p>
+          <p className="text-muted-foreground">
+            Al final del torneo, tú haces las transferencias por tu cuenta — la app no procesa pagos
+            ni reparte premios. Si te equivocas, eliminas el registro y vuelves a empezar. Tu nombre
+            y correo de Google se muestran a los miembros al abrir el QR.
+          </p>
+          <p className="text-muted-foreground">
             mundial-pool no es una casa de apuestas y no se hace responsable por disputas, fraudes o
-            pérdidas. Tu nombre y correo de Google se muestran a los miembros al ver el QR.
+            pérdidas.
           </p>
         </div>
       </div>

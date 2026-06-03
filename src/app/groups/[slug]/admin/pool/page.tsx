@@ -1,5 +1,6 @@
 import { and, desc, eq } from 'drizzle-orm'
 import { Wallet } from 'lucide-react'
+import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -11,13 +12,28 @@ import { QrUploadCard } from '@/components/pool/qr-upload-card'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, profiles } from '@/db/schema'
-import { getPoolSummary, listPoolTransactions } from '@/features/pool/queries'
+import {
+  getPoolContributorIds,
+  getPoolSummary,
+  listPoolTransactions,
+} from '@/features/pool/queries'
 import { formatMoney } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.slug, slug),
+    columns: { name: true },
+  })
+  return {
+    title: group ? `Configurar pozo · ${group.name}` : 'Configurar pozo',
+  }
+}
 
 export default async function AdminPoolPage({ params }: Params) {
   const { slug } = await params
@@ -36,7 +52,7 @@ export default async function AdminPoolPage({ params }: Params) {
   if (!membership) notFound()
   if (membership.role !== 'owner') redirect(`/groups/${slug}`)
 
-  const [pool, ledger, members] = await Promise.all([
+  const [pool, ledger, members, paidUserIds] = await Promise.all([
     getPoolSummary(group.id),
     listPoolTransactions(group.id),
     db
@@ -48,6 +64,7 @@ export default async function AdminPoolPage({ params }: Params) {
       .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
       .where(eq(groupMembers.groupId, group.id))
       .orderBy(desc(profiles.displayName)),
+    getPoolContributorIds(group.id),
   ])
 
   const displayName =
@@ -120,6 +137,7 @@ export default async function AdminPoolPage({ params }: Params) {
               currency={pool.currency ?? 'BOB'}
               buyInAmount={pool.buyInAmount}
               members={members}
+              paidUserIds={Array.from(paidUserIds)}
             />
           </Card>
         </div>

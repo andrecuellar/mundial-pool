@@ -1,4 +1,4 @@
-import { desc, eq, inArray, sql } from 'drizzle-orm'
+import { and, desc, eq, inArray, sql } from 'drizzle-orm'
 import { ChevronRight, Plus, Users } from 'lucide-react'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
@@ -8,6 +8,7 @@ import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
+import { PendingPaymentsBanner } from '@/components/pool/pending-payments-banner'
 import { PoolChip } from '@/components/pool/pool-chip'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
@@ -48,9 +49,10 @@ export default async function Home() {
     .where(eq(groupMembers.userId, user.id))
     .orderBy(desc(groups.createdAt))
 
-  const poolTotals =
+  const poolGroupIds = myGroups.filter((g) => g.poolEnabled).map((g) => g.id)
+  const [poolTotals, myPaidRows] = await Promise.all([
     myGroups.length > 0
-      ? await db
+      ? db
           .select({
             groupId: poolTransactions.groupId,
             total: sql<string>`COALESCE(SUM(${poolTransactions.amount}), 0)`,
@@ -63,8 +65,24 @@ export default async function Home() {
             ),
           )
           .groupBy(poolTransactions.groupId)
-      : []
+      : Promise.resolve([] as { groupId: string; total: string }[]),
+    poolGroupIds.length > 0
+      ? db
+          .select({ groupId: poolTransactions.groupId })
+          .from(poolTransactions)
+          .where(
+            and(
+              inArray(poolTransactions.groupId, poolGroupIds),
+              eq(poolTransactions.contributorUserId, user.id),
+            ),
+          )
+      : Promise.resolve([] as { groupId: string }[]),
+  ])
   const totalsByGroup = new Map(poolTotals.map((p) => [p.groupId, Number(p.total)]))
+  const paidGroupIdsForMe = new Set(myPaidRows.map((p) => p.groupId))
+  const pendingPaymentGroups = myGroups
+    .filter((g) => g.poolEnabled && !paidGroupIdsForMe.has(g.id))
+    .map((g) => ({ id: g.id, name: g.name, slug: g.slug, isOwner: g.role === 'owner' }))
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ??
@@ -100,6 +118,10 @@ export default async function Home() {
         </div>
 
         <PoolDisclaimer variant="home" className="mt-4" />
+
+        {pendingPaymentGroups.length > 0 && (
+          <PendingPaymentsBanner groups={pendingPaymentGroups} className="mt-4" />
+        )}
 
         <div className="mt-4 flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:mt-0 sm:w-[22rem]">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />

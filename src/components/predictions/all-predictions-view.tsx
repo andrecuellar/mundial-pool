@@ -212,4 +212,3 @@ export function AllPredictionsView({ view, currentUserId, enableReactions = fals
     </div>
   )
 }
-

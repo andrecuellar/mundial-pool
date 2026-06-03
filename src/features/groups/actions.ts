@@ -24,10 +24,7 @@ const QR_MAX_BYTES = 5 * 1024 * 1024
 // check that helper does — the caller just inserted the group and knows the
 // user is the owner. Failures here don't roll back the group; the owner can
 // still upload later from Configurar pozo.
-async function tryUploadPoolQrForNewGroup(
-  groupId: string,
-  file: File,
-): Promise<string | null> {
+async function tryUploadPoolQrForNewGroup(groupId: string, file: File): Promise<string | null> {
   if (file.size === 0 || file.size > QR_MAX_BYTES) return null
   if (!file.type.startsWith('image/')) return null
   try {
@@ -94,8 +91,7 @@ function parseCategoryPointOverrides(formData: FormData): Partial<Record<Categor
     if (!rawKey.startsWith('points:')) continue
     const key = rawKey.slice('points:'.length)
     if (!CATEGORY_KEYS.has(key as CategoryKey)) continue
-    const value =
-      typeof rawValue === 'string' ? Number.parseInt(rawValue, 10) : Number.NaN
+    const value = typeof rawValue === 'string' ? Number.parseInt(rawValue, 10) : Number.NaN
     if (!Number.isFinite(value) || value < 0 || value > 100) continue
     out[key as CategoryKey] = value
   }

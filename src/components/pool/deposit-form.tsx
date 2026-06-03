@@ -33,15 +33,18 @@ type Props = {
   currency: string
   buyInAmount: number
   members: Member[]
+  paidUserIds: string[]
 }
 
 const ANON_VALUE = '__anon__'
 
-export function DepositForm({ groupId, currency, buyInAmount, members }: Props) {
+export function DepositForm({ groupId, currency, buyInAmount, members, paidUserIds }: Props) {
+  const paidSet = new Set(paidUserIds)
   const [contributor, setContributor] = useState<string>(members[0]?.userId ?? ANON_VALUE)
   const [anonLabel, setAnonLabel] = useState('')
   const [note, setNote] = useState('')
   const [confirmOpen, setConfirmOpen] = useState(false)
+  const [dupeOpen, setDupeOpen] = useState(false)
   const [pending, startTransition] = useTransition()
 
   const isAnon = contributor === ANON_VALUE
@@ -58,21 +61,36 @@ export function DepositForm({ groupId, currency, buyInAmount, members }: Props) 
     setConfirmOpen(true)
   }
 
-  function confirmAndSave() {
+  function save(confirmDuplicate: boolean) {
     startTransition(async () => {
       const r = await recordPoolTransaction({
         groupId,
         contributorUserId: contributor === ANON_VALUE ? null : contributor,
         contributorLabel: contributor === ANON_VALUE ? anonLabel || 'Anónimo' : null,
         note: note.trim() === '' ? null : note.trim(),
+        confirmDuplicate,
       })
       if (r.ok) {
         toast.success('Pago registrado')
         setNote('')
         setAnonLabel('')
         setConfirmOpen(false)
-      } else toast.error(r.error)
+        setDupeOpen(false)
+      } else if (r.code === 'duplicate') {
+        setConfirmOpen(false)
+        setDupeOpen(true)
+      } else {
+        toast.error(r.error)
+      }
     })
+  }
+
+  function confirmAndSave() {
+    save(false)
+  }
+
+  function forceSaveDuplicate() {
+    save(true)
   }
 
   return (
@@ -109,11 +127,18 @@ export function DepositForm({ groupId, currency, buyInAmount, members }: Props) 
               {members.map((m) => (
                 <SelectItem key={m.userId} value={m.userId}>
                   {m.displayName}
+                  {paidSet.has(m.userId) && ' · ✓ ya pagó'}
                 </SelectItem>
               ))}
               <SelectItem value={ANON_VALUE}>Otro / anónimo</SelectItem>
             </SelectContent>
           </Select>
+          {!isAnon && paidSet.has(contributor) && (
+            <p className="rounded-md border border-warning/30 bg-warning/5 px-2.5 py-1.5 text-[11px] leading-relaxed text-muted-foreground">
+              <span className="font-medium text-foreground">Atención:</span> este jugador ya tiene
+              un aporte registrado. Si lo registras otra vez, vas a tener un duplicado.
+            </p>
+          )}
           {isAnon && (
             <Input
               value={anonLabel}
@@ -164,6 +189,30 @@ export function DepositForm({ groupId, currency, buyInAmount, members }: Props) 
             <AlertDialogCancel disabled={pending}>No, todavía no</AlertDialogCancel>
             <AlertDialogAction onClick={confirmAndSave} disabled={pending}>
               {pending ? 'Registrando…' : 'Sí, registrar el pago'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={dupeOpen} onOpenChange={setDupeOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Este jugador ya pagó</AlertDialogTitle>
+            <AlertDialogDescription>
+              <span className="font-semibold text-foreground">{contributorName}</span> ya tiene un
+              aporte registrado en este grupo. Revisa el nombre — si seleccionaste al equivocado,
+              cancela. Si realmente recibiste un segundo pago de esta persona, registralo igual y
+              devuélvele lo extra cuando puedas.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="rounded-lg border border-warning/40 bg-warning/5 p-3 text-xs leading-relaxed text-muted-foreground">
+            Registrar dos veces a la misma persona inflará su aporte. Solo continúa si tienes
+            certeza y vas a devolverle la diferencia.
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={pending}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={forceSaveDuplicate} disabled={pending}>
+              {pending ? 'Registrando…' : 'Registrar igual y devolver lo extra'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

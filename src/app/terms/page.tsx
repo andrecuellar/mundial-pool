@@ -3,7 +3,7 @@ import { BackLink } from '@/components/app-shell/back-link'
 import { SUPER_ADMIN_EMAILS } from '@/lib/admin'
 
 export const metadata = {
-  title: 'Términos de uso · mundial-pool',
+  title: 'Términos de uso',
   description: 'Reglas de uso de mundial-pool.',
 }
 
@@ -21,9 +21,7 @@ export default function TermsPage() {
         <p className="mt-2 text-sm text-muted-foreground">Última actualización: junio de 2026.</p>
 
         <div className="mt-6 rounded-xl border-2 border-destructive/50 bg-destructive/5 p-4 text-sm leading-relaxed">
-          <p className="font-semibold text-destructive">
-            mundial-pool NO es una casa de apuestas.
-          </p>
+          <p className="font-semibold text-destructive">mundial-pool NO es una casa de apuestas.</p>
           <p className="mt-2 text-muted-foreground">
             Es una aplicación para que grupos cerrados de amigos lleven el registro de sus
             predicciones del Mundial 2026 y, opcionalmente, de los aportes que cada miembro hace al
@@ -55,9 +53,7 @@ export default function TermsPage() {
             <div>
               <p className="font-medium text-foreground">Al ver el QR para aportar al pozo:</p>
               <ul className="mt-1 list-disc space-y-1 pl-5 text-muted-foreground">
-                <li>
-                  La app no procesa pagos. Lo que mandes va directamente al admin del grupo.
-                </li>
+                <li>La app no procesa pagos. Lo que mandes va directamente al admin del grupo.</li>
                 <li>
                   El reparto del dinero al final del torneo lo hace el admin del grupo, no
                   mundial-pool.
@@ -73,8 +69,8 @@ export default function TermsPage() {
               <p className="font-medium text-foreground">Al crear un grupo con pozo activo:</p>
               <p className="mt-1 text-muted-foreground">
                 "Al activar el pozo declaras que: solo invitarás a personas que conoces, tú
-                resuelves los pagos fuera de la app, y entiendes que mundial-pool no es una casa
-                de apuestas ni se hace responsable por pérdidas o disputas entre los miembros del
+                resuelves los pagos fuera de la app, y entiendes que mundial-pool no es una casa de
+                apuestas ni se hace responsable por pérdidas o disputas entre los miembros del
                 grupo."
               </p>
             </div>
@@ -85,9 +81,9 @@ export default function TermsPage() {
               </p>
               <p className="mt-1 text-muted-foreground">
                 "Tú eres responsable del dinero de este pozo. La app lleva el registro de aportes
-                pero no procesa pagos ni reparte premios. Al final del torneo, tú confirmas con
-                cada miembro y haces las transferencias por tu cuenta. mundial-pool no es una casa
-                de apuestas y no se hace responsable por disputas, fraudes o pérdidas. Tu nombre y
+                pero no procesa pagos ni reparte premios. Al final del torneo, tú confirmas con cada
+                miembro y haces las transferencias por tu cuenta. mundial-pool no es una casa de
+                apuestas y no se hace responsable por disputas, fraudes o pérdidas. Tu nombre y
                 correo de Google se muestran a los miembros al ver el QR."
               </p>
             </div>
@@ -127,10 +123,10 @@ export default function TermsPage() {
                 momento.
               </li>
               <li>
-                El creador del grupo (el "administrador") es el responsable de recibir los
-                aportes, llevar el registro dentro de la aplicación y repartir el premio al final
-                del torneo. La aplicación solo lleva un registro contable que ayuda al
-                administrador, pero no ejecuta repartos.
+                El creador del grupo (el "administrador") es el responsable de recibir los aportes,
+                llevar el registro dentro de la aplicación y repartir el premio al final del torneo.
+                La aplicación solo lleva un registro contable que ayuda al administrador, pero no
+                ejecuta repartos.
               </li>
               <li>
                 Al aportar al pozo le confías tu dinero directamente al administrador del grupo.
@@ -162,9 +158,7 @@ export default function TermsPage() {
 
           <section>
             <h2 className="text-base font-semibold">Conducta esperada</h2>
-            <p className="mt-2 text-muted-foreground">
-              Al usar la aplicación te comprometes a:
-            </p>
+            <p className="mt-2 text-muted-foreground">Al usar la aplicación te comprometes a:</p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
               <li>Solo unirte y crear grupos con personas que conoces personalmente.</li>
               <li>No usar la aplicación con fines comerciales ni para apuestas profesionales.</li>
@@ -181,8 +175,8 @@ export default function TermsPage() {
             <h2 className="text-base font-semibold">Propiedad intelectual</h2>
             <p className="mt-2 text-muted-foreground">
               mundial-pool y todo su contenido original son propiedad del operador. Los nombres
-              "FIFA" y "Mundial 2026" son marcas de sus respectivos dueños y se usan únicamente
-              con fines descriptivos. No tenemos afiliación con FIFA.
+              "FIFA" y "Mundial 2026" son marcas de sus respectivos dueños y se usan únicamente con
+              fines descriptivos. No tenemos afiliación con FIFA.
             </p>
           </section>
 

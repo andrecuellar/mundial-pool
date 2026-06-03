@@ -1,5 +1,6 @@
 import { and, count, desc, eq } from 'drizzle-orm'
 import { ChevronRight, Lock, Share2, Sparkles, Users } from 'lucide-react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
@@ -24,6 +25,17 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.slug, slug),
+    columns: { name: true },
+  })
+  return {
+    title: group?.name ?? 'Grupo',
+  }
+}
 
 function daysUntil(target: Date): number {
   const ms = target.getTime() - Date.now()
@@ -131,6 +143,77 @@ export default async function GroupPage({ params }: Params) {
     }
   }
 
+  const predictionsCtaState: 'locked' | 'empty' | 'partial' | 'done' = locked
+    ? 'locked'
+    : completedCount === 0
+      ? 'empty'
+      : completedCount === totalPredictions
+        ? 'done'
+        : 'partial'
+  const predictionsCtaShouldGlow =
+    predictionsCtaState === 'empty' || predictionsCtaState === 'partial'
+  const predictionsCtaHeading =
+    predictionsCtaState === 'locked'
+      ? 'Mis predicciones'
+      : predictionsCtaState === 'empty'
+        ? '¡Empieza aquí!'
+        : predictionsCtaState === 'partial'
+          ? 'Continúa donde te quedaste'
+          : '¡Listo, todo completo!'
+  const predictionsCtaHelper =
+    predictionsCtaState === 'locked'
+      ? 'Solo lectura'
+      : predictionsCtaState === 'empty'
+        ? 'Toca para hacer tus 14 predicciones'
+        : predictionsCtaState === 'partial'
+          ? `Te faltan ${totalPredictions - completedCount} ${
+              totalPredictions - completedCount === 1 ? 'categoría' : 'categorías'
+            }`
+          : 'Vuelve cuando quieras a revisarlas'
+  const predictionsCtaProgress = completedCount / totalPredictions
+  const predictionsCta = (
+    <Link href={`/groups/${slug}/predict`} className="group block h-full">
+      <Card
+        className={`relative flex h-full flex-col overflow-hidden p-5 ${
+          predictionsCtaShouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
+        }`}
+      >
+        <div className="relative z-10 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {predictionsCtaShouldGlow && <Sparkles className="h-3 w-3 text-primary" />}
+              {predictionsCtaHeading}
+            </p>
+            <p className="mt-2 text-2xl font-semibold tabular-nums">
+              {completedCount}{' '}
+              <span className="text-base text-muted-foreground">/ {totalPredictions}</span>
+            </p>
+            <p
+              className={`mt-1 text-xs ${
+                predictionsCtaShouldGlow ? 'text-primary' : 'text-muted-foreground'
+              }`}
+            >
+              {predictionsCtaHelper}
+            </p>
+          </div>
+          <ChevronRight
+            className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:text-primary ${
+              predictionsCtaShouldGlow ? 'text-primary' : 'text-muted-foreground'
+            }`}
+          />
+        </div>
+        <div className="relative z-10 mt-auto pt-4">
+          <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
+            <div
+              className="mp-progress-fill h-full rounded-full bg-gradient-to-r from-primary to-accent"
+              style={{ width: `${Math.max(predictionsCtaProgress * 100, 6)}%` }}
+            />
+          </div>
+        </div>
+      </Card>
+    </Link>
+  )
+
   return (
     <>
       <AppHeader
@@ -166,7 +249,7 @@ export default async function GroupPage({ params }: Params) {
         )}
 
         <div className="grid gap-4 lg:grid-cols-[1.5fr_1fr]">
-          <Card className="relative overflow-hidden border-none bg-primary p-6 sm:p-8 text-primary-foreground">
+          <Card className="relative overflow-hidden border-none bg-primary p-6 sm:p-8 text-primary-foreground lg:row-span-2">
             <div
               aria-hidden
               className="absolute inset-0 opacity-[0.06]"
@@ -226,138 +309,66 @@ export default async function GroupPage({ params }: Params) {
             </div>
           </Card>
 
-          <div className="flex flex-col gap-4">
-            <Card className="p-5 lg:flex-1">
-              <div className="flex items-center justify-between gap-3">
-                <div className="min-w-0">
-                  <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                    <Share2 className="h-3 w-3" />
-                    Código de invitación
-                  </p>
-                  <p className="mt-2 font-mono text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-primary">
-                    {group.inviteCode}
-                  </p>
-                </div>
-                <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
-                  <CopyCodeButton code={group.inviteCode} />
-                  <ShareButton code={group.inviteCode} groupName={group.name} />
-                </div>
-              </div>
-            </Card>
+          <div className="lg:hidden">{predictionsCta}</div>
 
-            <Card className="p-5 lg:flex-1">
-              <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                <Users className="h-3 w-3" />
-                Miembros · {memberCount}
-              </p>
-              <div className="mt-3 flex flex-wrap gap-1.5">
-                {allMembers.slice(0, 8).map((m) => (
-                  <div
-                    key={m.displayName + m.avatarUrl}
-                    title={m.displayName}
-                    className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-medium text-foreground ring-2 ring-card overflow-hidden"
-                  >
-                    {m.avatarUrl ? (
-                      // biome-ignore lint/performance/noImgElement: external profile photo
-                      <img
-                        src={m.avatarUrl}
-                        alt={m.displayName}
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      m.displayName
-                        .split(/\s+/)
-                        .map((p) => p[0])
-                        .slice(0, 2)
-                        .join('')
-                        .toUpperCase()
-                    )}
-                  </div>
-                ))}
-                {memberCount > 8 && (
-                  <div className="grid h-9 w-9 place-items-center rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
-                    +{memberCount - 8}
-                  </div>
-                )}
+          <Card className="p-5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0">
+                <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+                  <Share2 className="h-3 w-3" />
+                  Código de invitación
+                </p>
+                <p className="mt-2 font-mono text-2xl sm:text-3xl font-semibold tracking-[0.3em] text-primary">
+                  {group.inviteCode}
+                </p>
               </div>
-            </Card>
-          </div>
+              <div className="flex shrink-0 flex-col gap-1.5 sm:flex-row">
+                <CopyCodeButton code={group.inviteCode} />
+                <ShareButton code={group.inviteCode} groupName={group.name} />
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-5">
+            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              <Users className="h-3 w-3" />
+              Miembros · {memberCount}
+            </p>
+            <div className="mt-3 flex flex-wrap gap-1.5">
+              {allMembers.slice(0, 8).map((m) => (
+                <div
+                  key={m.displayName + m.avatarUrl}
+                  title={m.displayName}
+                  className="grid h-9 w-9 place-items-center rounded-full bg-muted text-xs font-medium text-foreground ring-2 ring-card overflow-hidden"
+                >
+                  {m.avatarUrl ? (
+                    // biome-ignore lint/performance/noImgElement: external profile photo
+                    <img
+                      src={m.avatarUrl}
+                      alt={m.displayName}
+                      className="h-full w-full object-cover"
+                    />
+                  ) : (
+                    m.displayName
+                      .split(/\s+/)
+                      .map((p) => p[0])
+                      .slice(0, 2)
+                      .join('')
+                      .toUpperCase()
+                  )}
+                </div>
+              ))}
+              {memberCount > 8 && (
+                <div className="grid h-9 w-9 place-items-center rounded-full border border-border bg-muted text-xs font-medium text-muted-foreground">
+                  +{memberCount - 8}
+                </div>
+              )}
+            </div>
+          </Card>
         </div>
 
         <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          {(() => {
-            const progress = completedCount / totalPredictions
-            const state: 'locked' | 'empty' | 'partial' | 'done' = locked
-              ? 'locked'
-              : completedCount === 0
-                ? 'empty'
-                : completedCount === totalPredictions
-                  ? 'done'
-                  : 'partial'
-            const shouldGlow = state === 'empty' || state === 'partial'
-            const heading =
-              state === 'locked'
-                ? 'Mis predicciones'
-                : state === 'empty'
-                  ? '¡Empieza aquí!'
-                  : state === 'partial'
-                    ? 'Continúa donde te quedaste'
-                    : '¡Listo, todo completo!'
-            const helper =
-              state === 'locked'
-                ? 'Solo lectura'
-                : state === 'empty'
-                  ? 'Toca para hacer tus 14 predicciones'
-                  : state === 'partial'
-                    ? `Te faltan ${totalPredictions - completedCount} ${
-                        totalPredictions - completedCount === 1 ? 'categoría' : 'categorías'
-                      }`
-                    : 'Vuelve cuando quieras a revisarlas'
-            return (
-              <Link href={`/groups/${slug}/predict`} className="group block h-full">
-                <Card
-                  className={`relative flex h-full flex-col overflow-hidden p-5 ${
-                    shouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
-                  }`}
-                >
-                  <div className="relative z-10 flex items-start justify-between gap-3">
-                    <div className="min-w-0">
-                      <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
-                        {shouldGlow && <Sparkles className="h-3 w-3 text-primary" />}
-                        {heading}
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold tabular-nums">
-                        {completedCount}{' '}
-                        <span className="text-base text-muted-foreground">
-                          / {totalPredictions}
-                        </span>
-                      </p>
-                      <p
-                        className={`mt-1 text-xs ${
-                          shouldGlow ? 'text-primary' : 'text-muted-foreground'
-                        }`}
-                      >
-                        {helper}
-                      </p>
-                    </div>
-                    <ChevronRight
-                      className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:text-primary ${
-                        shouldGlow ? 'text-primary' : 'text-muted-foreground'
-                      }`}
-                    />
-                  </div>
-                  <div className="relative z-10 mt-auto pt-4">
-                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-muted">
-                      <div
-                        className="mp-progress-fill h-full rounded-full bg-gradient-to-r from-primary to-accent"
-                        style={{ width: `${Math.max(progress * 100, 6)}%` }}
-                      />
-                    </div>
-                  </div>
-                </Card>
-              </Link>
-            )
-          })()}
+          <div className="hidden lg:block">{predictionsCta}</div>
 
           <Link href={`/groups/${slug}/leaderboard`} className="group block h-full">
             <Card className="hover-lift flex h-full flex-col p-5">
@@ -401,12 +412,14 @@ export default async function GroupPage({ params }: Params) {
             </Card>
           </Link>
 
-          <PoolStatCard
-            pool={pool}
-            payoutPreview={payoutPreview}
-            groupSlug={slug}
-            isOwner={membership.role === 'owner'}
-          />
+          <div id="pozo" className="scroll-mt-24">
+            <PoolStatCard
+              pool={pool}
+              payoutPreview={payoutPreview}
+              groupSlug={slug}
+              isOwner={membership.role === 'owner'}
+            />
+          </div>
         </div>
 
         <div className="mt-4">

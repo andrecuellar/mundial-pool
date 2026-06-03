@@ -1,5 +1,6 @@
 import { asc } from 'drizzle-orm'
 import { Trophy } from 'lucide-react'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -9,6 +10,12 @@ import { teams } from '@/db/schema'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Las 48 selecciones',
+  description:
+    'Ranking 1→48 con desempates por penales, fair play y diferencia de gol del Mundial 2026.',
+}
 
 const WORLD_CUP_START = new Date('2026-06-11T22:00:00Z')
 
@@ -68,16 +75,17 @@ export default async function TableSeleccionesPage() {
               eliminados en grupos.
             </li>
             <li>
-              <span className="font-medium">Dentro de los brackets de eliminación directa</span>{' '}
+              <span className="font-medium">Dentro de las fases de eliminación directa</span>{' '}
               (cuartos, octavos y 16vos de final) los perdedores se ordenan así:
               <ul className="mt-1.5 ml-4 list-[circle] space-y-1 text-muted-foreground">
                 <li>
                   Primero los que perdieron{' '}
                   <span className="font-medium text-foreground">por penales</span> (es decir,
                   empataron en los 90 minutos + la prórroga y recién se definió en la tanda). Entre
-                  ellos, los que <span className="font-medium text-foreground">hicieron más goles</span>{' '}
-                  en ese partido quedan mejor que los que hicieron menos. Si igual están empatados
-                  en goles, gana el de mejor{' '}
+                  ellos, los que{' '}
+                  <span className="font-medium text-foreground">hicieron más goles</span> en ese
+                  partido quedan mejor que los que hicieron menos. Si igual están empatados en
+                  goles, gana el de mejor{' '}
                   <span className="font-medium text-foreground">fair play</span> (menos tarjetas
                   amarillas + rojas en el torneo).
                 </li>

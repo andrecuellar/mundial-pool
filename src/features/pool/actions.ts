@@ -9,7 +9,7 @@ import { formatMoney } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { sendNotificationByType } from '@/server/notifications/send'
 
-export type PoolActionResult = { ok: true } | { ok: false; error: string }
+export type PoolActionResult = { ok: true } | { ok: false; error: string; code?: 'duplicate' }
 
 const configSchema = z.object({
   groupId: z.uuid(),
@@ -24,6 +24,7 @@ const transactionSchema = z.object({
   contributorUserId: z.uuid().nullable(),
   contributorLabel: z.string().max(60).nullable(),
   note: z.string().max(280).nullable(),
+  confirmDuplicate: z.boolean().optional(),
 })
 
 async function requireOwner(groupId: string): Promise<{ userId: string } | { error: string }> {
@@ -112,6 +113,26 @@ export async function recordPoolTransaction(input: unknown): Promise<PoolActionR
   if (!group) return { ok: false, error: 'Grupo no encontrado.' }
   if (!group.poolEnabled) return { ok: false, error: 'El pozo no está activado.' }
   if (!group.poolCurrency) return { ok: false, error: 'El pozo no tiene moneda configurada.' }
+
+  if (parsed.data.contributorUserId && !parsed.data.confirmDuplicate) {
+    const existing = await db
+      .select({ id: poolTransactions.id })
+      .from(poolTransactions)
+      .where(
+        and(
+          eq(poolTransactions.groupId, parsed.data.groupId),
+          eq(poolTransactions.contributorUserId, parsed.data.contributorUserId),
+        ),
+      )
+      .limit(1)
+    if (existing.length > 0) {
+      return {
+        ok: false,
+        code: 'duplicate',
+        error: 'Este jugador ya tiene un aporte registrado en este grupo.',
+      }
+    }
+  }
 
   const [inserted] = await db
     .insert(poolTransactions)

@@ -3,6 +3,7 @@
 import { Loader2, Maximize2, Trash2, Upload } from 'lucide-react'
 import { useRef, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { QrImage } from '@/components/pool/qr-image'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -23,7 +24,6 @@ import {
   DialogTrigger,
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
-import { QrImage } from '@/components/pool/qr-image'
 import { removePoolQr, uploadPoolQr } from '@/features/pool/storage'
 
 type Props = {

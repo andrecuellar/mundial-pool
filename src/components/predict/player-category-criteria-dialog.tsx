@@ -3,6 +3,7 @@
 import { ExternalLink, Info, X } from 'lucide-react'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { CoachMark } from '@/components/ui/coach-mark'
 import {
   Dialog,
   DialogContent,
@@ -89,22 +90,24 @@ export function PlayerCategoryCriteriaDialog({ kind, size = 'sm', className }: P
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <TooltipProvider delayDuration={200}>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <DialogTrigger asChild>
-              <button
-                type="button"
-                aria-label={`Cómo se decide ${c.title}`}
-                className={`inline-grid place-items-center rounded-full border border-border bg-muted/40 p-1 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary ${className ?? ''}`}
-              >
-                <Info className={iconSize} />
-              </button>
-            </DialogTrigger>
-          </TooltipTrigger>
-          <TooltipContent side="top">Haz click para ver cómo se decide</TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <CoachMark storageKey="criteria-tip" message="Toca aquí para ver cómo se decide">
+        <TooltipProvider delayDuration={200}>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DialogTrigger asChild>
+                <button
+                  type="button"
+                  aria-label={`Cómo se decide ${c.title}`}
+                  className={`inline-grid place-items-center rounded-full border border-border bg-muted/40 p-1 text-muted-foreground transition-colors hover:border-primary/40 hover:bg-primary/10 hover:text-primary ${className ?? ''}`}
+                >
+                  <Info className={iconSize} />
+                </button>
+              </DialogTrigger>
+            </TooltipTrigger>
+            <TooltipContent side="top">Haz click para ver cómo se decide</TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
+      </CoachMark>
 
       <DialogContent className="max-h-[85vh] overflow-y-auto sm:max-w-xl">
         <DialogHeader>

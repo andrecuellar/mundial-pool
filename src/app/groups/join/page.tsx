@@ -1,11 +1,18 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
+import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Card } from '@/components/ui/card'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { JoinGroupForm } from './join-group-form'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Unirme con código',
+  description: 'Únete a un grupo existente con el código de invitación de 6 caracteres.',
+}
 
 export default async function JoinGroupPage() {
   const supabase = await createSupabaseServerClient()
@@ -39,6 +46,10 @@ export default async function JoinGroupPage() {
             El código tiene 6 caracteres, letras y números.
           </p>
         </Card>
+
+        <div className="mt-4">
+          <InstallPrompt />
+        </div>
       </main>
     </>
   )

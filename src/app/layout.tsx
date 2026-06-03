@@ -18,9 +18,32 @@ const geistMono = Geist_Mono({
   subsets: ['latin'],
 })
 
+const SITE_URL = 'https://mundial-pool.vercel.app'
+const SITE_TITLE = 'mundial-pool · El pool del Mundial 2026 entre amigos'
+const SITE_DESCRIPTION =
+  'Predice solo lo que importa del Mundial 2026: 48 selecciones, 14 categorías, sin partidos aburridos. Pool entre amigos, no casa de apuestas.'
+
 export const metadata: Metadata = {
-  title: 'mundial-pool',
-  description: 'El pool del Mundial 2026 entre amigos',
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: SITE_TITLE,
+    template: '%s · mundial-pool',
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: 'mundial-pool',
+  keywords: [
+    'Mundial 2026',
+    'World Cup 2026',
+    'pool',
+    'pollas',
+    'predicciones',
+    'quiniela',
+    'fútbol',
+    'futbol',
+  ],
+  authors: [{ name: 'mundial-pool' }],
+  creator: 'mundial-pool',
+  publisher: 'mundial-pool',
   appleWebApp: {
     capable: true,
     title: 'mundial-pool',
@@ -28,6 +51,31 @@ export const metadata: Metadata = {
   },
   formatDetection: {
     telephone: false,
+    email: false,
+    address: false,
+  },
+  openGraph: {
+    type: 'website',
+    locale: 'es_BO',
+    alternateLocale: ['es_MX', 'es_AR', 'es_ES', 'es_PE'],
+    siteName: 'mundial-pool',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+    url: SITE_URL,
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: SITE_TITLE,
+    description: SITE_DESCRIPTION,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-image-preview': 'large',
+    },
   },
 }
 

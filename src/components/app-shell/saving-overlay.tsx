@@ -65,9 +65,7 @@ export function SavingOverlay({
                 {savingTitle}
                 <span className="mp-ellipsis" aria-hidden />
               </p>
-              {savingSubtitle && (
-                <p className="text-sm text-muted-foreground">{savingSubtitle}</p>
-              )}
+              {savingSubtitle && <p className="text-sm text-muted-foreground">{savingSubtitle}</p>}
             </div>
           </>
         ) : (

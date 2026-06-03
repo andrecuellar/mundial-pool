@@ -1,3 +1,4 @@
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -6,6 +7,11 @@ import { getMyPreferences } from '@/features/auth/notification-preferences'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Notificaciones',
+  description: 'Elige qué tipos de avisos quieres recibir de mundial-pool.',
+}
 
 export default async function NotificationsSettingsPage() {
   const supabase = await createSupabaseServerClient()

@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Wallet } from 'lucide-react'
+import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -60,9 +61,19 @@ type Props = {
   poolEnabled: boolean
   paidUserIds: string[]
   lockAt: string
+  groupSlug: string
+  isAdmin: boolean
 }
 
-export function RankingTable({ rows, currentUserId, poolEnabled, paidUserIds, lockAt }: Props) {
+export function RankingTable({
+  rows,
+  currentUserId,
+  poolEnabled,
+  paidUserIds,
+  lockAt,
+  groupSlug,
+  isAdmin,
+}: Props) {
   const hasScores = rows.some((r) => r.totalPoints > 0)
   const ranks = competitionRanks(rows)
   const paidSet = new Set(paidUserIds)
@@ -135,13 +146,22 @@ export function RankingTable({ rows, currentUserId, poolEnabled, paidUserIds, lo
                           Aportó
                         </Badge>
                       ) : (
-                        <Badge
-                          variant="secondary"
-                          className="border-warning/40 bg-warning/10 text-warning gap-1"
+                        <Link
+                          href={
+                            isAdmin
+                              ? `/groups/${groupSlug}/admin/pool`
+                              : `/groups/${groupSlug}#pozo`
+                          }
+                          aria-label={isAdmin ? 'Registrar este aporte' : 'Cómo aportar al pozo'}
                         >
-                          <AlertTriangle className="h-3 w-3" />
-                          Pendiente
-                        </Badge>
+                          <Badge
+                            variant="secondary"
+                            className="border-warning/40 bg-warning/10 text-warning gap-1 transition-colors hover:bg-warning/20"
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            Pendiente
+                          </Badge>
+                        </Link>
                       ))}
                   </div>
                 </div>

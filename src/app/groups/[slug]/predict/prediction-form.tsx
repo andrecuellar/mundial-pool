@@ -4,6 +4,7 @@ import { AlertTriangle, Check, Info, Lock, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import {
   PlayerCategoryCriteriaDialog,
   type PlayerCategoryKey,
@@ -13,7 +14,6 @@ import {
   RevelationCriteriaDialog,
   RevelationCriteriaLink,
 } from '@/components/predict/revelation-criteria-dialog'
-import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { TeamComboBox } from '@/components/predict/team-combobox'
 import { TeamSetGrid } from '@/components/predict/team-set-grid'
 import { Badge } from '@/components/ui/badge'

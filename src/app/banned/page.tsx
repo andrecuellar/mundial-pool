@@ -1,5 +1,6 @@
 import { eq } from 'drizzle-orm'
 import { AlertOctagon } from 'lucide-react'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Button } from '@/components/ui/button'
 import { db } from '@/db'
@@ -9,6 +10,11 @@ import { SUPER_ADMIN_EMAILS } from '@/lib/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Cuenta suspendida',
+  robots: { index: false, follow: false },
+}
 
 export default async function BannedPage() {
   const supabase = await createSupabaseServerClient()

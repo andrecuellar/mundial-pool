@@ -2,10 +2,10 @@
 
 import { Loader2 } from 'lucide-react'
 import Link, { useLinkStatus } from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { ComponentProps } from 'react'
 import { useEffect, useRef } from 'react'
 import { Button } from '@/components/ui/button'
-import { usePathname } from 'next/navigation'
 
 type ButtonProps = ComponentProps<typeof Button>
 type LinkProps = ComponentProps<typeof Link>
@@ -57,13 +57,7 @@ export function NavButton({
 
   return (
     <Button asChild disabled={disabled} {...buttonProps}>
-      <Link
-        href={href}
-        prefetch={prefetch}
-        replace={replace}
-        scroll={scroll}
-        onClick={handleClick}
-      >
+      <Link href={href} prefetch={prefetch} replace={replace} scroll={scroll} onClick={handleClick}>
         <NavSpinner />
         {children}
       </Link>

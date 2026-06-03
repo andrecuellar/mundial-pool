@@ -376,7 +376,8 @@ async function notifyDethroned(
     const group = groupById.get(d.groupId)
     if (!group) continue
     const newTopIds = newTopsByGroup.get(d.groupId) ?? []
-    const firstNewTopName = newTopIds.length > 0 ? (nameById.get(newTopIds[0]) ?? 'Otro jugador') : 'Otro jugador'
+    const firstNewTopName =
+      newTopIds.length > 0 ? (nameById.get(newTopIds[0]) ?? 'Otro jugador') : 'Otro jugador'
     const body =
       newTopIds.length > 1
         ? `${firstNewTopName} y ${newTopIds.length - 1} más comparten el #1 en ${group.name}`

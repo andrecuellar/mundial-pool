@@ -25,7 +25,7 @@ self.addEventListener('push', (event) => {
     self.registration.showNotification(title, {
       body,
       icon: '/icon',
-      badge: '/icon',
+      badge: '/notification-badge',
       tag,
       data: { url },
     }),

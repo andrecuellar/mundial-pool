@@ -7,8 +7,8 @@ import {
   ImagePlus,
   Maximize2,
   RotateCcw,
-  Sparkles,
   Sliders,
+  Sparkles,
   X,
 } from 'lucide-react'
 import { useEffect, useRef, useState, useTransition } from 'react'
@@ -33,13 +33,13 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Switch } from '@/components/ui/switch'
+import { createGroup } from '@/features/groups/actions'
 import {
   CATEGORY_DEFAULTS,
   CATEGORY_GROUPS,
   type CategoryKey,
   defaultPointsRecord,
 } from '@/features/predictions/category-defaults'
-import { createGroup } from '@/features/groups/actions'
 
 export function NewGroupForm() {
   const [poolEnabled, setPoolEnabled] = useState(false)
@@ -49,19 +49,18 @@ export function NewGroupForm() {
   const [pending, startTransition] = useTransition()
   const qrInputRef = useRef<HTMLInputElement>(null)
   const [pointsOpen, setPointsOpen] = useState(false)
-  const [points, setPoints] = useState<Record<CategoryKey, number>>(() => defaultPointsRecord())
+  const [points, setPoints] = useState<Record<CategoryKey, number | ''>>(() =>
+    defaultPointsRecord(),
+  )
 
   function updatePoint(key: CategoryKey, raw: string) {
     if (raw === '') {
-      // Empty input → fall back to the suggested default rather than 0, so
-      // clearing the field doesn't silently zero out a category.
-      const def = CATEGORY_DEFAULTS.find((c) => c.key === key)?.defaultPoints ?? 0
-      setPoints((p) => ({ ...p, [key]: def }))
+      setPoints((p) => ({ ...p, [key]: '' }))
       return
     }
     const n = Number.parseInt(raw, 10)
     if (!Number.isFinite(n)) return
-    setPoints((p) => ({ ...p, [key]: Math.max(0, Math.min(100, n)) }))
+    setPoints((p) => ({ ...p, [key]: Math.max(0, Math.min(10000, n)) }))
   }
 
   function resetPoints() {
@@ -115,10 +114,12 @@ export function NewGroupForm() {
     // the server already gets `poolQr` correctly. Strip if the user toggled
     // off after picking a file.
     if (!poolEnabled) formData.delete('poolQr')
-    // Serialize the per-category points map. Only send values that differ
-    // from the default so the server keeps the seed default for the rest.
+    // Serialize the per-category points map. Empty fields fall back to the
+    // suggested default. Only send values that differ from the default so
+    // the server keeps the seed default for the rest.
     for (const c of CATEGORY_DEFAULTS) {
-      const v = points[c.key]
+      const raw = points[c.key]
+      const v = raw === '' ? c.defaultPoints : raw
       if (v !== c.defaultPoints) formData.set(`points:${c.key}`, String(v))
     }
     setSavePhase('saving')
@@ -346,6 +347,10 @@ export function NewGroupForm() {
 
           {pointsOpen && (
             <div className="border-t border-border px-4 py-4 space-y-5">
+              <p className="rounded-lg border border-border bg-muted/40 px-3 py-2 text-xs leading-relaxed text-muted-foreground">
+                Pon el valor que quieras por categoría — no hay tope. Si dejas un campo vacío, al
+                guardar usamos el valor sugerido.
+              </p>
               {CATEGORY_GROUPS.map((g) => {
                 const rows = CATEGORY_DEFAULTS.filter((c) => c.group === g.id)
                 return (
@@ -364,7 +369,7 @@ export function NewGroupForm() {
                               id={`points-${c.key}`}
                               type="number"
                               min={0}
-                              max={100}
+                              max={10000}
                               step={1}
                               value={points[c.key]}
                               placeholder={String(c.defaultPoints)}
@@ -375,11 +380,10 @@ export function NewGroupForm() {
                               {c.unit === 'per_team' ? 'pts por acierto' : 'pts'}
                               {' · sugerido '}
                               {c.defaultPoints}
+                              {' · sin máximo'}
                             </span>
                           </div>
-                          {c.hint && (
-                            <p className="text-[11px] text-muted-foreground">{c.hint}</p>
-                          )}
+                          {c.hint && <p className="text-[11px] text-muted-foreground">{c.hint}</p>}
                         </div>
                       ))}
                     </div>

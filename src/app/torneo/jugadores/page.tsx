@@ -1,4 +1,5 @@
 import { Clock, Goal, HandHeart } from 'lucide-react'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -7,6 +8,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Goleadores y asistentes',
+  description: 'Cómo se decide la Bota de Oro y el Máximo Asistente del Mundial 2026.',
+}
 
 export default async function TableJugadoresPage() {
   const supabase = await createSupabaseServerClient()

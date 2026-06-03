@@ -4,12 +4,12 @@ import { eq } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { db } from '@/db'
 import { notificationPreferences } from '@/db/schema'
+import { createSupabaseServerClient } from '@/lib/supabase/server'
 import {
   NOTIFICATION_TYPE_KEYS,
   NOTIFICATION_TYPES,
   type NotificationType,
 } from '@/server/notifications/types'
-import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export type PreferencesResult =
   | { ok: true; preferences: Record<NotificationType, boolean> }
@@ -63,4 +63,3 @@ export async function setPreference(type: string, enabled: boolean): Promise<Tog
   revalidatePath('/settings/notifications')
   return { ok: true }
 }
-

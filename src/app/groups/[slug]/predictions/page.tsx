@@ -1,5 +1,6 @@
 import { and, eq } from 'drizzle-orm'
 import { Eye, EyeOff } from 'lucide-react'
+import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -19,6 +20,17 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ slug: string }> }
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { slug } = await params
+  const group = await db.query.groups.findFirst({
+    where: eq(groups.slug, slug),
+    columns: { name: true },
+  })
+  return {
+    title: group ? `Apuestas · ${group.name}` : 'Apuestas del grupo',
+  }
+}
 
 export default async function PredictionsPage({ params }: Params) {
   const { slug } = await params

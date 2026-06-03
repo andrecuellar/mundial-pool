@@ -1,4 +1,5 @@
 import { Bolt } from 'lucide-react'
+import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -7,6 +8,11 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { NewGroupForm } from './new-group-form'
 
 export const dynamic = 'force-dynamic'
+
+export const metadata: Metadata = {
+  title: 'Crear grupo',
+  description: 'Crea un grupo y comparte un código de 6 caracteres con tus amigos.',
+}
 
 export default async function NewGroupPage() {
   const supabase = await createSupabaseServerClient()

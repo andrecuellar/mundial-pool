@@ -88,9 +88,7 @@ export async function uploadPoolQr(formData: FormData): Promise<UploadResult> {
   // here only leaves orphan files behind, the new QR is already live.
   try {
     const { data: existing } = await admin.storage.from(BUCKET).list(groupId)
-    const stale = (existing ?? [])
-      .map((f) => `${groupId}/${f.name}`)
-      .filter((p) => p !== path)
+    const stale = (existing ?? []).map((f) => `${groupId}/${f.name}`).filter((p) => p !== path)
     if (stale.length > 0) {
       await admin.storage.from(BUCKET).remove(stale)
     }

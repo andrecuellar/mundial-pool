@@ -15,6 +15,8 @@ type Props = {
   poolEnabled: boolean
   paidUserIds: string[]
   lockAt: string
+  groupSlug: string
+  isAdmin: boolean
 }
 
 export function LeaderboardTabs({
@@ -24,6 +26,8 @@ export function LeaderboardTabs({
   poolEnabled,
   paidUserIds,
   lockAt,
+  groupSlug,
+  isAdmin,
 }: Props) {
   const [tab, setTab] = useState('ranking')
   return (
@@ -39,6 +43,8 @@ export function LeaderboardTabs({
           poolEnabled={poolEnabled}
           paidUserIds={paidUserIds}
           lockAt={lockAt}
+          groupSlug={groupSlug}
+          isAdmin={isAdmin}
         />
       </TabsContent>
       <TabsContent value="breakdown">

@@ -1,5 +1,6 @@
 import { and, count, eq } from 'drizzle-orm'
 import { CheckCircle2, Users } from 'lucide-react'
+import type { Metadata } from 'next'
 import Link from 'next/link'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
@@ -15,6 +16,14 @@ import { createSupabaseServerClient } from '@/lib/supabase/server'
 export const dynamic = 'force-dynamic'
 
 type Params = { params: Promise<{ code: string }> }
+
+export async function generateMetadata({ params }: Params): Promise<Metadata> {
+  const { code } = await params
+  return {
+    title: `Unirse al grupo · ${code}`,
+    description: 'Invitación a un grupo de mundial-pool. Únete con un click.',
+  }
+}
 
 export default async function JoinByCodePage({ params }: Params) {
   const { code } = await params

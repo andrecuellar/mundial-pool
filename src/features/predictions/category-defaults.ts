@@ -110,9 +110,7 @@ export const CATEGORY_DEFAULTS: readonly CategoryDefault[] = [
   },
 ] as const
 
-export const CATEGORY_KEYS: ReadonlySet<CategoryKey> = new Set(
-  CATEGORY_DEFAULTS.map((c) => c.key),
-)
+export const CATEGORY_KEYS: ReadonlySet<CategoryKey> = new Set(CATEGORY_DEFAULTS.map((c) => c.key))
 
 export function defaultPointsRecord(): Record<CategoryKey, number> {
   const out = {} as Record<CategoryKey, number>
@@ -121,7 +119,7 @@ export function defaultPointsRecord(): Record<CategoryKey, number> {
 }
 
 export const CATEGORY_GROUPS: { id: 'podium' | 'team' | 'player'; label: string }[] = [
-  { id: 'podium', label: 'Podio y brackets' },
+  { id: 'podium', label: 'Podio y eliminación directa' },
   { id: 'team', label: 'Distinciones de equipo' },
   { id: 'player', label: 'Jugadores destacados' },
 ]

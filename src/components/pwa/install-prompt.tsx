@@ -214,7 +214,10 @@ export function InstallPrompt() {
               <span>
                 Si no ves el ícono, abre el menú del navegador (⋮ arriba a la derecha) y elige{' '}
                 <span className="font-medium text-foreground">"Instalar mundial-pool"</span> o{' '}
-                <span className="font-medium text-foreground">"Aplicaciones → Instalar este sitio"</span>.
+                <span className="font-medium text-foreground">
+                  "Aplicaciones → Instalar este sitio"
+                </span>
+                .
               </span>
             </li>
             <li className="flex items-start gap-2.5">

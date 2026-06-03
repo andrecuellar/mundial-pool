@@ -3,7 +3,7 @@ import { BackLink } from '@/components/app-shell/back-link'
 import { SUPER_ADMIN_EMAILS } from '@/lib/admin'
 
 export const metadata = {
-  title: 'Política de privacidad · mundial-pool',
+  title: 'Política de privacidad',
   description: 'Cómo mundial-pool maneja tus datos personales.',
 }
 
@@ -25,8 +25,8 @@ export default function PrivacyPage() {
             <h2 className="text-base font-semibold">Quiénes somos</h2>
             <p className="mt-2 text-muted-foreground">
               mundial-pool es un pool privado de predicciones del Mundial 2026 hecho para grupos de
-              amigos. No somos una casa de apuestas, no procesamos pagos ni operamos
-              comercialmente. La aplicación está disponible en{' '}
+              amigos. No somos una casa de apuestas, no procesamos pagos ni operamos comercialmente.
+              La aplicación está disponible en{' '}
               <a className="underline" href="https://mundial-pool.vercel.app">
                 https://mundial-pool.vercel.app
               </a>{' '}
@@ -41,8 +41,8 @@ export default function PrivacyPage() {
             </p>
             <ul className="mt-2 list-disc space-y-1 pl-5 text-muted-foreground">
               <li>
-                <strong className="text-foreground">Correo electrónico</strong> y, si te
-                autenticas con Google, tu <strong className="text-foreground">nombre</strong> y
+                <strong className="text-foreground">Correo electrónico</strong> y, si te autenticas
+                con Google, tu <strong className="text-foreground">nombre</strong> y
                 <strong className="text-foreground"> foto de perfil</strong> pública. Los usamos
                 para identificarte dentro de los grupos.
               </li>
@@ -59,9 +59,9 @@ export default function PrivacyPage() {
                 pagos suceden fuera de la aplicación entre los miembros del grupo.
               </li>
               <li>
-                <strong className="text-foreground">Datos técnicos básicos</strong> generados por
-                la infraestructura: dirección IP, tipo de navegador y logs de errores. Los usamos
-                solo para diagnosticar problemas.
+                <strong className="text-foreground">Datos técnicos básicos</strong> generados por la
+                infraestructura: dirección IP, tipo de navegador y logs de errores. Los usamos solo
+                para diagnosticar problemas.
               </li>
             </ul>
             <p className="mt-2 text-muted-foreground">
@@ -99,8 +99,8 @@ export default function PrivacyPage() {
                 aplicación.
               </li>
               <li>
-                <strong className="text-foreground">Google</strong> — solo si decides iniciar
-                sesión con tu cuenta de Google.
+                <strong className="text-foreground">Google</strong> — solo si decides iniciar sesión
+                con tu cuenta de Google.
               </li>
               <li>
                 <strong className="text-foreground">API-Football</strong> — proveedor de datos
@@ -114,8 +114,8 @@ export default function PrivacyPage() {
             <p className="mt-2 text-muted-foreground">
               Tu nombre, foto y predicciones son visibles para los demás miembros de los grupos a
               los que te unas. Si eres el creador de un grupo, tu nombre y correo electrónico se
-              muestran a los miembros al ver el QR de aporte al pozo para que sepan a quién le
-              están enviando dinero.
+              muestran a los miembros al ver el QR de aporte al pozo para que sepan a quién le están
+              enviando dinero.
             </p>
           </section>
 
@@ -136,8 +136,8 @@ export default function PrivacyPage() {
             <p className="mt-2 text-muted-foreground">
               Conservamos tus datos mientras tu cuenta esté activa. Los datos están almacenados en
               infraestructura cifrada gestionada por Supabase y Vercel. No podemos garantizar
-              seguridad absoluta — al usar la aplicación aceptas que ningún sistema en línea es
-              100% seguro.
+              seguridad absoluta — al usar la aplicación aceptas que ningún sistema en línea es 100%
+              seguro.
             </p>
           </section>
 
