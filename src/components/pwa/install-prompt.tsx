@@ -5,9 +5,11 @@ import { Download, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
 import {
+  AndroidInstallDialog,
   type BeforeInstallPromptEvent,
   DesktopInstallDialog,
   IosInstallDialog,
+  isAndroid,
   isIos,
   isStandalone,
 } from './install-dialogs'
@@ -20,6 +22,7 @@ export function InstallPrompt() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [showSnack, setShowSnack] = useState(false)
   const [iosDialogOpen, setIosDialogOpen] = useState(false)
+  const [androidDialogOpen, setAndroidDialogOpen] = useState(false)
   const [desktopDialogOpen, setDesktopDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -106,6 +109,11 @@ export function InstallPrompt() {
       }
       return
     }
+    if (isAndroid()) {
+      track('pwa_install_clicked', { platform: 'android-fallback' })
+      setAndroidDialogOpen(true)
+      return
+    }
     track('pwa_install_clicked', { platform: 'desktop-fallback' })
     // Fallback desktop: el navegador no nos dio el evento (ya lo manejó
     // antes, otro browser, etc.) → mostramos instrucciones manuales.
@@ -158,6 +166,7 @@ export function InstallPrompt() {
       )}
 
       <IosInstallDialog open={iosDialogOpen} onOpenChange={setIosDialogOpen} />
+      <AndroidInstallDialog open={androidDialogOpen} onOpenChange={setAndroidDialogOpen} />
       <DesktopInstallDialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen} />
     </>
   )

@@ -484,6 +484,25 @@
   transform-origin: center;
 }
 
+/*
+ * Soft halo pulse for the "Instalar app" footer button. Subtle scale + a
+ * primary-tinted box-shadow that fades out and in. Loud enough to catch the
+ * eye without being annoying on every page.
+ */
+@keyframes mp-pulse-soft {
+  0%, 100% {
+    box-shadow: 0 0 0 0 color-mix(in oklab, var(--primary) 40%, transparent);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 6px color-mix(in oklab, var(--primary) 0%, transparent);
+    transform: scale(1.04);
+  }
+}
+.mp-pulse-soft {
+  animation: mp-pulse-soft 2.2s ease-in-out infinite;
+}
+
 @keyframes mp-ellipsis {
   0% { content: ""; }
   25% { content: "."; }
@@ -515,7 +534,8 @@
   }
   .mp-pulse-ring,
   .mp-trophy-spin,
-  .mp-ellipsis::after {
+  .mp-ellipsis::after,
+  .mp-pulse-soft {
     animation: none;
   }
 }

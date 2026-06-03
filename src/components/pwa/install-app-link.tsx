@@ -4,9 +4,11 @@ import { track } from '@vercel/analytics'
 import { Download } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import {
+  AndroidInstallDialog,
   type BeforeInstallPromptEvent,
   DesktopInstallDialog,
   IosInstallDialog,
+  isAndroid,
   isIos,
   isStandalone,
 } from './install-dialogs'
@@ -38,6 +40,7 @@ export function InstallAppLink() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
   const [hidden, setHidden] = useState(false)
   const [iosDialogOpen, setIosDialogOpen] = useState(false)
+  const [androidDialogOpen, setAndroidDialogOpen] = useState(false)
   const [desktopDialogOpen, setDesktopDialogOpen] = useState(false)
 
   useEffect(() => {
@@ -88,6 +91,11 @@ export function InstallAppLink() {
       }
       return
     }
+    if (isAndroid()) {
+      track('pwa_install_clicked', { platform: 'android-fallback', source: 'footer' })
+      setAndroidDialogOpen(true)
+      return
+    }
     track('pwa_install_clicked', { platform: 'desktop-fallback', source: 'footer' })
     setDesktopDialogOpen(true)
   }
@@ -97,13 +105,14 @@ export function InstallAppLink() {
       <button
         type="button"
         onClick={install}
-        className="inline-flex items-center gap-1 underline-offset-2 hover:text-foreground hover:underline"
+        className="mp-pulse-soft inline-flex items-center gap-1.5 rounded-full border border-primary/40 bg-primary/10 px-3 py-1 text-[11px] font-medium text-primary transition-colors hover:bg-primary/20 hover:text-primary"
       >
         <Download className="h-3 w-3" />
         Instalar app
       </button>
 
       <IosInstallDialog open={iosDialogOpen} onOpenChange={setIosDialogOpen} />
+      <AndroidInstallDialog open={androidDialogOpen} onOpenChange={setAndroidDialogOpen} />
       <DesktopInstallDialog open={desktopDialogOpen} onOpenChange={setDesktopDialogOpen} />
     </>
   )

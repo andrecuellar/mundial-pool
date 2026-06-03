@@ -20,6 +20,11 @@ export function isIos(): boolean {
   return /iphone|ipad|ipod/i.test(navigator.userAgent)
 }
 
+export function isAndroid(): boolean {
+  if (typeof navigator === 'undefined') return false
+  return /android/i.test(navigator.userAgent)
+}
+
 export function isStandalone(): boolean {
   if (typeof window === 'undefined') return false
   return (
@@ -65,6 +70,60 @@ export function IosInstallDialog({ open, onOpenChange }: DialogProps) {
             <span>Toca "Añadir" en la esquina superior derecha. ¡Listo!</span>
           </li>
         </ol>
+        <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full">
+          Cerrar
+        </Button>
+      </DialogContent>
+    </Dialog>
+  )
+}
+
+export function AndroidInstallDialog({ open, onOpenChange }: DialogProps) {
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Instalar en Android</DialogTitle>
+          <DialogDescription>3 pasos en Chrome, Edge o Brave:</DialogDescription>
+        </DialogHeader>
+        <ol className="space-y-3 text-sm">
+          <li className="flex items-start gap-2.5">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+              1
+            </span>
+            <span>
+              Toca el menú <span className="font-mono font-semibold text-foreground">⋮</span>{' '}
+              (tres puntos verticales) en la esquina superior derecha del navegador.
+            </span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+              2
+            </span>
+            <span>
+              Busca y toca{' '}
+              <span className="font-medium text-foreground">"Instalar app"</span> o{' '}
+              <span className="font-medium text-foreground">"Añadir a pantalla principal"</span>
+              . Suele estar a la mitad del menú.
+            </span>
+          </li>
+          <li className="flex items-start gap-2.5">
+            <span className="grid h-6 w-6 shrink-0 place-items-center rounded-full bg-muted font-mono text-xs font-semibold">
+              3
+            </span>
+            <span>
+              Confirma con <span className="font-medium text-foreground">"Instalar"</span>. La app
+              queda en tu pantalla de inicio como cualquier otra y arranca sin la barra del
+              navegador.
+            </span>
+          </li>
+        </ol>
+        <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground leading-relaxed">
+          <span className="font-medium text-foreground">¿No ves la opción "Instalar app"?</span>{' '}
+          Algunos navegadores (Firefox, ciertos custom browsers) solo ofrecen{' '}
+          <span className="font-medium text-foreground">"Añadir a pantalla principal"</span> —
+          funciona casi igual. Si no aparece ninguna, prueba con Chrome o Edge.
+        </p>
         <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full">
           Cerrar
         </Button>
