@@ -1,5 +1,6 @@
 'use client'
 
+import { track } from '@vercel/analytics'
 import { AlertTriangle, Check, Info, Lock, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
@@ -440,6 +441,10 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
       const r = await submitPredictions(groupSlug, fd)
       if (r.ok) {
         toast.success('Predicciones guardadas')
+        track('predictions_saved', { completed, total })
+        if (completed === total) {
+          track('predictions_completed', { total })
+        }
         // Hold the success animation visible for a beat before navigating, so
         // the user sees the "¡Listo!" state instead of an abrupt jump.
         setSavePhase('success')

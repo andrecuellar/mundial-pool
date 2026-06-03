@@ -1,5 +1,6 @@
 'use client'
 
+import { track } from '@vercel/analytics'
 import { Download, Share2, X } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from '@/components/ui/button'
@@ -87,21 +88,26 @@ export function InstallPrompt() {
 
   async function install() {
     if (isIos()) {
+      track('pwa_install_clicked', { platform: 'ios' })
       setIosDialogOpen(true)
       return
     }
     if (event) {
+      track('pwa_install_clicked', { platform: 'web' })
       await event.prompt()
       const { outcome } = await event.userChoice
       if (outcome === 'accepted') {
+        track('pwa_installed', { platform: 'web' })
         setShowSnack(false)
         // Don't store dismissal — they installed; the standalone check will
         // suppress next time.
       } else {
+        track('pwa_install_dismissed', { platform: 'web' })
         dismiss()
       }
       return
     }
+    track('pwa_install_clicked', { platform: 'desktop-fallback' })
     // Fallback desktop: el navegador no nos dio el evento (ya lo manejó
     // antes, otro browser, etc.) → mostramos instrucciones manuales.
     setDesktopDialogOpen(true)
