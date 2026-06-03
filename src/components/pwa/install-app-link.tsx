@@ -11,19 +11,46 @@ import {
   isStandalone,
 } from './install-dialogs'
 
+// Chrome/Edge: returns installed PWAs that match the current origin. Empty
+// array (or no API) means we can't confirm — we still show the link in that
+// case. Safari iOS has no equivalent — there we rely on the iOS dialog.
+async function isPwaAlreadyInstalled(): Promise<boolean> {
+  if (typeof navigator === 'undefined') return false
+  const nav = navigator as Navigator & {
+    getInstalledRelatedApps?: () => Promise<unknown[]>
+  }
+  if (typeof nav.getInstalledRelatedApps !== 'function') return false
+  try {
+    const apps = await nav.getInstalledRelatedApps()
+    return Array.isArray(apps) && apps.length > 0
+  } catch {
+    return false
+  }
+}
+
 // Permanent link in the footer that opens the PWA install flow on demand.
 // Counterpart to <InstallPrompt /> (the timed banner). This one is always
 // visible so users who dismissed the banner — or already-onboarded users
-// who decide they want the app — have a clear entry point.
+// who decide they want the app — have a clear entry point. Hidden when the
+// PWA is already installed (either browsing inside it, or installed but
+// currently in the browser).
 export function InstallAppLink() {
   const [event, setEvent] = useState<BeforeInstallPromptEvent | null>(null)
-  const [standalone, setStandalone] = useState(false)
+  const [hidden, setHidden] = useState(false)
   const [iosDialogOpen, setIosDialogOpen] = useState(false)
   const [desktopDialogOpen, setDesktopDialogOpen] = useState(false)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    setStandalone(isStandalone())
+    if (isStandalone()) {
+      setHidden(true)
+      return
+    }
+
+    let mounted = true
+    isPwaAlreadyInstalled().then((installed) => {
+      if (mounted && installed) setHidden(true)
+    })
 
     const handler = (e: Event) => {
       e.preventDefault()
@@ -31,18 +58,17 @@ export function InstallAppLink() {
     }
     window.addEventListener('beforeinstallprompt', handler)
 
-    const onInstalled = () => setStandalone(true)
+    const onInstalled = () => setHidden(true)
     window.addEventListener('appinstalled', onInstalled)
 
     return () => {
+      mounted = false
       window.removeEventListener('beforeinstallprompt', handler)
       window.removeEventListener('appinstalled', onInstalled)
     }
   }, [])
 
-  // If the app is already installed and the user is browsing inside the
-  // installed PWA, hide the link — no point offering to install what's open.
-  if (standalone) return null
+  if (hidden) return null
 
   async function install() {
     if (isIos()) {

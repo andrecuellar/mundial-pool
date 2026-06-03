@@ -35,6 +35,24 @@ export function InstallPrompt() {
     let mounted = true
     let savedEvent: BeforeInstallPromptEvent | null = null
 
+    // Chrome/Edge: detect "installed but currently in browser" via
+    // getInstalledRelatedApps. If installed, skip the whole banner — the user
+    // already has the app, no point nagging them.
+    const nav = navigator as Navigator & {
+      getInstalledRelatedApps?: () => Promise<unknown[]>
+    }
+    if (typeof nav.getInstalledRelatedApps === 'function') {
+      nav
+        .getInstalledRelatedApps()
+        .then((apps) => {
+          if (Array.isArray(apps) && apps.length > 0 && mounted) {
+            // Mark as dismissed for a long time so we don't keep checking.
+            window.localStorage.setItem(DISMISS_KEY, String(Date.now() + DISMISS_MS))
+          }
+        })
+        .catch(() => {})
+    }
+
     const handler = (e: Event) => {
       e.preventDefault()
       savedEvent = e as BeforeInstallPromptEvent
