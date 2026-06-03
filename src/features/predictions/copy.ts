@@ -104,12 +104,7 @@ export async function copyPredictions(input: unknown): Promise<CopyPredictionsRe
       n: sql<number>`COUNT(*)::int`,
     })
     .from(predictions)
-    .where(
-      and(
-        inArray(predictions.groupId, destGroupIds),
-        eq(predictions.userId, user.id),
-      ),
-    )
+    .where(and(inArray(predictions.groupId, destGroupIds), eq(predictions.userId, user.id)))
     .groupBy(predictions.groupId)
   const existingByGroup = new Map(existingCounts.map((r) => [r.groupId, r.n]))
 
@@ -135,12 +130,7 @@ export async function copyPredictions(input: unknown): Promise<CopyPredictionsRe
       categoryId: groupCategories.categoryId,
     })
     .from(groupCategories)
-    .where(
-      and(
-        inArray(groupCategories.groupId, destGroupIds),
-        eq(groupCategories.enabled, true),
-      ),
-    )
+    .where(and(inArray(groupCategories.groupId, destGroupIds), eq(groupCategories.enabled, true)))
   const enabledByGroup = new Map<string, Set<string>>()
   for (const row of enabledRows) {
     const set = enabledByGroup.get(row.groupId) ?? new Set<string>()
@@ -148,37 +138,38 @@ export async function copyPredictions(input: unknown): Promise<CopyPredictionsRe
     enabledByGroup.set(row.groupId, set)
   }
 
-  // Apply the copy atomically.
+  // Apply the copy atomically. One bulk UPSERT per dest — the `excluded` rows
+  // come from the VALUES list, so a single statement covers all 14 categories.
   const copiedTo: { groupId: string; groupName: string; count: number }[] = []
   await db.transaction(async (tx) => {
     for (const dest of destGroups) {
       const enabledSet = enabledByGroup.get(dest.id) ?? new Set()
-      let count = 0
-      for (const src of sourcePredictions) {
-        if (!enabledSet.has(src.categoryId)) continue
+      const rows = sourcePredictions
+        .filter((src) => enabledSet.has(src.categoryId))
+        .map((src) => ({
+          groupId: dest.id,
+          userId: user.id,
+          categoryId: src.categoryId,
+          teamId: src.teamId,
+          teamSet: src.teamSet,
+          playerText: src.playerText,
+          updatedAt: now,
+        }))
+      if (rows.length > 0) {
         await tx
           .insert(predictions)
-          .values({
-            groupId: dest.id,
-            userId: user.id,
-            categoryId: src.categoryId,
-            teamId: src.teamId,
-            teamSet: src.teamSet,
-            playerText: src.playerText,
-            updatedAt: new Date(),
-          })
+          .values(rows)
           .onConflictDoUpdate({
             target: [predictions.groupId, predictions.userId, predictions.categoryId],
             set: {
-              teamId: src.teamId,
-              teamSet: src.teamSet,
-              playerText: src.playerText,
-              updatedAt: new Date(),
+              teamId: sql`excluded.team_id`,
+              teamSet: sql`excluded.team_set`,
+              playerText: sql`excluded.player_text`,
+              updatedAt: sql`excluded.updated_at`,
             },
           })
-        count++
       }
-      copiedTo.push({ groupId: dest.id, groupName: dest.name, count })
+      copiedTo.push({ groupId: dest.id, groupName: dest.name, count: rows.length })
     }
   })
 
