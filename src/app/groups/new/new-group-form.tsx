@@ -73,6 +73,33 @@ export function NewGroupForm() {
     setLockAt(toDateTimeLocal(WORLD_CUP_START))
   }, [lockAt])
 
+  // Mark the form as dirty the moment the user touches anything. We use
+  // this to wire up a beforeunload guard so refreshing/closing the tab
+  // mid-edit triggers the native "leave this site?" prompt — same pattern
+  // every online editor uses to protect in-progress work.
+  const [isDirty, setIsDirty] = useState(false)
+
+  useEffect(() => {
+    // Only guard while the form has unsaved edits AND we're not in the
+    // middle of (or just past) a successful submit — once we've kicked off
+    // the redirect, the dirty data is on its way to the server and the
+    // prompt would just nag the user.
+    if (!isDirty || savePhase !== 'idle') return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+      // Legacy browsers used the return value as the prompt text. Modern
+      // browsers show a generic message regardless, but still require this
+      // assignment for the prompt to fire.
+      e.returnValue = ''
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [isDirty, savePhase])
+
+  function markDirty() {
+    if (!isDirty) setIsDirty(true)
+  }
+
   function updatePoint(key: CategoryKey, raw: string) {
     if (raw === '') {
       setPoints((p) => ({ ...p, [key]: '' }))
@@ -168,7 +195,12 @@ export function NewGroupForm() {
         successSubtitle="Llevándote al grupo"
       />
 
-      <form onSubmit={handleSubmit} className="mt-6 space-y-5">
+      <form
+        onSubmit={handleSubmit}
+        onInput={markDirty}
+        onChange={markDirty}
+        className="mt-6 space-y-5"
+      >
         <div className="space-y-2">
           <Label htmlFor="name">Nombre del grupo</Label>
           <Input
@@ -210,7 +242,13 @@ export function NewGroupForm() {
                 La app no procesa pagos — solo lleva el registro entre ustedes.
               </p>
             </div>
-            <Switch checked={poolEnabled} onCheckedChange={setPoolEnabled} />
+            <Switch
+              checked={poolEnabled}
+              onCheckedChange={(v) => {
+                setPoolEnabled(v)
+                markDirty()
+              }}
+            />
           </div>
 
           {poolEnabled && (
