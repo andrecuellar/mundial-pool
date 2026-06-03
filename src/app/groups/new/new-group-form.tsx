@@ -40,6 +40,16 @@ import {
   type CategoryKey,
   defaultPointsRecord,
 } from '@/features/predictions/category-defaults'
+import { WORLD_CUP_START } from '@/lib/world-cup'
+
+// Format a Date as the local-TZ string that <input type="datetime-local">
+// expects: YYYY-MM-DDTHH:mm with no timezone suffix. The browser interprets
+// it as the user's local time, which is exactly what we want — the user
+// types and reads times in their own clock.
+function toDateTimeLocal(d: Date): string {
+  const pad = (n: number) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
 
 export function NewGroupForm() {
   const [poolEnabled, setPoolEnabled] = useState(false)
@@ -52,6 +62,16 @@ export function NewGroupForm() {
   const [points, setPoints] = useState<Record<CategoryKey, number | ''>>(() =>
     defaultPointsRecord(),
   )
+  // The lockAt input is controlled so we can hydrate the default from the
+  // shared WORLD_CUP_START constant in the device's local TZ. Empty on SSR
+  // and on first paint; useEffect fills it after mount with the right value
+  // for the user's wall clock.
+  const [lockAt, setLockAt] = useState('')
+
+  useEffect(() => {
+    if (lockAt) return
+    setLockAt(toDateTimeLocal(WORLD_CUP_START))
+  }, [lockAt])
 
   function updatePoint(key: CategoryKey, raw: string) {
     if (raw === '') {
@@ -170,13 +190,14 @@ export function NewGroupForm() {
             name="predictionsLockAt"
             type="datetime-local"
             required
-            defaultValue="2026-06-11T17:00"
+            value={lockAt}
+            onChange={(e) => setLockAt(e.target.value)}
             className="h-11"
           />
           <p className="text-xs text-muted-foreground">
             Después de esa fecha nadie podrá editar predicciones.{' '}
             <span className="font-medium text-primary">
-              Sugerido: partido inaugural (México vs Sudáfrica).
+              Sugerido: pitazo inicial México vs Sudáfrica (en tu hora local).
             </span>
           </p>
         </div>
