@@ -5,14 +5,15 @@ import * as schema from './schema'
 
 // Supabase transaction pooler (port 6543) handles connection multiplexing at
 // PgBouncer, so connections are cheap. With Vercel Fluid Compute reusing the
-// same Lambda for multiple concurrent requests, max:5 starved Promise.all-
-// style RSC pages — /groups/[slug] alone runs ~8 parallel queries, and two
-// concurrent visits exhausted the pool. Bumping to 10 keeps headroom without
-// abusing PgBouncer. prepare:false is required: PgBouncer transaction mode
-// does not preserve prepared statements across transactions.
+// same Lambda for multiple concurrent requests, /groups/[slug] alone runs ~8
+// parallel queries; with 3 simultaneous requests in one instance demand peaks
+// near 24, so we keep max:15 to absorb the burst before queueing internally.
+// Supavisor has 200 slots total — plenty of headroom for other Lambdas.
+// prepare:false is required: PgBouncer transaction mode does not preserve
+// prepared statements across transactions.
 const client = postgres(env.DATABASE_URL, {
   prepare: false,
-  max: 10,
+  max: 15,
   idle_timeout: 20,
   connect_timeout: 10,
 })

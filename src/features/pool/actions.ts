@@ -3,6 +3,7 @@
 import { track } from '@vercel/analytics/server'
 import { and, eq, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
+import { after } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { groupMembers, groups, poolTransactions, profiles } from '@/db/schema'
@@ -153,15 +154,13 @@ export async function recordPoolTransaction(input: unknown): Promise<PoolActionR
   )[0]?.slug
   if (slug) revalidatePath(`/groups/${slug}`)
 
-  try {
-    await track('pool_payment_recorded', {
+  after(() =>
+    track('pool_payment_recorded', {
       currency: group.poolCurrency,
       anonymous: parsed.data.contributorUserId === null,
       duplicate: parsed.data.confirmDuplicate ?? false,
-    })
-  } catch (e) {
-    console.error('analytics pool_payment_recorded failed', e)
-  }
+    }).catch((e) => console.error('analytics pool_payment_recorded failed', e)),
+  )
 
   // Confirmation push to the contributor (when they have a userId in the
   // app). Anonymous tags have no recipient. Best-effort — failures don't

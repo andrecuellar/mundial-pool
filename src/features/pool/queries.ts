@@ -1,4 +1,4 @@
-import { and, desc, eq, isNotNull, sql } from 'drizzle-orm'
+import { and, desc, eq, isNotNull, lt, sql } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
 import { groups, poolTransactions, profiles } from '@/db/schema'
@@ -82,7 +82,20 @@ export type PoolTransactionRow = {
   createdByUserId: string
 }
 
-export async function listPoolTransactions(groupId: string): Promise<PoolTransactionRow[]> {
+export const POOL_LEDGER_PAGE_SIZE = 20
+
+export async function listPoolTransactions(
+  groupId: string,
+  opts: { before?: Date; limit?: number } = {},
+): Promise<PoolTransactionRow[]> {
+  const limit = opts.limit ?? POOL_LEDGER_PAGE_SIZE
+  const whereClause = opts.before
+    ? and(
+        eq(poolTransactions.groupId, groupId),
+        lt(poolTransactions.createdAt, opts.before),
+      )
+    : eq(poolTransactions.groupId, groupId)
+
   const rows = await db
     .select({
       id: poolTransactions.id,
@@ -97,8 +110,9 @@ export async function listPoolTransactions(groupId: string): Promise<PoolTransac
     })
     .from(poolTransactions)
     .leftJoin(profiles, eq(profiles.id, poolTransactions.contributorUserId))
-    .where(eq(poolTransactions.groupId, groupId))
+    .where(whereClause)
     .orderBy(desc(poolTransactions.createdAt))
+    .limit(limit)
 
   return rows.map((r) => ({
     id: r.id,

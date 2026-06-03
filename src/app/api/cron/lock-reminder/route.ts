@@ -8,6 +8,8 @@ import { sendNotificationByType } from '@/server/notifications/send'
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
 export const maxDuration = 60
+// Co-located with Supabase (us-west-2). See cron/resolve/route.ts.
+export const preferredRegion = 'sfo1'
 
 function isAuthorized(req: Request): boolean {
   const secret = env.CRON_SECRET ?? env.RESOLUTION_CRON_SECRET

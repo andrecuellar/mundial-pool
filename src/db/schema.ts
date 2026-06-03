@@ -1,6 +1,7 @@
 import {
   boolean,
   date,
+  index,
   integer,
   jsonb,
   numeric,
@@ -70,21 +71,25 @@ export const groups = pgTable('groups', {
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
-export const poolTransactions = pgTable('pool_transactions', {
-  id: uuid('id').defaultRandom().primaryKey(),
-  groupId: uuid('group_id')
-    .notNull()
-    .references(() => groups.id, { onDelete: 'cascade' }),
-  contributorUserId: uuid('contributor_user_id').references(() => profiles.id),
-  contributorLabel: text('contributor_label'),
-  amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
-  currency: text('currency').notNull(),
-  note: text('note'),
-  createdByUserId: uuid('created_by_user_id')
-    .notNull()
-    .references(() => profiles.id),
-  createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
-})
+export const poolTransactions = pgTable(
+  'pool_transactions',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => groups.id, { onDelete: 'cascade' }),
+    contributorUserId: uuid('contributor_user_id').references(() => profiles.id),
+    contributorLabel: text('contributor_label'),
+    amount: numeric('amount', { precision: 12, scale: 2 }).notNull(),
+    currency: text('currency').notNull(),
+    note: text('note'),
+    createdByUserId: uuid('created_by_user_id')
+      .notNull()
+      .references(() => profiles.id),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index('idx_pool_tx_group_user').on(t.groupId, t.contributorUserId)],
+)
 
 export const groupMembers = pgTable(
   'group_members',
@@ -98,7 +103,10 @@ export const groupMembers = pgTable(
     role: memberRole('role').notNull().default('member'),
     joinedAt: timestamp('joined_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [primaryKey({ columns: [t.groupId, t.userId] })],
+  (t) => [
+    primaryKey({ columns: [t.groupId, t.userId] }),
+    index('idx_group_members_user').on(t.userId),
+  ],
 )
 
 export const teams = pgTable('teams', {
@@ -168,20 +176,28 @@ export const predictions = pgTable(
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [unique('predictions_user_category_unique').on(t.groupId, t.userId, t.categoryId)],
+  (t) => [
+    unique('predictions_user_category_unique').on(t.groupId, t.userId, t.categoryId),
+    index('idx_predictions_group_category').on(t.groupId, t.categoryId),
+    index('idx_predictions_category').on(t.categoryId),
+  ],
 )
 
-export const results = pgTable('results', {
-  categoryId: uuid('category_id')
-    .primaryKey()
-    .references(() => categories.id),
-  teamId: uuid('team_id').references(() => teams.id),
-  playerId: uuid('player_id').references(() => players.id),
-  playerText: text('player_text'),
-  teamSet: jsonb('team_set').$type<string[]>(),
-  source: text('source').notNull(),
-  resolvedAt: timestamp('resolved_at', { withTimezone: true }).defaultNow().notNull(),
-})
+export const results = pgTable(
+  'results',
+  {
+    categoryId: uuid('category_id')
+      .primaryKey()
+      .references(() => categories.id),
+    teamId: uuid('team_id').references(() => teams.id),
+    playerId: uuid('player_id').references(() => players.id),
+    playerText: text('player_text'),
+    teamSet: jsonb('team_set').$type<string[]>(),
+    source: text('source').notNull(),
+    resolvedAt: timestamp('resolved_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index('idx_results_resolved_at').on(t.resolvedAt.desc())],
+)
 
 export const resolutionRuns = pgTable('resolution_runs', {
   id: uuid('id').defaultRandom().primaryKey(),

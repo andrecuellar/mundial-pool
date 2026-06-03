@@ -16,13 +16,17 @@ import {
   getPoolContributorIds,
   getPoolSummary,
   listPoolTransactions,
+  POOL_LEDGER_PAGE_SIZE,
 } from '@/features/pool/queries'
 import { formatMoney } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
 
-type Params = { params: Promise<{ slug: string }> }
+type Params = {
+  params: Promise<{ slug: string }>
+  searchParams: Promise<{ ledger_before?: string }>
+}
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params
@@ -35,8 +39,9 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
   }
 }
 
-export default async function AdminPoolPage({ params }: Params) {
+export default async function AdminPoolPage({ params, searchParams }: Params) {
   const { slug } = await params
+  const { ledger_before } = await searchParams
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
@@ -52,9 +57,12 @@ export default async function AdminPoolPage({ params }: Params) {
   if (!membership) notFound()
   if (membership.role !== 'owner') redirect(`/groups/${slug}`)
 
+  const beforeDate = ledger_before ? new Date(ledger_before) : undefined
+  const ledgerBefore = beforeDate && !Number.isNaN(beforeDate.getTime()) ? beforeDate : undefined
+
   const [pool, ledger, members, paidUserIds] = await Promise.all([
     getPoolSummary(group.id),
-    listPoolTransactions(group.id),
+    listPoolTransactions(group.id, { before: ledgerBefore }),
     db
       .select({
         userId: profiles.id,
@@ -152,6 +160,10 @@ export default async function AdminPoolPage({ params }: Params) {
             currency={pool.currency ?? 'BOB'}
             ownerMode
             groupId={group.id}
+            groupSlug={slug}
+            totalCount={pool.transactionCount}
+            totalAmount={pool.total}
+            hasMore={ledger.length === POOL_LEDGER_PAGE_SIZE}
           />
         </div>
       </main>

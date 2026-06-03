@@ -1,6 +1,7 @@
 import { asc } from 'drizzle-orm'
 import { Trophy } from 'lucide-react'
 import type { Metadata } from 'next'
+import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
@@ -19,6 +20,25 @@ export const metadata: Metadata = {
 
 const WORLD_CUP_START = new Date('2026-06-11T22:00:00Z')
 
+// Same teams for every viewer; data only changes when we re-seed via deploy or
+// call revalidateTag('teams'). Cached cross-request so the FIFA-ranking sort
+// hits the DB once per hour, not once per page load.
+const getTeamsForBoard = unstable_cache(
+  async () =>
+    db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        flagEmoji: teams.flagEmoji,
+        fifaCode: teams.fifaCode,
+        fifaRanking: teams.fifaRanking,
+      })
+      .from(teams)
+      .orderBy(asc(teams.fifaRanking)),
+  ['teams-board'],
+  { revalidate: 3600, tags: ['teams'] },
+)
+
 export default async function TableSeleccionesPage() {
   const supabase = await createSupabaseServerClient()
   const {
@@ -26,16 +46,7 @@ export default async function TableSeleccionesPage() {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const rows = await db
-    .select({
-      id: teams.id,
-      name: teams.name,
-      flagEmoji: teams.flagEmoji,
-      fifaCode: teams.fifaCode,
-      fifaRanking: teams.fifaRanking,
-    })
-    .from(teams)
-    .orderBy(asc(teams.fifaRanking))
+  const rows = await getTeamsForBoard()
 
   // Internal Mundial rank: position among the 48 WC teams sorted by global
   // FIFA rank. Stays as a fallback preview until the tournament starts and we

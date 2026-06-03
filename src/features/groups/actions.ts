@@ -4,6 +4,7 @@ import { track } from '@vercel/analytics/server'
 import { and, eq, inArray, ne, sql } from 'drizzle-orm'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
+import { after } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { groupMembers, groups, profiles } from '@/db/schema'
@@ -203,14 +204,12 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
   }
 
   revalidatePath('/')
-  try {
-    await track('group_created', {
+  after(() =>
+    track('group_created', {
       poolEnabled: created.poolEnabled ?? false,
       poolCurrency: created.poolCurrency ?? 'none',
-    })
-  } catch (e) {
-    console.error('analytics group_created failed', e)
-  }
+    }).catch((e) => console.error('analytics group_created failed', e)),
+  )
   return { ok: true, data: { slug: created.slug } }
 }
 
@@ -255,11 +254,11 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
 
   revalidatePath('/')
   if (inserted.length > 0) {
-    try {
-      await track('group_joined', { via: 'code' })
-    } catch (e) {
-      console.error('analytics group_joined failed', e)
-    }
+    after(() =>
+      track('group_joined', { via: 'code' }).catch((e) =>
+        console.error('analytics group_joined failed', e),
+      ),
+    )
   }
   return { ok: true, data: { slug: group.slug } }
 }

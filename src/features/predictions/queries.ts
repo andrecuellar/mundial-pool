@@ -1,4 +1,5 @@
 import { and, asc, eq } from 'drizzle-orm'
+import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
 import {
   categories,
@@ -74,9 +75,14 @@ export async function listMembers(groupId: string) {
   } as never)
 }
 
-export async function listAllTeams() {
-  return db.select().from(teams).orderBy(teams.name)
-}
+// Cross-request cache: same 48 rows for every viewer, only invalidated by
+// revalidateTag('teams') after a re-seed. 1h TTL is fine — pre-Mundial seeds
+// are deploy-time only; once tournament starts the names don't change.
+export const listAllTeams = unstable_cache(
+  async () => db.select().from(teams).orderBy(teams.name),
+  ['list-all-teams'],
+  { revalidate: 3600, tags: ['teams'] },
+)
 
 export type PlayerOption = {
   id: string
@@ -87,7 +93,8 @@ export type PlayerOption = {
   dateOfBirth: string | null
 }
 
-export async function listAllPlayers(): Promise<PlayerOption[]> {
+export const listAllPlayers = unstable_cache(
+  async (): Promise<PlayerOption[]> => {
   const rows = await db
     .select({
       id: players.id,
@@ -108,7 +115,10 @@ export async function listAllPlayers(): Promise<PlayerOption[]> {
     position: r.position,
     dateOfBirth: r.dateOfBirth,
   }))
-}
+  },
+  ['list-all-players'],
+  { revalidate: 3600, tags: ['players'] },
+)
 
 export async function getPredictionForm(
   groupId: string,

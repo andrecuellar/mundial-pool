@@ -1,3 +1,4 @@
+import Link from 'next/link'
 import {
   Table,
   TableBody,
@@ -15,9 +16,22 @@ type Props = {
   currency: string
   ownerMode?: boolean
   groupId?: string
+  groupSlug?: string
+  totalCount: number
+  totalAmount: number
+  hasMore: boolean
 }
 
-export function PoolLedgerTable({ rows, currency, ownerMode, groupId }: Props) {
+export function PoolLedgerTable({
+  rows,
+  currency,
+  ownerMode,
+  groupId,
+  groupSlug,
+  totalCount,
+  totalAmount,
+  hasMore,
+}: Props) {
   if (rows.length === 0) {
     return (
       <div className="rounded-xl border border-dashed border-border bg-muted/30 p-8 text-center">
@@ -26,7 +40,7 @@ export function PoolLedgerTable({ rows, currency, ownerMode, groupId }: Props) {
     )
   }
 
-  const total = rows.reduce((acc, r) => acc + r.amount, 0)
+  const nextCursor = hasMore ? rows[rows.length - 1].createdAt.toISOString() : null
 
   return (
     <div className="overflow-hidden rounded-xl border border-border bg-card">
@@ -71,15 +85,28 @@ export function PoolLedgerTable({ rows, currency, ownerMode, groupId }: Props) {
           ))}
         </TableBody>
       </Table>
-      <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <span>
-          {rows.length} {rows.length === 1 ? 'depósito' : 'depósitos'}
+          Mostrando {rows.length} de {totalCount}{' '}
+          {totalCount === 1 ? 'depósito' : 'depósitos'}
         </span>
         <span className="font-mono">
           Total:{' '}
-          <span className="text-foreground font-semibold">{formatMoney(total, currency)}</span>
+          <span className="text-foreground font-semibold">
+            {formatMoney(totalAmount, currency)}
+          </span>
         </span>
       </div>
+      {nextCursor && groupSlug && (
+        <div className="border-t border-border bg-card px-4 py-2 text-center">
+          <Link
+            href={`/groups/${groupSlug}/admin/pool?ledger_before=${encodeURIComponent(nextCursor)}`}
+            className="text-xs font-medium text-primary hover:underline"
+          >
+            Cargar más antiguas →
+          </Link>
+        </div>
+      )}
     </div>
   )
 }
