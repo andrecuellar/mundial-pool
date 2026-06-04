@@ -3,7 +3,7 @@
 import { track } from '@vercel/analytics'
 import { AlertTriangle, Check, Info, Lock, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import { useMemo, useState, useTransition } from 'react'
+import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import {
@@ -361,7 +361,21 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   })
   const [pending, startTransition] = useTransition()
   const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'success'>('idle')
+  const [dirty, setDirty] = useState(false)
   const router = useRouter()
+
+  // Native browser warning if the user tries to close/refresh/back-out with
+  // unsaved changes. Skipped while saving (success animation in flight) and
+  // when the form is locked. Internal Next.js Link navigation doesn't fire
+  // beforeunload — that's a known framework limitation.
+  useEffect(() => {
+    if (!dirty || locked || savePhase !== 'idle') return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener('beforeunload', handler)
+    return () => window.removeEventListener('beforeunload', handler)
+  }, [dirty, locked, savePhase])
 
   function recomputeDerived(next: Record<string, DraftValue>) {
     const { champion, runnerUp, thirdPlace } = getLockedFromSources(next, sourceIds)
@@ -380,6 +394,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   }
 
   function update(id: string, patch: DraftValue) {
+    setDirty(true)
     setDraft((prev) => {
       const next = { ...prev, [id]: { ...prev[id], ...patch } }
       // If a source for finalists/top_5 changed, recompute derived values.
@@ -446,6 +461,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
         // Hold the success animation visible for a beat before navigating, so
         // the user sees the "¡Listo!" state instead of an abrupt jump.
         setSavePhase('success')
+        setDirty(false)
         setTimeout(() => {
           router.push(`/groups/${groupSlug}/comprobante`)
         }, 900)

@@ -81,10 +81,7 @@ export const groupCreationRequests = pgTable(
     rejectionReason: text('rejection_reason'),
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
   },
-  (t) => [
-    index('idx_gcr_status').on(t.status),
-    index('idx_gcr_user').on(t.userId),
-  ],
+  (t) => [index('idx_gcr_status').on(t.status), index('idx_gcr_user').on(t.userId)],
 )
 
 export const groups = pgTable('groups', {
@@ -344,6 +341,30 @@ export const appState = pgTable('app_state', {
   value: text('value').notNull(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
+
+// Client-side runtime errors reported by the browser (console.error,
+// console.warn, window.onerror, unhandledrejection). Surfaced in the
+// /admin/errors panel for the superadmin so we can catch regressions
+// without needing to open Sentry. userId is nullable + onDelete:set null
+// to keep the history even if the user is deleted.
+export const clientErrors = pgTable(
+  'client_errors',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    userId: uuid('user_id').references(() => profiles.id, { onDelete: 'set null' }),
+    level: text('level').notNull(),
+    message: text('message').notNull(),
+    stack: text('stack'),
+    url: text('url'),
+    userAgent: text('user_agent'),
+    fingerprint: text('fingerprint').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [
+    index('idx_client_errors_created').on(t.createdAt),
+    index('idx_client_errors_fingerprint_created').on(t.fingerprint, t.createdAt),
+  ],
+)
 
 export type Profile = typeof profiles.$inferSelect
 export type Group = typeof groups.$inferSelect

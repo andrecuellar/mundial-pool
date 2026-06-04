@@ -1,6 +1,7 @@
 'use client'
 
 import {
+  AlertTriangle,
   Database,
   Layers,
   LayoutDashboard,
@@ -23,6 +24,7 @@ const LINKS = [
   { href: '/admin/predicciones', label: 'Predicciones', icon: Vote },
   { href: '/admin/pozos', label: 'Pozos', icon: Wallet },
   { href: '/admin/datos', label: 'Datos', icon: Database },
+  { href: '/admin/errores', label: 'Errores', icon: AlertTriangle },
   { href: '/admin/sistema', label: 'Sistema', icon: Wrench },
 ]
 

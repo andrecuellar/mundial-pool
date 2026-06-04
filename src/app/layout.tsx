@@ -3,6 +3,7 @@ import { SpeedInsights } from '@vercel/speed-insights/next'
 import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import Link from 'next/link'
+import { ClientErrorReporter } from '@/components/app-shell/client-error-reporter'
 import { NavigationProgress } from '@/components/app-shell/navigation-progress'
 import { ThemeProvider } from '@/components/app-shell/theme-provider'
 import { ServiceWorkerRegistration } from '@/components/notifications/sw-registration'
@@ -129,6 +130,7 @@ export default function RootLayout({
           </TooltipProvider>
         </ThemeProvider>
         <ServiceWorkerRegistration />
+        <ClientErrorReporter />
         <Analytics />
         <SpeedInsights />
       </body>
