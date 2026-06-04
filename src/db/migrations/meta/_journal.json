@@ -134,6 +134,13 @@
       "when": 1780515385911,
       "tag": "0018_slow_lady_deathstrike",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1780543730000,
+      "tag": "0019_silly_human_cannonball",
+      "breakpoints": true
     }
   ]
 }
