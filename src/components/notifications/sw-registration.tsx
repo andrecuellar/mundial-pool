@@ -17,7 +17,12 @@ export function ServiceWorkerRegistration() {
     // Register immediately so Chrome's PWA install eligibility (which needs
     // an active SW) is met as early as possible. Non-blocking — the promise
     // doesn't gate any other work.
-    navigator.serviceWorker.register('/sw.js').catch((e) => console.error('SW register failed', e))
+    //
+    // We log failures as warnings, not errors. In-app browsers (Google App,
+    // Facebook, Instagram, Twitter) frequently reject SW registration via
+    // their custom webview proxy — that's expected, the app still works.
+    // Real outages would surface as 500s on /sw.js in Vercel logs.
+    navigator.serviceWorker.register('/sw.js').catch((e) => console.warn('SW register failed', e))
   }, [])
   return null
 }

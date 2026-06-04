@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button'
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -44,6 +45,10 @@ export function PoolQrDialog({
       <DialogContent className="max-h-[90vh] overflow-y-auto sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>Aporta al pozo</DialogTitle>
+          <DialogDescription className="sr-only">
+            Escanea el QR del administrador con la app de tu banco para enviar tu aporte al pozo
+            del grupo.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="grid gap-4 sm:grid-cols-2">
