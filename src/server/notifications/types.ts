@@ -11,7 +11,7 @@ export const NOTIFICATION_TYPES = [
   {
     key: 'lock_reminder',
     label: 'Recordatorio antes del cierre',
-    description: 'Un día antes del cierre, si todavía no completaste tus 14 predicciones.',
+    description: 'A 3 días y a 1 día del cierre, si todavía no completaste tus 14 predicciones.',
     icon: '⏰',
   },
   {
@@ -19,6 +19,19 @@ export const NOTIFICATION_TYPES = [
     label: 'Cuando se cierra un grupo',
     description: 'Aviso cuando un grupo del que eres miembro acaba de bloquear sus predicciones.',
     icon: '🔒',
+  },
+  {
+    key: 'payment_reminder',
+    label: 'Recordatorios para aportar al pozo',
+    description:
+      'A 7, 3 y 1 días del cierre, si todavía no apareces como contribuyente del pozo.',
+    icon: '💰',
+  },
+  {
+    key: 'admin_broadcast',
+    label: 'Mensajes del administrador',
+    description: 'Avisos manuales del administrador del torneo (no spam, solo lo importante).',
+    icon: '📣',
   },
   {
     key: 'member_joined',

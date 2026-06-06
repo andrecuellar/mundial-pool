@@ -5,6 +5,7 @@ import {
   Database,
   Layers,
   LayoutDashboard,
+  Megaphone,
   ShieldCheck,
   UserCheck,
   User as UserIcon,
@@ -24,6 +25,7 @@ const LINKS = [
   { href: '/admin/predicciones', label: 'Predicciones', icon: Vote },
   { href: '/admin/pozos', label: 'Pozos', icon: Wallet },
   { href: '/admin/datos', label: 'Datos', icon: Database },
+  { href: '/admin/notificar', label: 'Notificar', icon: Megaphone },
   { href: '/admin/errores', label: 'Errores', icon: AlertTriangle },
   { href: '/admin/sistema', label: 'Sistema', icon: Wrench },
 ]
