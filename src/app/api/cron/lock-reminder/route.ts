@@ -22,10 +22,14 @@ const TOTAL_CATEGORIES = 14
 
 // Hobby plan allows only daily crons, so we widen the windows to make sure
 // each group gets its reminder once. Cron runs at 10:00 UTC.
-type Window = { label: 'tomorrow' | 'just_locked'; fromMs: number; toMs: number }
+type Window = { label: 'three_days' | 'tomorrow' | 'just_locked'; fromMs: number; toMs: number }
 
 function nextWindows(now: number): Window[] {
   return [
+    // Lock falls between now+58h and now+82h → "your lock is in 3 days".
+    // Extra heads-up before the 24h window so users que entran poco se
+    // enteren a tiempo de completar sus picks.
+    { label: 'three_days', fromMs: now + 58 * 60 * 60 * 1000, toMs: now + 82 * 60 * 60 * 1000 },
     // Lock falls between now+10h and now+34h → "your lock is tomorrow-ish".
     { label: 'tomorrow', fromMs: now + 10 * 60 * 60 * 1000, toMs: now + 34 * 60 * 60 * 1000 },
     // Lock happened in the last 24h → "predictions are now locked".
@@ -91,10 +95,16 @@ async function handle(req: Request) {
       const pendingUsers = allMembers.map((m) => m.userId).filter((id) => !completedUsers.has(id))
       if (pendingUsers.length === 0) continue
 
-      const copy = {
-        title: '⏰ Tu lock está cerca',
-        body: `No olvides cerrar tus picks de "${g.name}" antes del cierre.`,
-      }
+      const copy =
+        window.label === 'three_days'
+          ? {
+              title: '📅 Tus predicciones cierran en 3 días',
+              body: `Todavía tienes margen para "${g.name}" — entra y deja tus 14 picks tranquilo.`,
+            }
+          : {
+              title: '⏰ Tu lock está cerca',
+              body: `No olvides cerrar tus picks de "${g.name}" antes del cierre.`,
+            }
 
       await sendNotificationByType('lock_reminder', pendingUsers, {
         title: copy.title,

@@ -342,6 +342,32 @@ export const appState = pgTable('app_state', {
   updatedAt: timestamp('updated_at', { withTimezone: true }).defaultNow().notNull(),
 })
 
+// Audit log of admin broadcast push notifications. The superadmin uses
+// /admin/notificar to send manual messages to segmented audiences (all
+// users, members of a group, non-payers, non-predictors, etc). One row
+// per send. audienceFilter is a discriminated union persisted as JSON so
+// the historial view can describe it back in plain language.
+export const adminBroadcasts = pgTable(
+  'admin_broadcasts',
+  {
+    id: uuid('id').defaultRandom().primaryKey(),
+    sentByUserId: uuid('sent_by_user_id')
+      .notNull()
+      .references(() => profiles.id),
+    title: text('title').notNull(),
+    body: text('body').notNull(),
+    url: text('url'),
+    // Shape: { kind: 'all' } | { kind: 'group'; groupId } | { kind: 'non_payers'; groupId | null }
+    // | { kind: 'non_predictors'; groupId | null; threshold } | { kind: 'non_payers_and_non_predictors'; groupId | null }
+    audienceFilter: jsonb('audience_filter').notNull(),
+    audienceCount: integer('audience_count').notNull(),
+    deliveredCount: integer('delivered_count').notNull().default(0),
+    ignoreOptOut: boolean('ignore_opt_out').notNull().default(false),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => [index('idx_admin_broadcasts_created').on(t.createdAt)],
+)
+
 // Client-side runtime errors reported by the browser (console.error,
 // console.warn, window.onerror, unhandledrejection). Surfaced in the
 // /admin/errors panel for the superadmin so we can catch regressions

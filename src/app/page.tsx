@@ -5,17 +5,18 @@ import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
 import { CreateGroupCTA } from '@/components/groups/create-group-cta'
+import { DualPendingBanner } from '@/components/groups/dual-pending-banner'
 import { GroupCardChips } from '@/components/groups/group-card-chips'
 import { DataMundialSection } from '@/components/home/data-mundial-section'
-import { CopyPredictionsDialog } from '@/components/predictions/copy-predictions-dialog'
-import { Button } from '@/components/ui/button'
 import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
 import { OnboardingModal } from '@/components/onboarding/onboarding-modal'
 import { PendingPaymentsBanner } from '@/components/pool/pending-payments-banner'
 import { PoolChip } from '@/components/pool/pool-chip'
+import { CopyPredictionsDialog } from '@/components/predictions/copy-predictions-dialog'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import {
@@ -26,8 +27,8 @@ import {
   predictions,
   profiles,
 } from '@/db/schema'
-import { env } from '@/lib/env'
 import { isSuperAdminEmail } from '@/lib/admin'
+import { env } from '@/lib/env'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -137,6 +138,27 @@ export default async function Home() {
     .filter((g) => g.poolEnabled && !paidGroupIdsForMe.has(g.id))
     .map((g) => ({ id: g.id, name: g.name, slug: g.slug, isOwner: g.role === 'owner' }))
 
+  // Banner urgente para grupos donde no pagó NI predijo Y el lock está a ≤3
+  // días. Es la combinación más crítica — la cuota de pago + las predicciones
+  // se pierden si no actúa ya.
+  const dualPendingGroups = myGroups
+    .filter((g) => {
+      if (new Date() >= g.predictionsLockAt) return false
+      const days = Math.ceil((g.predictionsLockAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000))
+      if (days > 3) return false
+      const noPredictions = (predCountByGroup.get(g.id) ?? 0) === 0
+      const noPayment = g.poolEnabled && !paidGroupIdsForMe.has(g.id)
+      return noPredictions && noPayment
+    })
+    .map((g) => ({
+      slug: g.slug,
+      name: g.name,
+      daysUntilLock: Math.max(
+        0,
+        Math.ceil((g.predictionsLockAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+      ),
+    }))
+
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ??
     (user.user_metadata?.name as string | undefined) ??
@@ -171,6 +193,10 @@ export default async function Home() {
         </div>
 
         <PoolDisclaimerHome className="mt-4" />
+
+        {dualPendingGroups.length > 0 && (
+          <DualPendingBanner groups={dualPendingGroups} className="mt-4" />
+        )}
 
         {pendingPaymentGroups.length > 0 && (
           <PendingPaymentsBanner groups={pendingPaymentGroups} className="mt-4" />
@@ -208,6 +234,10 @@ export default async function Home() {
             {myGroups.map((g, i) => {
               const locked = new Date() >= g.predictionsLockAt
               const poolTotal = totalsByGroup.get(g.id) ?? 0
+              const daysUntilLock = Math.max(
+                0,
+                Math.ceil((g.predictionsLockAt.getTime() - Date.now()) / (24 * 60 * 60 * 1000)),
+              )
               return (
                 <li
                   key={g.id}
@@ -254,6 +284,7 @@ export default async function Home() {
                             locked={locked}
                             poolEnabled={g.poolEnabled}
                             hasPaid={paidGroupIdsForMe.has(g.id)}
+                            daysUntilLock={daysUntilLock}
                           />
                         </div>
                         <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />

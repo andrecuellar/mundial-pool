@@ -1,5 +1,5 @@
 import { and, count, desc, eq } from 'drizzle-orm'
-import { ChevronRight, Lock, Share2, Sparkles, Users } from 'lucide-react'
+import { Check, ChevronRight, Lock, Share2, Sparkles, Users, Wallet } from 'lucide-react'
 import type { Metadata } from 'next'
 import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
@@ -15,7 +15,7 @@ import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupMembers, groups, predictions, profiles, results } from '@/db/schema'
+import { groupMembers, groups, poolTransactions, predictions, profiles, results } from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
 import { getLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
 import { env } from '@/lib/env'
@@ -80,6 +80,7 @@ export default async function GroupPage({ params }: Params) {
     myPredictions,
     myBreakdown,
     [latestResolution],
+    [myPoolPayment],
   ] = await Promise.all([
     getLeaderboard(group.id),
     getPoolSummary(group.id),
@@ -101,7 +102,18 @@ export default async function GroupPage({ params }: Params) {
       .from(results)
       .orderBy(desc(results.resolvedAt))
       .limit(1),
+    db
+      .select({ id: poolTransactions.id })
+      .from(poolTransactions)
+      .where(
+        and(
+          eq(poolTransactions.groupId, group.id),
+          eq(poolTransactions.contributorUserId, user.id),
+        ),
+      )
+      .limit(1),
   ])
+  const hasPaid = Boolean(myPoolPayment)
   const latestResolvedAt = latestResolution?.resolvedAt ?? null
   // All-time wins for the user. The client compares latestResolvedAt against
   // localStorage to decide whether to celebrate (so this is cheap to send).
@@ -152,6 +164,9 @@ export default async function GroupPage({ params }: Params) {
         : 'partial'
   const predictionsCtaShouldGlow =
     predictionsCtaState === 'empty' || predictionsCtaState === 'partial'
+
+  const showPoolCta = pool.enabled
+  const poolCtaShouldGlow = showPoolCta && !hasPaid && !locked
   const predictionsCtaHeading =
     predictionsCtaState === 'locked'
       ? 'Mis predicciones'
@@ -171,6 +186,60 @@ export default async function GroupPage({ params }: Params) {
             }`
           : 'Vuelve cuando quieras a revisarlas'
   const predictionsCtaProgress = completedCount / totalPredictions
+  const poolCtaHeading = !showPoolCta
+    ? 'Sin pozo'
+    : hasPaid
+      ? '¡Aporte confirmado!'
+      : 'Aporta al pozo'
+  const poolCtaHelper = !showPoolCta
+    ? 'Este grupo no tiene pozo activo'
+    : hasPaid
+      ? 'El admin ya marcó tu aporte como recibido'
+      : 'Mándale el aporte al admin y pídele que lo registre aquí'
+  const poolCta = showPoolCta && (
+    <Link href={`/groups/${slug}#pozo`} className="group block h-full">
+      <Card
+        className={`relative flex h-full flex-col overflow-hidden p-5 ${
+          poolCtaShouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
+        }`}
+      >
+        <div className="relative z-10 flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {poolCtaShouldGlow ? (
+                <Wallet className="h-3 w-3 text-warning" />
+              ) : hasPaid ? (
+                <Check className="h-3 w-3 text-accent" />
+              ) : (
+                <Wallet className="h-3 w-3" />
+              )}
+              {poolCtaHeading}
+            </p>
+            <p
+              className={`mt-2 text-2xl font-semibold ${
+                hasPaid ? 'text-accent' : poolCtaShouldGlow ? 'text-warning' : ''
+              }`}
+            >
+              {hasPaid ? 'Pagado' : 'Pendiente'}
+            </p>
+            <p
+              className={`mt-1 text-xs ${
+                poolCtaShouldGlow ? 'text-warning' : 'text-muted-foreground'
+              }`}
+            >
+              {poolCtaHelper}
+            </p>
+          </div>
+          <ChevronRight
+            className={`h-5 w-5 transition-transform group-hover:translate-x-0.5 group-hover:text-primary ${
+              poolCtaShouldGlow ? 'text-warning' : 'text-muted-foreground'
+            }`}
+          />
+        </div>
+      </Card>
+    </Link>
+  )
+
   const predictionsCta = (
     <Link href={`/groups/${slug}/predict`} className="group block h-full">
       <Card
@@ -309,7 +378,10 @@ export default async function GroupPage({ params }: Params) {
             </div>
           </Card>
 
-          <div className="lg:hidden">{predictionsCta}</div>
+          <div className="lg:hidden space-y-4">
+            {predictionsCta}
+            {poolCta}
+          </div>
 
           <Card className="p-5">
             <div className="flex items-center justify-between gap-3">
@@ -367,8 +439,15 @@ export default async function GroupPage({ params }: Params) {
           </Card>
         </div>
 
-        <div className="mt-6 grid gap-4 lg:grid-cols-3">
-          <div className="hidden lg:block">{predictionsCta}</div>
+        {showPoolCta && (
+          <div className="mt-6 hidden gap-4 lg:grid lg:grid-cols-2">
+            {predictionsCta}
+            {poolCta}
+          </div>
+        )}
+
+        <div className={`mt-6 grid gap-4 ${showPoolCta ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
+          {!showPoolCta && <div className="hidden lg:block">{predictionsCta}</div>}
 
           <Link href={`/groups/${slug}/leaderboard`} className="group block h-full">
             <Card className="hover-lift flex h-full flex-col p-5">
