@@ -2,7 +2,9 @@ import type { Metadata } from 'next'
 import { redirect } from 'next/navigation'
 import { Wordmark } from '@/components/app-shell/wordmark'
 import { InstallPrompt } from '@/components/pwa/install-prompt'
+import { WelcomeSplashInline } from '@/components/welcome/welcome-splash-inline'
 import { getMagicLinkBlockedUntil } from '@/features/auth/rate-limit'
+import { getBoringMatches } from '@/features/welcome/boring-matches'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { WORLD_CUP_START } from '@/lib/world-cup'
 import { LoginForm } from './login-form'
@@ -41,7 +43,10 @@ export default async function LoginPage({ searchParams }: Props) {
   } = await supabase.auth.getUser()
   if (user) redirect(next ?? '/')
 
-  const blockedUntil = await getMagicLinkBlockedUntil()
+  const [blockedUntil, boringMatches] = await Promise.all([
+    getMagicLinkBlockedUntil(),
+    getBoringMatches(),
+  ])
   const days = daysUntilOpener()
 
   return (
@@ -93,32 +98,33 @@ export default async function LoginPage({ searchParams }: Props) {
             maskImage: 'radial-gradient(ellipse at top right, black, transparent 70%)',
           }}
         />
-        <div className="relative z-10">
-          <p className="font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">Inicio</p>
-          <p className="mt-1 text-lg font-medium tracking-tight">
-            Jueves 11 de junio · Estadio Azteca
-          </p>
-          <p className="mt-3 text-base font-medium">
-            🇲🇽 México <span className="opacity-50 font-mono text-sm mx-1">vs</span> 🇿🇦 Sudáfrica
-          </p>
-        </div>
-
-        <div className="relative z-10 -ml-2">
-          <div
-            className="text-[180px] xl:text-[220px] font-bold leading-[0.85] tracking-tighter tabular-nums"
-            style={{ fontFeatureSettings: '"ss01"' }}
-          >
-            {days}
+        <div className="relative z-10 flex h-full flex-col gap-6">
+          <div>
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">Aquí no</p>
+            <p className="mt-1 text-lg font-medium tracking-tight">
+              ¿Quién quiere predecir esto?{' '}
+              <span className="animate-chef-kiss inline-block" aria-label="chef's kiss">
+                🤌🏽
+              </span>
+            </p>
           </div>
-          <p className="mt-2 font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">
-            días para cerrar predicciones
-          </p>
-        </div>
 
-        <div className="relative z-10 flex justify-between font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">
-          <span>48 selecciones</span>
-          <span>104 partidos</span>
-          <span>14 predicciones</span>
+          <WelcomeSplashInline matches={boringMatches} className="text-foreground" />
+
+          <div className="mt-auto space-y-3">
+            <p className="text-sm">
+              <span className="font-medium">{days}</span>{' '}
+              <span className="opacity-70">
+                {days === 1 ? 'día' : 'días'} para que cierren las predicciones · Inicio el jueves
+                11 de junio
+              </span>
+            </p>
+            <div className="flex justify-between font-mono text-[11px] uppercase tracking-[0.14em] opacity-70">
+              <span>48 selecciones</span>
+              <span>104 partidos</span>
+              <span>14 predicciones</span>
+            </div>
+          </div>
         </div>
       </aside>
     </main>

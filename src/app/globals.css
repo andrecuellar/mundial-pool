@@ -583,3 +583,32 @@
     cursor: pointer;
   }
 }
+
+/* ─── Welcome splash: cartas que vuelan ─────────────────────────────── */
+@keyframes mp-card-fly-in {
+  0%   { opacity: 0; transform: translate3d(40px, 16px, 0) rotate(2deg); }
+  60%  { opacity: 1; }
+  100% { opacity: 1; transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+@keyframes mp-card-drift {
+  0%   { transform: translate3d(0, 0, 0) rotate(0deg); }
+  50%  { transform: translate3d(-6px, -2px, 0) rotate(-0.6deg); }
+  100% { transform: translate3d(0, 0, 0) rotate(0deg); }
+}
+@keyframes mp-card-fly-out {
+  0%   { opacity: 1; transform: translate3d(0, 0, 0); }
+  100% { opacity: 0; transform: translate3d(-60px, -12px, 0) rotate(-2deg); }
+}
+.mp-card-fly-in  { animation: mp-card-fly-in 600ms cubic-bezier(0.16, 1, 0.3, 1) both; }
+.mp-card-drift   { animation: mp-card-drift 4.5s ease-in-out infinite; }
+.mp-card-fly-out { animation: mp-card-fly-out 500ms ease-in both; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mp-card-fly-in,
+  .mp-card-fly-out,
+  .mp-card-drift {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+}

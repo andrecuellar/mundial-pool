@@ -7,6 +7,7 @@ import { ClientErrorReporter } from '@/components/app-shell/client-error-reporte
 import { NavigationProgress } from '@/components/app-shell/navigation-progress'
 import { ThemeProvider } from '@/components/app-shell/theme-provider'
 import { ServiceWorkerRegistration } from '@/components/notifications/sw-registration'
+import { WelcomeSplashGate } from '@/components/welcome/welcome-splash-gate'
 import { InstallAppLink } from '@/components/pwa/install-app-link'
 import { Toaster } from '@/components/ui/sonner'
 import { TooltipProvider } from '@/components/ui/tooltip'
@@ -131,6 +132,7 @@ export default function RootLayout({
         </ThemeProvider>
         <ServiceWorkerRegistration />
         <ClientErrorReporter />
+        <WelcomeSplashGate />
         <Analytics />
         <SpeedInsights />
       </body>
