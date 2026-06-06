@@ -154,7 +154,13 @@ function parseIntOrNull(s: string | null | undefined): number | null {
 
 function parseDateOrNull(s: string | null | undefined): Date | null {
   if (!s) return null
-  const d = new Date(s)
+  // TheSportsDB entrega timestamps en UTC pero SIN sufijo Z (formato
+  // "YYYY-MM-DDTHH:MM:SS"). El estándar ISO dice que strings así son
+  // interpretados como hora LOCAL del runtime — frágil entre Vercel
+  // (UTC) y dev local (BOT). Forzamos UTC explícito para ser TZ-safe
+  // en cualquier ambiente.
+  const normalized = /[zZ]|[+-]\d{2}:\d{2}$/.test(s) ? s : `${s}Z`
+  const d = new Date(normalized)
   return Number.isNaN(d.getTime()) ? null : d
 }
 

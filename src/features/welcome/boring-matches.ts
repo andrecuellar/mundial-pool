@@ -37,8 +37,8 @@ const FALLBACK_DATA: BoringMatchView[] = [
     home: { name: 'Irán', flagEmoji: '🇮🇷', fifaCode: 'IRN' },
     away: { name: 'Nueva Zelanda', flagEmoji: '🇳🇿', fifaCode: 'NZL' },
     group: 'G',
-    dateLabel: 'Mar, 16/6',
-    timeLabel: '12:00 a.m.',
+    dateLabel: 'Lun, 15/6',
+    timeLabel: '9:00 p.m.',
   },
   {
     home: { name: 'Jordania', flagEmoji: '🇯🇴', fifaCode: 'JOR' },
