@@ -3,7 +3,7 @@
     "relation": ["delegate_permission/common.handle_all_urls"],
     "target": {
       "namespace": "android_app",
-      "package_name": "app.vercel.mundial_pool.twa",
+      "package_name": "app.andrecuellar.mundialpool.twa",
       "sha256_cert_fingerprints": [
         "TODO_REPLACE_WITH_PWABUILDER_KEY_FINGERPRINT_AFTER_FIRST_APK_BUILD"
       ]
