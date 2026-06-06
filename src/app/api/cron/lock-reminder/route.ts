@@ -21,7 +21,7 @@ function isAuthorized(req: Request): boolean {
 const TOTAL_CATEGORIES = 14
 
 // Hobby plan allows only daily crons, so we widen the windows to make sure
-// each group gets its reminder once. Cron runs at 10:00 UTC.
+// each group gets its reminder once. Cron runs at 14:00 UTC (10am BOT).
 type Window = { label: 'three_days' | 'tomorrow' | 'just_locked'; fromMs: number; toMs: number }
 
 function nextWindows(now: number): Window[] {
