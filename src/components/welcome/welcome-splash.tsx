@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import type { BoringMatchView } from '@/features/welcome/boring-matches'
+import { bolivianCalendarDate } from '@/lib/format'
 import { MatchCard } from './match-card'
 
 type Props = {
@@ -19,7 +20,9 @@ export function WelcomeSplash({ matches }: Props) {
 
   useEffect(() => {
     if (typeof window === 'undefined') return
-    const today = new Date().toLocaleDateString('en-CA') // "2026-06-06"
+    // El "día de hoy" se mide en hora boliviana, NO en la TZ del device.
+    // Si el user viaja, el flag sigue alineado al calendario BOT.
+    const today = bolivianCalendarDate()
     try {
       const last = window.localStorage.getItem(STORAGE_KEY)
       if (last === today) return

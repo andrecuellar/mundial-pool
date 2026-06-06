@@ -40,16 +40,11 @@ import {
   type CategoryKey,
   defaultPointsRecord,
 } from '@/features/predictions/category-defaults'
+import {
+  formatBolivianDateTimeLocal,
+  parseBolivianDateTimeLocal,
+} from '@/lib/format'
 import { WORLD_CUP_START } from '@/lib/world-cup'
-
-// Format a Date as the local-TZ string that <input type="datetime-local">
-// expects: YYYY-MM-DDTHH:mm with no timezone suffix. The browser interprets
-// it as the user's local time, which is exactly what we want — the user
-// types and reads times in their own clock.
-function toDateTimeLocal(d: Date): string {
-  const pad = (n: number) => String(n).padStart(2, '0')
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
-}
 
 export function NewGroupForm() {
   const [poolEnabled, setPoolEnabled] = useState(false)
@@ -62,15 +57,15 @@ export function NewGroupForm() {
   const [points, setPoints] = useState<Record<CategoryKey, number | ''>>(() =>
     defaultPointsRecord(),
   )
-  // The lockAt input is controlled so we can hydrate the default from the
-  // shared WORLD_CUP_START constant in the device's local TZ. Empty on SSR
-  // and on first paint; useEffect fills it after mount with the right value
-  // for the user's wall clock.
+  // El input lockAt es controlled. Se hidrata después del mount con la
+  // hora boliviana de WORLD_CUP_START (sin importar la TZ del device del
+  // admin), porque la app es para Bolivia y el lock se interpreta SIEMPRE
+  // como hora boliviana.
   const [lockAt, setLockAt] = useState('')
 
   useEffect(() => {
     if (lockAt) return
-    setLockAt(toDateTimeLocal(WORLD_CUP_START))
+    setLockAt(formatBolivianDateTimeLocal(WORLD_CUP_START))
   }, [lockAt])
 
   // Mark the form as dirty the moment the user touches anything. We use
@@ -152,8 +147,12 @@ export function NewGroupForm() {
     if (poolEnabled) formData.set('poolEnabled', 'on')
     const lockRaw = formData.get('predictionsLockAt')
     if (typeof lockRaw === 'string' && lockRaw.length > 0) {
-      const d = new Date(lockRaw)
-      if (!Number.isNaN(d.getTime())) {
+      // Interpretamos el valor del input <datetime-local> SIEMPRE como BOT,
+      // sin importar la TZ del browser. Esto garantiza que un admin que
+      // viaja al extranjero siga creando locks expresados en hora
+      // boliviana — la única que el resto de la app entiende.
+      const d = parseBolivianDateTimeLocal(lockRaw)
+      if (d) {
         formData.set('predictionsLockAt', d.toISOString())
       }
     }
@@ -216,7 +215,12 @@ export function NewGroupForm() {
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="predictionsLockAt">Bloquear predicciones a partir de</Label>
+          <Label htmlFor="predictionsLockAt" className="flex flex-wrap items-baseline gap-1">
+            <span>Bloquear predicciones a partir de</span>
+            <span className="font-mono text-[10px] uppercase tracking-[0.12em] text-muted-foreground">
+              (hora boliviana)
+            </span>
+          </Label>
           <Input
             id="predictionsLockAt"
             name="predictionsLockAt"
