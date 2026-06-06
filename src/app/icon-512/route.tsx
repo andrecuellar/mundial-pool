@@ -1,9 +1,10 @@
 import { ImageResponse } from 'next/og'
 
-export const size = { width: 512, height: 512 }
-export const contentType = 'image/png'
-
-export default function Icon512() {
+// 512x512 PWA icon (purpose: 'any'). Next.js' metadata icon convention
+// (icon.tsx, icon1.tsx) only supports numbered suffixes, so para tener
+// rutas con nombres descriptivos ('/icon-512', '/icon-maskable') usamos
+// regular route handlers — mismo patrón que /notification-badge.
+export function GET() {
   return new ImageResponse(
     <div
       style={{
@@ -32,6 +33,6 @@ export default function Icon512() {
       />
       <span>p</span>
     </div>,
-    { ...size },
+    { width: 512, height: 512 },
   )
 }
