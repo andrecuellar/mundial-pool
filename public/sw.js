@@ -1,12 +1,32 @@
-// Minimal service worker for mundial-pool: receives Web Push events and
-// routes notification clicks back into the app.
+// Minimal service worker for mundial-pool: receives Web Push events,
+// routes notification clicks, and pre-caches critical assets so Chrome
+// considers the site "installable PWA quality" (afecta el Quieter
+// Notification UI score). Bump PRECACHE version cuando cambien los assets.
 
-self.addEventListener('install', () => {
+const PRECACHE = 'mp-precache-v1'
+const PRECACHE_URLS = ['/', '/manifest.webmanifest', '/icon', '/icon-512']
+
+self.addEventListener('install', (event) => {
+  event.waitUntil(
+    caches
+      .open(PRECACHE)
+      .then((c) => c.addAll(PRECACHE_URLS))
+      .catch(() => {
+        // Si algún asset falla no rompemos el SW — el install completa igual.
+      }),
+  )
   self.skipWaiting()
 })
 
 self.addEventListener('activate', (event) => {
-  event.waitUntil(self.clients.claim())
+  event.waitUntil(
+    (async () => {
+      // Limpiar versiones viejas del precache.
+      const keys = await caches.keys()
+      await Promise.all(keys.filter((k) => k !== PRECACHE).map((k) => caches.delete(k)))
+      await self.clients.claim()
+    })(),
+  )
 })
 
 self.addEventListener('push', (event) => {
