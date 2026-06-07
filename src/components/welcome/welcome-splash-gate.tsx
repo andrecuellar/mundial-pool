@@ -1,3 +1,4 @@
+import { env } from '@/lib/env'
 import { getBoringMatches } from '@/features/welcome/boring-matches'
 import { WelcomeSplash } from './welcome-splash'
 
@@ -7,5 +8,10 @@ import { WelcomeSplash } from './welcome-splash'
 // query, solo el state visible/leaving.
 export async function WelcomeSplashGate() {
   const matches = await getBoringMatches()
-  return <WelcomeSplash matches={matches} />
+  return (
+    <WelcomeSplash
+      matches={matches}
+      vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null}
+    />
+  )
 }
