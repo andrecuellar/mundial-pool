@@ -197,9 +197,9 @@ export default async function GroupPage({ params }: Params) {
       ? 'El admin ya marcó tu aporte como recibido'
       : 'Mándale el aporte al admin y pídele que lo registre aquí'
   const poolCta = showPoolCta && (
-    <Link href={`/groups/${slug}#pozo`} className="group block h-full">
+    <Link href={`/groups/${slug}#pozo`} className="group block lg:h-full">
       <Card
-        className={`relative flex h-full flex-col overflow-hidden p-5 ${
+        className={`relative flex flex-col overflow-hidden p-5 lg:h-full ${
           poolCtaShouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
         }`}
       >
@@ -241,9 +241,9 @@ export default async function GroupPage({ params }: Params) {
   )
 
   const predictionsCta = (
-    <Link href={`/groups/${slug}/predict`} className="group block h-full">
+    <Link href={`/groups/${slug}/predict`} className="group block lg:h-full">
       <Card
-        className={`relative flex h-full flex-col overflow-hidden p-5 ${
+        className={`relative flex flex-col overflow-hidden p-5 lg:h-full ${
           predictionsCtaShouldGlow ? 'mp-glow-border hover-lift-strong' : 'hover-lift'
         }`}
       >
@@ -449,8 +449,8 @@ export default async function GroupPage({ params }: Params) {
         <div className={`mt-6 grid gap-4 ${showPoolCta ? 'lg:grid-cols-2' : 'lg:grid-cols-3'}`}>
           {!showPoolCta && <div className="hidden lg:block">{predictionsCta}</div>}
 
-          <Link href={`/groups/${slug}/leaderboard`} className="group block h-full">
-            <Card className="hover-lift flex h-full flex-col p-5">
+          <Link href={`/groups/${slug}/leaderboard`} className="group block lg:h-full">
+            <Card className="hover-lift flex flex-col p-5 lg:h-full">
               <div className="flex items-start justify-between gap-3">
                 <div>
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
