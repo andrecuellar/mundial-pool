@@ -14,6 +14,7 @@ type Props = {
 
 const STORAGE_KEY = 'mp_splash_last_shown_v1'
 const SILENT_BLOCK_KEY = 'mp_notif_silent_block_v1'
+const GRANTED_KEY = 'mp:push-granted-locally'
 const COUNTDOWN_SECONDS = 7
 
 // Detecta si la app abrió en un contexto de "alta intención": TWA (APK
@@ -151,6 +152,10 @@ async function askForNotifications(
     if (ok) track('push_subscription_saved', { context })
     try {
       window.localStorage.removeItem(SILENT_BLOCK_KEY)
+      // El user dijo "sí". Persistimos para que PushOptIn no vuelva a
+      // molestar aunque Notification.permission reporte 'default' después
+      // de un reload (bug conocido en mobile Chrome).
+      window.localStorage.setItem(GRANTED_KEY, '1')
     } catch {}
   } else if (result.kind === 'denied') {
     track('notification_permission_denied', { context })
