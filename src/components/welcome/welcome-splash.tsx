@@ -149,17 +149,17 @@ async function askForNotifications(
     track('notification_permission_granted', { context })
     const ok = await ensurePushSubscription(vapidPublicKey)
     if (ok) track('push_subscription_saved', { context })
-    // Limpiar flag de silent-block si lo había.
     try {
       window.localStorage.removeItem(SILENT_BLOCK_KEY)
     } catch {}
   } else if (result.kind === 'denied') {
     track('notification_permission_denied', { context })
   } else if (result.kind === 'silent_block') {
+    // OJO: en TWA / PWA instalada, "default" después de requestPermission
+    // significa que el user descartó el prompt nativo del OS (swipe, fuera),
+    // NO que Chrome aplicó Quieter UI. Trackeamos pero NO seteamos el flag
+    // de localStorage — sino el banner muestra copy equivocada ("tu
+    // navegador bloqueó") cuando en realidad solo fue dismissal del user.
     track('notification_permission_silent_blocked', { context })
-    // Persistimos el flag para que el banner PushOptIn lo muestre.
-    try {
-      window.localStorage.setItem(SILENT_BLOCK_KEY, '1')
-    } catch {}
   }
 }
