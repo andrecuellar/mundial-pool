@@ -53,8 +53,27 @@ export function PushOptIn({ vapidPublicKey }: Props) {
       return
     }
 
-    // El splash puede haber detectado un silent-block y dejado un flag.
-    // En ese caso el banner muestra la UI de recovery.
+    // ORDEN IMPORTANTE: el estado real del browser manda sobre cualquier flag
+    // viejo en localStorage. Si el user ya dio el permiso (en cualquier
+    // sesión anterior, otro dispositivo, lo que sea), nunca más le mostramos
+    // el banner ni la UI de silent-block. La subscription al server se
+    // garantiza en background — si falla, fallamos en silencio (no obligamos
+    // al user a re-aceptar para corregir nuestro backend).
+    if (Notification.permission === 'granted') {
+      setState('granted')
+      try {
+        window.localStorage.removeItem(SILENT_BLOCK_KEY)
+      } catch {}
+      void ensurePushSubscription(vapidPublicKey)
+      return
+    }
+    if (Notification.permission === 'denied') {
+      setState('denied')
+      return
+    }
+
+    // permission === 'default' (nunca preguntado). Ahora sí miramos los
+    // flags secundarios.
     try {
       if (window.localStorage.getItem(SILENT_BLOCK_KEY) === '1') {
         setState('silent_block')
@@ -68,13 +87,7 @@ export function PushOptIn({ vapidPublicKey }: Props) {
       return
     }
 
-    if (Notification.permission === 'denied') {
-      setState('denied')
-    } else if (Notification.permission === 'granted') {
-      setState('granted')
-    } else {
-      setState('prompt')
-    }
+    setState('prompt')
   }, [vapidPublicKey])
 
   async function enable() {
@@ -84,17 +97,21 @@ export function PushOptIn({ vapidPublicKey }: Props) {
       track('notification_prompt_shown', { context: 'banner' })
       const result = await requestNotificationPermission()
       if (result.kind === 'granted') {
+        // CRÍTICO: el user dijo que sí, NUNCA volvemos a mostrar el banner.
+        // Aunque la suscripción al backend falle (red caída, 500, lo que
+        // sea), no obligamos a re-aceptar — eso fue el bug que generaba el
+        // loop infinito de "activa las notificaciones".
+        setState('granted')
+        try {
+          window.localStorage.removeItem(SILENT_BLOCK_KEY)
+        } catch {}
         track('notification_permission_granted', { context: 'banner' })
         const ok = await ensurePushSubscription(vapidPublicKey)
         if (ok) {
           track('push_subscription_saved', { context: 'banner' })
-          setState('granted')
           toast.success('Notificaciones activadas')
-          try {
-            window.localStorage.removeItem(SILENT_BLOCK_KEY)
-          } catch {}
         } else {
-          toast.error('No pudimos activar las notificaciones.')
+          toast.error('Activadas, pero hubo un problema guardando. Recargá la página.')
         }
       } else if (result.kind === 'denied') {
         track('notification_permission_denied', { context: 'banner' })
