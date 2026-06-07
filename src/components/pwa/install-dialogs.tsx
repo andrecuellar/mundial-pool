@@ -92,8 +92,8 @@ export function AndroidInstallDialog({ open, onOpenChange }: DialogProps) {
               1
             </span>
             <span>
-              Toca el menú <span className="font-mono font-semibold text-foreground">⋮</span>{' '}
-              (tres puntos verticales) en la esquina superior derecha del navegador.
+              Toca el menú <span className="font-mono font-semibold text-foreground">⋮</span> (tres
+              puntos verticales) en la esquina superior derecha del navegador.
             </span>
           </li>
           <li className="flex items-start gap-2.5">
@@ -101,10 +101,9 @@ export function AndroidInstallDialog({ open, onOpenChange }: DialogProps) {
               2
             </span>
             <span>
-              Busca y toca{' '}
-              <span className="font-medium text-foreground">"Instalar app"</span> o{' '}
-              <span className="font-medium text-foreground">"Añadir a pantalla principal"</span>
-              . Suele estar a la mitad del menú.
+              Busca y toca <span className="font-medium text-foreground">"Instalar app"</span> o{' '}
+              <span className="font-medium text-foreground">"Añadir a pantalla principal"</span>.
+              Suele estar a la mitad del menú.
             </span>
           </li>
           <li className="flex items-start gap-2.5">
@@ -130,6 +129,14 @@ export function AndroidInstallDialog({ open, onOpenChange }: DialogProps) {
           Algunos navegadores (Firefox, ciertos custom browsers) solo ofrecen{' '}
           <span className="font-medium text-foreground">"Añadir a pantalla principal"</span> —
           funciona casi igual. Si no aparece ninguna, prueba con Chrome o Edge.
+        </p>
+        <p className="rounded-lg border border-accent/30 bg-accent/5 p-3 text-xs text-muted-foreground leading-relaxed">
+          <span className="font-medium text-foreground">¿Querés la app nativa con notificaciones?</span>{' '}
+          Bajá el .apk desde{' '}
+          <a href="/instalar" className="font-medium text-accent underline">
+            mundial-pool.vercel.app/instalar
+          </a>
+          .
         </p>
         <Button onClick={() => onOpenChange(false)} variant="outline" className="w-full">
           Cerrar
@@ -157,8 +164,8 @@ export function DesktopInstallDialog({ open, onOpenChange }: DialogProps) {
             <span>
               En <span className="font-medium text-foreground">Chrome</span> o{' '}
               <span className="font-medium text-foreground">Edge</span>: mira al final de la barra
-              de direcciones. Vas a ver un ícono pequeño de instalación (una pantalla con una
-              flecha hacia abajo). Hazle clic.
+              de direcciones. Vas a ver un ícono pequeño de instalación (una pantalla con una flecha
+              hacia abajo). Hazle clic.
             </span>
           </li>
           <li className="flex items-start gap-2.5">
@@ -192,7 +199,9 @@ export function DesktopInstallDialog({ open, onOpenChange }: DialogProps) {
           Ya tienes la app instalada. Hazle clic ahí y se abre directamente — listo.
         </p>
         <p className="rounded-lg border border-warning/30 bg-warning/5 p-3 text-xs text-muted-foreground leading-relaxed">
-          <span className="font-medium text-foreground">¿No ves el ícono ni "Instalar" ni "Abrir"?</span>{' '}
+          <span className="font-medium text-foreground">
+            ¿No ves el ícono ni "Instalar" ni "Abrir"?
+          </span>{' '}
           Puede ser que tu navegador no soporte la instalación (Firefox de escritorio no la trae).
           Prueba con Chrome o Edge.
         </p>

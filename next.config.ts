@@ -26,6 +26,21 @@ const nextConfig: NextConfig = {
           { key: 'Content-Type', value: 'application/json' },
         ],
       },
+      // APK del TWA descargable desde /instalar. Content-Type específico
+      // para que Android lo abra con el installer, no que el browser lo
+      // muestre como texto. noindex para que no aparezca en buscadores.
+      {
+        source: '/downloads/mundial-pool.apk',
+        headers: [
+          { key: 'Content-Type', value: 'application/vnd.android.package-archive' },
+          {
+            key: 'Content-Disposition',
+            value: 'attachment; filename="mundial-pool.apk"',
+          },
+          { key: 'Cache-Control', value: 'public, max-age=86400' },
+          { key: 'X-Robots-Tag', value: 'noindex' },
+        ],
+      },
     ]
   },
 }
