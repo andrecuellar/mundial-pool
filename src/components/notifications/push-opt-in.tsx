@@ -6,9 +6,13 @@ import { useEffect, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { Card } from '@/components/ui/card'
+import { bolivianCalendarDate } from '@/lib/format'
 import { ensurePushSubscription, requestNotificationPermission } from '@/lib/notifications'
 
-const DISMISS_KEY = 'mp:push-opt-in-dismissed'
+// El dismiss persiste solo por el día BOT actual. Al día siguiente (en
+// calendario boliviano) el banner vuelve a aparecer — así no perdemos
+// al user que dijo "Más tarde" en algún momento del Mundial.
+const DISMISS_KEY = 'mp:push-opt-in-dismissed-on'
 const SILENT_BLOCK_KEY = 'mp_notif_silent_block_v1'
 const TWA_PACKAGE = 'app.andrecuellar.mundialpool.twa'
 
@@ -81,11 +85,15 @@ export function PushOptIn({ vapidPublicKey }: Props) {
       }
     } catch {}
 
-    const dismissed = window.localStorage.getItem(DISMISS_KEY)
-    if (dismissed === '1') {
-      setState('dismissed')
-      return
-    }
+    // El dismiss es per-día: si lo cerró HOY (BOT), respetamos. Si fue
+    // ayer o antes, mostramos el banner igual.
+    try {
+      const dismissedOn = window.localStorage.getItem(DISMISS_KEY)
+      if (dismissedOn && dismissedOn === bolivianCalendarDate()) {
+        setState('dismissed')
+        return
+      }
+    } catch {}
 
     setState('prompt')
   }, [vapidPublicKey])
@@ -132,7 +140,11 @@ export function PushOptIn({ vapidPublicKey }: Props) {
   }
 
   function dismiss() {
-    window.localStorage.setItem(DISMISS_KEY, '1')
+    try {
+      // Guardamos la fecha BOT del dismiss. Al día siguiente el banner
+      // vuelve a aparecer aunque el user lo haya cerrado.
+      window.localStorage.setItem(DISMISS_KEY, bolivianCalendarDate())
+    } catch {}
     setState('dismissed')
   }
 
