@@ -1,7 +1,7 @@
 'use client'
 
 import { track } from '@vercel/analytics'
-import { AlertTriangle, Check, Info, Lock, Trophy } from 'lucide-react'
+import { AlertTriangle, ArrowRight, Check, Info, Lock, Share2, Trophy } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import { useEffect, useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
@@ -361,6 +361,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   })
   const [pending, startTransition] = useTransition()
   const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'success'>('idle')
+  const [overlayLeaving, setOverlayLeaving] = useState(false)
   const [dirty, setDirty] = useState(false)
   const router = useRouter()
 
@@ -376,6 +377,30 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     window.addEventListener('beforeunload', handler)
     return () => window.removeEventListener('beforeunload', handler)
   }, [dirty, locked, savePhase])
+
+  // Auto-redirect al comprobante 6s después de que aparezca el check de
+  // success. El user puede acelerarlo con los botones, o esperar a que
+  // aterrice solo. Si toca "Compartir", goToComprobante limpia este timer.
+  useEffect(() => {
+    if (savePhase !== 'success') return
+    const t = window.setTimeout(() => {
+      goToComprobante(false)
+    }, 6000)
+    return () => window.clearTimeout(t)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [savePhase])
+
+  function goToComprobante(share: boolean) {
+    if (overlayLeaving) return
+    setOverlayLeaving(true)
+    const target = share
+      ? `/groups/${groupSlug}/comprobante?share=1`
+      : `/groups/${groupSlug}/comprobante`
+    // 400ms = duración de la animación de fade-out del overlay. Justo
+    // antes de la navegación, así el user ve el overlay "irse" y aterriza
+    // en el comprobante directamente.
+    window.setTimeout(() => router.push(target), 400)
+  }
 
   function recomputeDerived(next: Record<string, DraftValue>) {
     const { champion, runnerUp, thirdPlace } = getLockedFromSources(next, sourceIds)
@@ -458,13 +483,12 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
         if (completed === total) {
           track('predictions_completed', { total })
         }
-        // Hold the success animation visible for a beat before navigating, so
-        // the user sees the "¡Listo!" state instead of an abrupt jump.
+        // Hold success visible. El user puede tocar "Compartir como
+        // imagen" (que navega con ?share=1 para auto-disparar el share en
+        // el comprobante), o "Ver comprobante". El useEffect de abajo
+        // arma el auto-redirect a 6s.
         setSavePhase('success')
         setDirty(false)
-        setTimeout(() => {
-          router.push(`/groups/${groupSlug}/comprobante`)
-        }, 900)
       } else {
         setSavePhase('idle')
         toast.error(r.error)
@@ -497,6 +521,32 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
         savingTitle="Guardando tus predicciones"
         savingSubtitle="Un momento mientras dejamos todo registrado"
         successSubtitle="Preparando tu comprobante"
+        leaving={overlayLeaving}
+        successActions={
+          <div className="flex flex-col gap-2">
+            <Button
+              type="button"
+              size="lg"
+              className="w-full"
+              onClick={() => goToComprobante(true)}
+              disabled={overlayLeaving}
+            >
+              <Share2 className="h-4 w-4" />
+              Compartir como imagen
+            </Button>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              onClick={() => goToComprobante(false)}
+              disabled={overlayLeaving}
+            >
+              Ver comprobante
+              <ArrowRight className="h-3.5 w-3.5" />
+            </Button>
+          </div>
+        }
       />
       <div className="sticky top-14 sm:top-16 z-20 -mx-4 sm:-mx-6 mb-5 border-b border-border bg-background/90 px-4 sm:px-6 py-3 backdrop-blur">
         <div className="flex items-center justify-between gap-3">

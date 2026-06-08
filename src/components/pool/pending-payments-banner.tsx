@@ -34,7 +34,7 @@ export function PendingPaymentsBanner({ groups, className }: Props) {
 
   const subline =
     memberCount > 0
-      ? 'Si no aportas antes del cierre, el administrador puede eliminarte del reparto del premio.'
+      ? 'Si no aportas antes del cierre, el administrador te eliminará del reparto del premio.'
       : 'Aunque tú administras el pozo, debes aparecer como contribuyente. Registralo desde Configurar pozo.'
 
   return (
