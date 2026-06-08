@@ -1,4 +1,4 @@
-import { and, count, desc, eq, sql } from 'drizzle-orm'
+import { and, count, desc, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   appState,
@@ -367,7 +367,24 @@ export async function listAdminPredictions(filters?: { categoryKey?: string; gro
     .orderBy(desc(predictions.updatedAt))
     .limit(500)
 
-  return rows
+  const teamIds = Array.from(
+    new Set(rows.flatMap((r) => (Array.isArray(r.teamSet) ? r.teamSet : []))),
+  )
+  const teamRows =
+    teamIds.length > 0
+      ? await db
+          .select({ id: teams.id, name: teams.name, flag: teams.flagEmoji })
+          .from(teams)
+          .where(inArray(teams.id, teamIds))
+      : []
+  const teamMap = new Map(teamRows.map((t) => [t.id, t]))
+
+  return rows.map((r) => ({
+    ...r,
+    teamSetExpanded: Array.isArray(r.teamSet)
+      ? r.teamSet.map((id) => teamMap.get(id) ?? { id, name: id, flag: null })
+      : null,
+  }))
 }
 
 export async function listAdminPoolTransactions() {
@@ -435,11 +452,12 @@ export async function listAdminPlayers() {
 }
 
 export async function listAdminResults() {
-  return db
+  const rows = await db
     .select({
       categoryKey: categories.key,
       categoryName: categories.name,
       teamName: teams.name,
+      teamFlag: teams.flagEmoji,
       teamSet: results.teamSet,
       playerText: results.playerText,
       source: results.source,
@@ -449,6 +467,25 @@ export async function listAdminResults() {
     .innerJoin(categories, eq(categories.id, results.categoryId))
     .leftJoin(teams, eq(teams.id, results.teamId))
     .orderBy(results.resolvedAt)
+
+  const teamIds = Array.from(
+    new Set(rows.flatMap((r) => (Array.isArray(r.teamSet) ? r.teamSet : []))),
+  )
+  const teamRows =
+    teamIds.length > 0
+      ? await db
+          .select({ id: teams.id, name: teams.name, flag: teams.flagEmoji })
+          .from(teams)
+          .where(inArray(teams.id, teamIds))
+      : []
+  const teamMap = new Map(teamRows.map((t) => [t.id, t]))
+
+  return rows.map((r) => ({
+    ...r,
+    teamSetExpanded: Array.isArray(r.teamSet)
+      ? r.teamSet.map((id) => teamMap.get(id) ?? { id, name: id, flag: null })
+      : null,
+  }))
 }
 
 export async function listAdminResolutionRuns() {
