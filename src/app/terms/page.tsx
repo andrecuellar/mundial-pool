@@ -10,7 +10,7 @@ export const metadata = {
 export const dynamic = 'force-static'
 
 export default function TermsPage() {
-  const contact = [...SUPER_ADMIN_EMAILS][0] ?? 'acuellaravaroma@gmail.com'
+  const contact = [...SUPER_ADMIN_EMAILS][0] ?? null
 
   return (
     <>
@@ -192,10 +192,17 @@ export default function TermsPage() {
           <section>
             <h2 className="text-base font-semibold">Contacto</h2>
             <p className="mt-2 text-muted-foreground">
-              Para cualquier consulta escribe a{' '}
-              <a className="underline" href={`mailto:${contact}`}>
-                {contact}
-              </a>
+              Para cualquier consulta escribe{' '}
+              {contact ? (
+                <>
+                  a{' '}
+                  <a className="underline" href={`mailto:${contact}`}>
+                    {contact}
+                  </a>
+                </>
+              ) : (
+                <span className="italic">(contacto pendiente de publicar)</span>
+              )}
               .
             </p>
           </section>

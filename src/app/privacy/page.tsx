@@ -10,7 +10,10 @@ export const metadata = {
 export const dynamic = 'force-static'
 
 export default function PrivacyPage() {
-  const contact = [...SUPER_ADMIN_EMAILS][0] ?? 'acuellaravaroma@gmail.com'
+  // Primero del set de superadmins (ya en lowercase). Si la env var
+  // SUPER_ADMIN_EMAILS no está configurada, queda null y los enlaces
+  // de contacto se renderean como texto plano "(contacto pendiente)".
+  const contact = [...SUPER_ADMIN_EMAILS][0] ?? null
 
   return (
     <>
@@ -123,10 +126,17 @@ export default function PrivacyPage() {
             <h2 className="text-base font-semibold">Tus derechos</h2>
             <p className="mt-2 text-muted-foreground">
               Puedes solicitar en cualquier momento que eliminemos tu cuenta y todos los datos
-              asociados escribiéndonos a{' '}
-              <a className="underline" href={`mailto:${contact}`}>
-                {contact}
-              </a>
+              asociados escribiéndonos{' '}
+              {contact ? (
+                <>
+                  a{' '}
+                  <a className="underline" href={`mailto:${contact}`}>
+                    {contact}
+                  </a>
+                </>
+              ) : (
+                <span className="italic">(contacto pendiente de publicar)</span>
+              )}
               . Atenderemos la solicitud en un plazo razonable.
             </p>
           </section>
@@ -152,10 +162,17 @@ export default function PrivacyPage() {
           <section>
             <h2 className="text-base font-semibold">Contacto</h2>
             <p className="mt-2 text-muted-foreground">
-              Para cualquier pregunta sobre privacidad escribe a{' '}
-              <a className="underline" href={`mailto:${contact}`}>
-                {contact}
-              </a>
+              Para cualquier pregunta sobre privacidad escribe{' '}
+              {contact ? (
+                <>
+                  a{' '}
+                  <a className="underline" href={`mailto:${contact}`}>
+                    {contact}
+                  </a>
+                </>
+              ) : (
+                <span className="italic">(contacto pendiente de publicar)</span>
+              )}
               .
             </p>
           </section>

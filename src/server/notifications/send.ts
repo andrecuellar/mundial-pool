@@ -10,7 +10,7 @@ let configured = false
 
 function configure(): boolean {
   if (configured) return true
-  if (!env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY) {
+  if (!env.NEXT_PUBLIC_VAPID_PUBLIC_KEY || !env.VAPID_PRIVATE_KEY || !env.VAPID_SUBJECT) {
     return false
   }
   webpush.setVapidDetails(
