@@ -15,7 +15,7 @@ type Props = {
 const STORAGE_KEY = 'mp_splash_last_shown_v1'
 const SILENT_BLOCK_KEY = 'mp_notif_silent_block_v1'
 const GRANTED_KEY = 'mp:push-granted-locally'
-const COUNTDOWN_SECONDS = 7
+const COUNTDOWN_SECONDS = 10
 
 // Detecta si la app abrió en un contexto de "alta intención": TWA (APK
 // Android) o PWA instalada (Add to Home Screen). En ambos casos el user
