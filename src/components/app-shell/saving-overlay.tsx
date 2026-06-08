@@ -23,6 +23,13 @@ type Props = {
    * cut by the page swap.
    */
   leaving?: boolean
+  /**
+   * Number of seconds remaining for an auto-redirect. If set, renders a
+   * circular badge in the top-right corner showing the count. Solo se
+   * muestra cuando phase === 'success'. Pasar null/undefined oculta el
+   * badge (ej. el user ya tomó acción).
+   */
+  successCountdown?: number | null
 }
 
 // Full-screen overlay with two visible phases — 'saving' shows the supplied
@@ -41,6 +48,7 @@ export function SavingOverlay({
   successSubtitle,
   successActions,
   leaving = false,
+  successCountdown = null,
 }: Props) {
   if (phase === 'idle') return null
 
@@ -55,6 +63,18 @@ export function SavingOverlay({
         leaving ? 'pointer-events-none opacity-0' : 'opacity-100'
       }`}
     >
+      {phase === 'success' && typeof successCountdown === 'number' && successCountdown > 0 && (
+        <div className="absolute right-4 top-4 sm:right-6 sm:top-6">
+          <div className="grid h-12 w-12 place-items-center rounded-full border border-border bg-card/80 backdrop-blur">
+            <span
+              className="font-mono text-lg font-semibold tabular-nums text-foreground"
+              aria-live="polite"
+            >
+              {successCountdown}
+            </span>
+          </div>
+        </div>
+      )}
       <div className="relative flex flex-col items-center gap-6 px-6 text-center">
         {phase === 'saving' ? (
           <>

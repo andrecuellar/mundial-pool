@@ -362,6 +362,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
   const [pending, startTransition] = useTransition()
   const [savePhase, setSavePhase] = useState<'idle' | 'saving' | 'success'>('idle')
   const [overlayLeaving, setOverlayLeaving] = useState(false)
+  const [successCountdown, setSuccessCountdown] = useState<number | null>(null)
   const [dirty, setDirty] = useState(false)
   const router = useRouter()
 
@@ -380,19 +381,33 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
 
   // Auto-redirect al comprobante 6s después de que aparezca el check de
   // success. El user puede acelerarlo con los botones, o esperar a que
-  // aterrice solo. Si toca "Compartir", goToComprobante limpia este timer.
+  // aterrice solo. El contador se ve arriba a la derecha del overlay.
+  // Si toca cualquier botón, goToComprobante apaga el contador (null)
+  // para que no siga ticando durante el fade-out.
   useEffect(() => {
     if (savePhase !== 'success') return
-    const t = window.setTimeout(() => {
-      goToComprobante(false)
-    }, 6000)
-    return () => window.clearTimeout(t)
+    setSuccessCountdown(6)
+    const tick = window.setInterval(() => {
+      setSuccessCountdown((s) => {
+        if (s === null) return null
+        if (s <= 1) {
+          window.clearInterval(tick)
+          goToComprobante(false)
+          return 0
+        }
+        return s - 1
+      })
+    }, 1000)
+    return () => window.clearInterval(tick)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [savePhase])
 
   function goToComprobante(share: boolean) {
     if (overlayLeaving) return
     setOverlayLeaving(true)
+    // Apagamos el contador para que no siga decrementando durante el
+    // fade-out (sino se ve un "0" o un número raro último frame).
+    setSuccessCountdown(null)
     const target = share
       ? `/groups/${groupSlug}/comprobante?share=1`
       : `/groups/${groupSlug}/comprobante`
@@ -522,6 +537,7 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
         savingSubtitle="Un momento mientras dejamos todo registrado"
         successSubtitle="Preparando tu comprobante"
         leaving={overlayLeaving}
+        successCountdown={successCountdown}
         successActions={
           <div className="flex flex-col gap-2">
             <Button
