@@ -64,58 +64,84 @@ export function PushOptIn({ vapidPublicKey }: Props) {
       return
     }
 
-    // ORDEN IMPORTANTE: el estado real del browser manda sobre cualquier flag
-    // viejo en localStorage. Si el user ya dio el permiso, nunca más le
-    // mostramos el banner. La suscripción al server se garantiza en
-    // background — si falla, fallamos en silencio (no obligamos al user a
-    // re-aceptar para corregir nuestro backend).
-    if (Notification.permission === 'granted') {
-      setState('granted')
-      try {
-        window.localStorage.removeItem(SILENT_BLOCK_KEY)
-        window.localStorage.setItem(GRANTED_KEY, '1')
-      } catch {}
-      void ensurePushSubscription(vapidPublicKey)
-      return
-    }
-    if (Notification.permission === 'denied') {
-      setState('denied')
-      return
-    }
-
-    // permission === 'default'. PERO: en mobile Chrome (Android, in-app,
-    // PWA standalone) la API a veces reporta 'default' después de reload
-    // aunque el user ya haya aceptado. Si tenemos el flag local de que ya
-    // dijo "sí" antes, no lo molestamos más. Si la suscripción se rompió,
-    // se rehidrata en background.
-    try {
-      if (window.localStorage.getItem(GRANTED_KEY) === '1') {
+    let cancelled = false
+    ;(async () => {
+      // ORDEN IMPORTANTE: chequeamos el estado real del browser primero.
+      // Si granted → nunca mostramos banner. Si denied → mostramos UI de
+      // recovery con instrucciones.
+      if (Notification.permission === 'granted') {
+        if (cancelled) return
         setState('granted')
+        try {
+          window.localStorage.removeItem(SILENT_BLOCK_KEY)
+          window.localStorage.setItem(GRANTED_KEY, '1')
+        } catch {}
         void ensurePushSubscription(vapidPublicKey)
         return
       }
-    } catch {}
-
-    // Permission DEFAULT y nunca dijo "sí" antes → miramos flags
-    // secundarios para decidir qué banner mostrar.
-    try {
-      if (window.localStorage.getItem(SILENT_BLOCK_KEY) === '1') {
-        setState('silent_block')
+      if (Notification.permission === 'denied') {
+        if (cancelled) return
+        setState('denied')
         return
       }
-    } catch {}
 
-    // El dismiss es per-día: si lo cerró HOY (BOT), respetamos. Si fue
-    // ayer o antes, mostramos el banner igual.
-    try {
-      const dismissedOn = window.localStorage.getItem(DISMISS_KEY)
-      if (dismissedOn && dismissedOn === bolivianCalendarDate()) {
-        setState('dismissed')
+      // permission === 'default'. Antes confiábamos ciegamente en el flag
+      // GRANTED_KEY de localStorage, pero eso ocultaba el banner cuando
+      // Chrome revoca el permiso silenciosamente (Quieter UI / abuse
+      // detection) sin cambiar permission a 'denied'. Ahora chequeamos si
+      // existe una suscripción REAL en el SW: si sí, granted de verdad;
+      // si no, el flag stale lo limpiamos y mostramos el banner para que
+      // el user pueda re-permitir.
+      let hasActiveSub = false
+      try {
+        const reg = await navigator.serviceWorker.getRegistration()
+        if (reg) {
+          const sub = await reg.pushManager.getSubscription()
+          hasActiveSub = !!sub
+        }
+      } catch {}
+
+      if (cancelled) return
+
+      if (hasActiveSub) {
+        // Suscripción válida del browser → granted de verdad (Chrome a
+        // veces reporta default después de reload aunque haya sub).
+        setState('granted')
+        try {
+          window.localStorage.setItem(GRANTED_KEY, '1')
+        } catch {}
         return
       }
-    } catch {}
 
-    setState('prompt')
+      // No hay suscripción activa: el flag GRANTED_KEY (si existía) es
+      // basura — el browser revocó. Lo limpiamos y caemos al flow normal
+      // de mostrar el banner.
+      try {
+        window.localStorage.removeItem(GRANTED_KEY)
+      } catch {}
+
+      try {
+        if (window.localStorage.getItem(SILENT_BLOCK_KEY) === '1') {
+          setState('silent_block')
+          return
+        }
+      } catch {}
+
+      // El dismiss es per-día: si lo cerró HOY (BOT), respetamos. Si fue
+      // ayer o antes, mostramos el banner igual.
+      try {
+        const dismissedOn = window.localStorage.getItem(DISMISS_KEY)
+        if (dismissedOn && dismissedOn === bolivianCalendarDate()) {
+          setState('dismissed')
+          return
+        }
+      } catch {}
+
+      setState('prompt')
+    })()
+    return () => {
+      cancelled = true
+    }
   }, [vapidPublicKey])
 
   async function enable() {
