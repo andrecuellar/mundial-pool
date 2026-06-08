@@ -6,8 +6,8 @@
 // Dry-run by default. Pass --apply to actually delete.
 //
 // Usage:
-//   pnpm dlx tsx scripts/unjoin-user.ts urriolagoitiadaniel@gmail.com
-//   pnpm dlx tsx scripts/unjoin-user.ts urriolagoitiadaniel@gmail.com --apply
+//   pnpm dlx tsx scripts/unjoin-user.ts user@example.com
+//   pnpm dlx tsx scripts/unjoin-user.ts user@example.com --apply
 import { config } from 'dotenv'
 import { and, eq, inArray, sql } from 'drizzle-orm'
 import { drizzle } from 'drizzle-orm/postgres-js'
