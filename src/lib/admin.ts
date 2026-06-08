@@ -3,11 +3,21 @@ import { inArray } from 'drizzle-orm'
 import { notFound } from 'next/navigation'
 import { db } from '@/db'
 import { profiles } from '@/db/schema'
+import { env } from '@/lib/env'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
-// Allowlist of emails that get the /admin panel. Everyone else gets a 404
-// (not 403) so non-admins can't discover that the panel exists.
-export const SUPER_ADMIN_EMAILS: ReadonlySet<string> = new Set(['acuellaravaroma@gmail.com'])
+// Allowlist of emails que pueden ver el panel /admin. Leemos de la env var
+// SUPER_ADMIN_EMAILS (comma-separated, lowercased + trim). Nunca hardcoded
+// en el código fuente — el repo es público y los emails no deben filtrarse.
+// Si la env var está vacía o no seteada, el panel queda inaccesible para
+// todos (404). Cualquiera que no esté en la lista también recibe 404 (no
+// 403) para no exponer la existencia del panel.
+export const SUPER_ADMIN_EMAILS: ReadonlySet<string> = new Set(
+  (env.SUPER_ADMIN_EMAILS ?? '')
+    .split(',')
+    .map((e) => e.trim().toLowerCase())
+    .filter((e) => e.length > 0),
+)
 
 export function isSuperAdminEmail(email: string | null | undefined): boolean {
   if (!email) return false
