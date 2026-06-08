@@ -352,9 +352,13 @@ export default async function GroupPage({ params }: Params) {
                 {myRank > 0 && (
                   <span className="opacity-80">
                     Vas en el lugar{' '}
-                    <span className="font-medium opacity-100">
-                      {myTied ? `=${myRank}` : `#${myRank}`} de {leaderboard.length}
-                    </span>
+                    <span
+                      className="inline-flex items-center justify-center rounded-full border border-white/40 bg-white/10 px-2 py-0.5 font-mono text-xs font-semibold tabular-nums"
+                      title={myTied ? `Empate por el puesto ${myRank}` : `Puesto ${myRank}`}
+                    >
+                      {myRank}
+                    </span>{' '}
+                    <span className="opacity-100">de {leaderboard.length}</span>
                   </span>
                 )}
               </div>
@@ -456,8 +460,17 @@ export default async function GroupPage({ params }: Params) {
                   <p className="text-xs font-medium uppercase tracking-[0.14em] text-muted-foreground">
                     Tabla de líderes
                   </p>
-                  <p className="mt-2 text-2xl font-semibold tabular-nums">
-                    {myRank > 0 ? (myTied ? `=${myRank}` : `#${myRank}`) : '—'}
+                  <p
+                    className="mt-2 text-2xl font-semibold tabular-nums"
+                    title={
+                      myRank > 0
+                        ? myTied
+                          ? `Empate por el puesto ${myRank}`
+                          : `Puesto ${myRank}`
+                        : undefined
+                    }
+                  >
+                    {myRank > 0 ? myRank : '—'}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {leaderboard.length > 0
@@ -506,7 +519,7 @@ export default async function GroupPage({ params }: Params) {
             rows={myBreakdown}
             totalPoints={leaderboard.find((r) => r.userId === user.id)?.totalPoints ?? 0}
             rank={myRank > 0 ? myRank : null}
-            rankLabel={myRank > 0 ? (myTied ? `=${myRank}` : `#${myRank}`) : null}
+            rankLabel={myRank > 0 ? String(myRank) : null}
             totalPlayers={leaderboard.length}
           />
         </div>
