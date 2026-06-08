@@ -186,9 +186,9 @@ export function RankingTable({
               Aviso para los {pendingCount} pendientes:
             </span>{' '}
             quienes no aporten al pozo antes del cierre del{' '}
-            <span className="font-medium text-foreground">{formatDayShort(lockDate)}</span> podrán
-            ser eliminados de la tabla por el administrador del grupo y quedarán fuera del reparto
-            del premio.
+            <span className="font-medium text-foreground">{formatDayShort(lockDate)}</span> serán
+            eliminados de la tabla por el administrador del grupo y quedarán fuera del reparto del
+            premio.
           </p>
         </div>
       )}
