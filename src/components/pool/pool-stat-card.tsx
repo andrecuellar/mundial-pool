@@ -89,7 +89,7 @@ export function PoolStatCard({ pool, payoutPreview, groupSlug, isOwner }: Props)
                           : 'bg-bronze/15 text-bronze'
                     }`}
                   >
-                    {p.tied ? `T-${p.rank}` : p.rank}
+                    {p.tied ? `=${p.rank}` : p.rank}
                   </span>
                   <span className="truncate">{p.displayName}</span>
                 </span>

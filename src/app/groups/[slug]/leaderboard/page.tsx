@@ -106,7 +106,7 @@ export default async function LeaderboardPage({ params }: Params) {
           />
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Los puntos se recalculan automáticamente con cada partido resuelto. Si dos o más
-            jugadores empatan en puntos, comparten el puesto (T-N) y el premio correspondiente se
+            jugadores empatan en puntos, comparten el puesto (mostrado como <span className="font-mono">=N</span>) y el premio correspondiente se
             divide en partes iguales entre ellos.
           </p>
         </div>
