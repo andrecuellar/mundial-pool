@@ -35,12 +35,14 @@ function rankCell(info: RankInfo, isMe: boolean, hasScores: boolean) {
   }
   return (
     <span
-      className={`font-mono text-sm font-semibold whitespace-nowrap ${
-        isMe ? 'text-primary' : 'text-muted-foreground'
+      className={`inline-flex min-w-[2rem] items-center justify-center whitespace-nowrap rounded-full border px-2 py-0.5 font-mono text-xs font-semibold tabular-nums ${
+        isMe
+          ? 'border-primary/40 bg-primary/10 text-primary'
+          : 'border-border bg-muted/40 text-muted-foreground'
       }`}
       title={info.tied ? `Empate por el puesto ${info.rank}` : `Puesto ${info.rank}`}
     >
-      {info.tied ? `=${info.rank}` : `#${info.rank}`}
+      {info.rank}
     </span>
   )
 }
