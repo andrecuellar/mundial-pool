@@ -71,11 +71,20 @@ export default async function AdminPredictionsPage({
                       <span className="text-base leading-none">{r.teamFlag ?? '🏳️'}</span>
                       {r.teamName}
                     </span>
+                  ) : r.teamSetExpanded && r.teamSetExpanded.length > 0 ? (
+                    <div className="flex flex-wrap gap-1">
+                      {r.teamSetExpanded.map((t) => (
+                        <span
+                          key={t.id}
+                          className="inline-flex items-center gap-1 rounded-full border border-border bg-muted/40 px-2 py-0.5 text-xs"
+                        >
+                          <span className="text-sm leading-none">{t.flag ?? '🏳️'}</span>
+                          {t.name}
+                        </span>
+                      ))}
+                    </div>
                   ) : (
-                    (r.playerText ??
-                    (Array.isArray(r.teamSet) && r.teamSet.length > 0
-                      ? `${r.teamSet.length} equipos`
-                      : '—'))
+                    (r.playerText ?? '—')
                   )}
                 </TableCell>
                 <TableCell className="hidden text-right font-mono text-xs text-muted-foreground sm:table-cell">
