@@ -353,7 +353,7 @@ export default async function GroupPage({ params }: Params) {
                   <span className="opacity-80">
                     Vas en el lugar{' '}
                     <span className="font-medium opacity-100">
-                      {myTied ? `T-${myRank}` : `#${myRank}`} de {leaderboard.length}
+                      {myTied ? `=${myRank}` : `#${myRank}`} de {leaderboard.length}
                     </span>
                   </span>
                 )}
@@ -457,7 +457,7 @@ export default async function GroupPage({ params }: Params) {
                     Tabla de líderes
                   </p>
                   <p className="mt-2 text-2xl font-semibold tabular-nums">
-                    {myRank > 0 ? (myTied ? `T-${myRank}` : `#${myRank}`) : '—'}
+                    {myRank > 0 ? (myTied ? `=${myRank}` : `#${myRank}`) : '—'}
                   </p>
                   <p className="mt-1 text-xs text-muted-foreground">
                     {leaderboard.length > 0
@@ -506,7 +506,7 @@ export default async function GroupPage({ params }: Params) {
             rows={myBreakdown}
             totalPoints={leaderboard.find((r) => r.userId === user.id)?.totalPoints ?? 0}
             rank={myRank > 0 ? myRank : null}
-            rankLabel={myRank > 0 ? (myTied ? `T-${myRank}` : `#${myRank}`) : null}
+            rankLabel={myRank > 0 ? (myTied ? `=${myRank}` : `#${myRank}`) : null}
             totalPlayers={leaderboard.length}
           />
         </div>

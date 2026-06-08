@@ -35,11 +35,12 @@ function rankCell(info: RankInfo, isMe: boolean, hasScores: boolean) {
   }
   return (
     <span
-      className={`font-mono text-sm font-semibold ${
+      className={`font-mono text-sm font-semibold whitespace-nowrap ${
         isMe ? 'text-primary' : 'text-muted-foreground'
       }`}
+      title={info.tied ? `Empate por el puesto ${info.rank}` : `Puesto ${info.rank}`}
     >
-      {info.tied ? `T-${info.rank}` : `#${info.rank}`}
+      {info.tied ? `=${info.rank}` : `#${info.rank}`}
     </span>
   )
 }
