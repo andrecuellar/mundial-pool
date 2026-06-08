@@ -101,6 +101,7 @@ export default async function LeaderboardPage({ params }: Params) {
             paidUserIds={Array.from(paidUserIds)}
             lockAt={group.predictionsLockAt.toISOString()}
             groupSlug={slug}
+            groupName={group.name}
             isAdmin={membership.role === 'owner'}
           />
           <p className="mt-3 text-center text-xs text-muted-foreground">

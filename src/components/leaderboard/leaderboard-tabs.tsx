@@ -1,8 +1,10 @@
 'use client'
 
 import { useState } from 'react'
+import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { LeaderboardRow } from '@/features/scoring/queries'
+import { formatDayShort } from '@/lib/format'
 import { CategoryBreakdownTable } from './category-breakdown-table'
 import { RankingTable } from './ranking-table'
 
@@ -16,6 +18,7 @@ type Props = {
   paidUserIds: string[]
   lockAt: string
   groupSlug: string
+  groupName: string
   isAdmin: boolean
 }
 
@@ -27,6 +30,7 @@ export function LeaderboardTabs({
   paidUserIds,
   lockAt,
   groupSlug,
+  groupName,
   isAdmin,
 }: Props) {
   const [tab, setTab] = useState('ranking')
@@ -37,15 +41,38 @@ export function LeaderboardTabs({
         <TabsTrigger value="breakdown">Detalle por categoría</TabsTrigger>
       </TabsList>
       <TabsContent value="ranking">
-        <RankingTable
-          rows={leaderboard}
-          currentUserId={currentUserId}
-          poolEnabled={poolEnabled}
-          paidUserIds={paidUserIds}
-          lockAt={lockAt}
-          groupSlug={groupSlug}
-          isAdmin={isAdmin}
-        />
+        {/* Wrapper capturable por html-to-image. El header con el branding +
+            nombre del grupo + fecha quedan dentro de la imagen compartida
+            para que tenga contexto fuera del sitio. */}
+        <div id="leaderboard-card" className="overflow-hidden rounded-xl border border-border bg-card">
+          <div className="border-b border-border bg-muted/30 px-4 py-3">
+            <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+              mundial-pool · Tabla de líderes
+            </p>
+            <p className="mt-0.5 text-sm font-semibold tracking-tight">
+              {groupName} · {formatDayShort(new Date())}
+            </p>
+          </div>
+          <div className="p-4 sm:p-5">
+            <RankingTable
+              rows={leaderboard}
+              currentUserId={currentUserId}
+              poolEnabled={poolEnabled}
+              paidUserIds={paidUserIds}
+              lockAt={lockAt}
+              groupSlug={groupSlug}
+              isAdmin={isAdmin}
+            />
+          </div>
+        </div>
+        <div className="mt-4">
+          <ShareComprobanteButton
+            targetId="leaderboard-card"
+            fileName={`mundial-pool-tabla-${groupSlug}`}
+            shareTitle={`Tabla · ${groupName}`}
+            shareText={`Ranking actual del pool ${groupName} en mundial-pool 🏆`}
+          />
+        </div>
       </TabsContent>
       <TabsContent value="breakdown">
         <CategoryBreakdownTable
