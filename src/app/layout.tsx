@@ -113,6 +113,12 @@ export default function RootLayout({
                 <nav className="flex flex-wrap items-center gap-x-4 gap-y-1.5">
                   <InstallAppLink />
                   <Link
+                    href="/faq"
+                    className="underline-offset-2 hover:text-foreground hover:underline"
+                  >
+                    FAQ
+                  </Link>
+                  <Link
                     href="/privacy"
                     className="underline-offset-2 hover:text-foreground hover:underline"
                   >
