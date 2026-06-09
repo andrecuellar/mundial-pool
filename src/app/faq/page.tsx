@@ -238,11 +238,11 @@ export default function FaqPage() {
       </div>
 
       {/*
-       * 21:9 horizontal share canvas — siempre montado pero off-screen.
+       * 9:21 vertical share canvas — siempre montado pero off-screen.
        * html-to-image necesita un elemento visible (no display:none) para
-       * clonarlo, así que lo movemos a left:-20000px. El botón Compartir
-       * captura este nodo en lugar del visible para que el flyer salga
-       * en proporción 2100×900 (21:9) en mobile o desktop.
+       * clonarlo, así que lo movemos a left:-20000px y el button lo trae
+       * a (0,0) con z-index:-1 sólo durante la captura. Dimensions
+       * 900×2100 = 9:21 (vertical tipo story).
        */}
       <div
         id="faq-share-card"
@@ -252,45 +252,48 @@ export default function FaqPage() {
           position: 'fixed',
           left: '-20000px',
           top: 0,
-          width: '2100px',
-          height: '900px',
+          width: '900px',
+          height: '2100px',
         }}
       >
-        <div className="flex h-full w-full flex-col bg-background p-12">
-          <header className="flex items-start justify-between gap-6">
-            <div className="flex flex-col gap-1">
-              <Wordmark size="lg" />
-              <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
-                El pool del Mundial 2026
-              </p>
-            </div>
-            <div className="flex flex-col items-end gap-1.5">
-              <h2 className="text-3xl font-semibold tracking-tight leading-none">
-                Qué se predice
-              </h2>
-              <div className="inline-flex items-baseline gap-1.5 rounded-full border border-border bg-card px-4 py-1.5">
-                <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  hasta
-                </span>
-                <span className="text-base font-semibold tabular-nums">{TOTAL_MAX}</span>
-                <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-                  puntos
-                </span>
-              </div>
-            </div>
+        <div className="flex h-full w-full flex-col bg-background p-14">
+          <header className="flex flex-col items-center gap-2 text-center">
+            <Wordmark size="lg" />
+            <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+              El pool del Mundial 2026
+            </p>
           </header>
 
-          <div className="mt-6 grid flex-1 grid-cols-3 gap-6">
+          <section className="mt-10 text-center">
+            <h2 className="text-balance text-5xl font-semibold tracking-tight leading-[1.05]">
+              Qué se predice
+            </h2>
+            <p className="mx-auto mt-4 max-w-md text-base leading-relaxed text-muted-foreground">
+              14 predicciones por jugador. El que más acierta se lleva todo el pozo del grupo.
+            </p>
+
+            <div className="mt-6 inline-flex items-baseline gap-1.5 rounded-full border border-border bg-card px-5 py-2">
+              <span className="font-mono text-sm uppercase tracking-[0.16em] text-muted-foreground">
+                hasta
+              </span>
+              <span className="text-xl font-semibold tabular-nums">{TOTAL_MAX}</span>
+              <span className="font-mono text-sm uppercase tracking-[0.16em] text-muted-foreground">
+                puntos
+              </span>
+            </div>
+          </section>
+
+          <div className="mt-10 flex flex-col gap-6">
             {SECTIONS.map((sec) => (
               <SectionCard key={sec.id} section={sec} scale="large" />
             ))}
           </div>
 
-          <footer className="mt-6 flex items-center justify-between gap-3">
+          <footer className="mt-auto flex flex-col items-center gap-2 pt-10 text-center">
             <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
               Las predicciones se cierran antes del partido inaugural · gana el que más acierta
             </p>
-            <p className="text-xl font-semibold tracking-tight">mundial-pool.vercel.app</p>
+            <p className="text-2xl font-semibold tracking-tight">mundial-pool.vercel.app</p>
           </footer>
         </div>
       </div>
