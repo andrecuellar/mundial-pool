@@ -46,6 +46,33 @@ export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareTe
       return
     }
     setPending(true)
+    // Si el target está posicionado lejos del viewport (patrón "captureable
+    // pero oculto", ej. faq-share-card a left:-20000px), los browsers pueden
+    // saltarse el paint del contenido como optimización y html-to-image
+    // devuelve PNG vacío. Lo traemos al viewport con z-index:-1 (atrás del
+    // body bg, invisible al user) sólo durante la captura.
+    const cs = window.getComputedStyle(node)
+    const isOffscreen =
+      cs.position === 'fixed' &&
+      (parseFloat(cs.left || '0') < -2000 || parseFloat(cs.top || '0') < -2000)
+    const saved = {
+      left: node.style.left,
+      top: node.style.top,
+      zIndex: node.style.zIndex,
+      visibility: node.style.visibility,
+      docOverflowX: document.documentElement.style.overflowX,
+      bodyOverflowX: document.body.style.overflowX,
+    }
+    if (isOffscreen) {
+      node.style.left = '0px'
+      node.style.top = '0px'
+      node.style.zIndex = '-1'
+      document.documentElement.style.overflowX = 'hidden'
+      document.body.style.overflowX = 'hidden'
+      // Forzar layout/paint antes de capturar.
+      void node.offsetHeight
+      await new Promise((r) => requestAnimationFrame(() => r(null)))
+    }
     try {
       // Dynamic import so the ~70KB html-to-image bundle is only paid by users
       // who actually click "Compartir". Capture follows whatever theme the
@@ -92,6 +119,14 @@ export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareTe
       console.error('share comprobante failed', e)
       toast.error('No se pudo generar la imagen.')
     } finally {
+      if (isOffscreen) {
+        node.style.left = saved.left
+        node.style.top = saved.top
+        node.style.zIndex = saved.zIndex
+        node.style.visibility = saved.visibility
+        document.documentElement.style.overflowX = saved.docOverflowX
+        document.body.style.overflowX = saved.bodyOverflowX
+      }
       setPending(false)
     }
   }
