@@ -113,47 +113,47 @@ function SectionCard({ section, scale = 'normal' }: SectionCardProps) {
   return (
     <article
       className={`relative overflow-hidden rounded-2xl border border-border bg-card ${
-        isLarge ? 'p-7' : 'p-5'
+        isLarge ? 'p-8' : 'p-5'
       } shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] ${a.ring}`}
     >
       <header className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <div
-            className={`grid ${isLarge ? 'h-12 w-12' : 'h-8 w-8'} place-items-center rounded-lg ${a.icon}`}
+            className={`grid ${isLarge ? 'h-14 w-14' : 'h-8 w-8'} place-items-center rounded-lg ${a.icon}`}
           >
-            <Icon className={isLarge ? 'h-6 w-6' : 'h-4 w-4'} />
+            <Icon className={isLarge ? 'h-7 w-7' : 'h-4 w-4'} />
           </div>
           <h2
             className={`${
-              isLarge ? 'text-sm' : 'text-[11px]'
+              isLarge ? 'text-base' : 'text-[11px]'
             } font-mono font-semibold uppercase tracking-[0.18em] text-foreground`}
           >
             {section.label}
           </h2>
         </div>
         <span
-          className={`font-mono ${isLarge ? 'text-sm' : 'text-[11px]'} uppercase tracking-[0.14em] ${a.label}`}
+          className={`font-mono ${isLarge ? 'text-base' : 'text-[11px]'} uppercase tracking-[0.14em] ${a.label}`}
         >
           {section.subtotal} pts
         </span>
       </header>
 
-      <ul className={`${isLarge ? 'mt-5' : 'mt-4'} divide-y divide-border/70`}>
+      <ul className={`${isLarge ? 'mt-6' : 'mt-4'} divide-y divide-border/70`}>
         {section.items.map((it) => (
           <li
             key={it.name}
             className={`flex items-start justify-between gap-3 ${
-              isLarge ? 'py-3.5' : 'py-2.5'
+              isLarge ? 'py-4' : 'py-2.5'
             } first:pt-0 last:pb-0`}
           >
             <div className="min-w-0 flex-1">
-              <p className={`${isLarge ? 'text-xl' : 'text-sm'} font-medium leading-tight`}>
+              <p className={`${isLarge ? 'text-2xl' : 'text-sm'} font-medium leading-tight`}>
                 {it.name}
               </p>
               {it.hint && (
                 <p
                   className={`mt-1 ${
-                    isLarge ? 'text-sm' : 'text-[11px]'
+                    isLarge ? 'text-base' : 'text-[11px]'
                   } leading-snug text-muted-foreground`}
                 >
                   {it.hint}
@@ -162,7 +162,7 @@ function SectionCard({ section, scale = 'normal' }: SectionCardProps) {
             </div>
             <span
               className={`shrink-0 rounded-full border ${
-                isLarge ? 'px-3 py-1 text-base' : 'px-2 py-0.5 text-[11px]'
+                isLarge ? 'px-3.5 py-1.5 text-lg' : 'px-2 py-0.5 text-[11px]'
               } font-mono font-semibold tabular-nums ${a.chip}`}
             >
               {it.points}
@@ -242,7 +242,8 @@ export default function FaqPage() {
        * html-to-image necesita un elemento visible (no display:none) para
        * clonarlo, así que lo movemos a left:-20000px y el button lo trae
        * a (0,0) con z-index:-1 sólo durante la captura. Dimensions
-       * 900×1600 = 9:16 (story estándar IG/WhatsApp).
+       * 900×1900 ≈ 9:19 — vertical pero menos alargado que 9:21 y
+       * con espacio para tipografía grande legible en mobile.
        */}
       <div
         id="faq-share-card"
@@ -253,7 +254,7 @@ export default function FaqPage() {
           left: '-20000px',
           top: 0,
           width: '900px',
-          height: '1600px',
+          height: '1900px',
         }}
       >
         <div className="flex h-full w-full flex-col bg-background p-10">
