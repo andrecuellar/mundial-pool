@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Trophy, Users, Sparkles } from 'lucide-react'
 import { Wordmark } from '@/components/app-shell/wordmark'
+import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
 
 export const metadata: Metadata = {
   title: 'Qué se predice',
@@ -102,6 +103,7 @@ function accentClasses(accent: string) {
 export default function FaqPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-6 py-10 sm:px-8 sm:py-14">
+      <div id="faq-card">
       <header className="flex flex-col items-center gap-2 text-center">
         <Wordmark size="lg" />
         <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
@@ -183,8 +185,8 @@ export default function FaqPage() {
           Cómo se juega
         </p>
         <p className="mt-3 text-sm leading-relaxed text-foreground/90">
-          Cada grupo arma su propio pozo en la moneda y monto que quiera. Las predicciones se cierran
-          antes del partido inaugural. Después del Mundial, el que más puntos hizo se lleva todo.
+          Las predicciones se cierran antes del partido inaugural. Después del Mundial, el que más
+          puntos hizo se lleva todo.
         </p>
       </section>
 
@@ -194,6 +196,16 @@ export default function FaqPage() {
         </p>
         <p className="text-lg font-semibold tracking-tight">mundial-pool.vercel.app</p>
       </footer>
+      </div>
+
+      <div className="mt-8 flex justify-center">
+        <ShareComprobanteButton
+          targetId="faq-card"
+          fileName="mundial-pool-faq"
+          shareTitle="mundial-pool · qué se predice"
+          shareText="El pool del Mundial 2026 entre amigos. mundial-pool.vercel.app"
+        />
+      </div>
     </main>
   )
 }
