@@ -100,111 +100,199 @@ function accentClasses(accent: string) {
   }
 }
 
+type SectionCardProps = {
+  section: Section
+  scale?: 'normal' | 'large'
+}
+
+function SectionCard({ section, scale = 'normal' }: SectionCardProps) {
+  const a = accentClasses(section.accent)
+  const Icon = section.icon
+  const isLarge = scale === 'large'
+
+  return (
+    <article
+      className={`relative overflow-hidden rounded-2xl border border-border bg-card ${
+        isLarge ? 'p-7' : 'p-5'
+      } shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] ${a.ring}`}
+    >
+      <header className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2.5">
+          <div
+            className={`grid ${isLarge ? 'h-10 w-10' : 'h-8 w-8'} place-items-center rounded-lg ${a.icon}`}
+          >
+            <Icon className={isLarge ? 'h-5 w-5' : 'h-4 w-4'} />
+          </div>
+          <h2
+            className={`${
+              isLarge ? 'text-xs' : 'text-[11px]'
+            } font-mono font-semibold uppercase tracking-[0.18em] text-foreground`}
+          >
+            {section.label}
+          </h2>
+        </div>
+        <span
+          className={`font-mono ${isLarge ? 'text-xs' : 'text-[11px]'} uppercase tracking-[0.14em] ${a.label}`}
+        >
+          {section.subtotal} pts
+        </span>
+      </header>
+
+      <ul className={`${isLarge ? 'mt-5' : 'mt-4'} divide-y divide-border/70`}>
+        {section.items.map((it) => (
+          <li
+            key={it.name}
+            className={`flex items-start justify-between gap-3 ${
+              isLarge ? 'py-3' : 'py-2.5'
+            } first:pt-0 last:pb-0`}
+          >
+            <div className="min-w-0 flex-1">
+              <p className={`${isLarge ? 'text-base' : 'text-sm'} font-medium leading-tight`}>
+                {it.name}
+              </p>
+              {it.hint && (
+                <p
+                  className={`mt-0.5 ${
+                    isLarge ? 'text-xs' : 'text-[11px]'
+                  } leading-snug text-muted-foreground`}
+                >
+                  {it.hint}
+                </p>
+              )}
+            </div>
+            <span
+              className={`shrink-0 rounded-full border ${
+                isLarge ? 'px-2.5 py-1 text-xs' : 'px-2 py-0.5 text-[11px]'
+              } font-mono font-semibold tabular-nums ${a.chip}`}
+            >
+              {it.points}
+            </span>
+          </li>
+        ))}
+      </ul>
+    </article>
+  )
+}
+
 export default function FaqPage() {
   return (
     <main className="mx-auto w-full max-w-md flex-1 px-6 py-10 sm:px-8 sm:py-14 md:max-w-5xl md:py-16 lg:py-20">
       <div id="faq-card">
-      <header className="flex flex-col items-center gap-2 text-center">
-        <Wordmark size="lg" />
-        <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
-          El pool del Mundial 2026
-        </p>
-      </header>
+        <header className="flex flex-col items-center gap-2 text-center">
+          <Wordmark size="lg" />
+          <p className="text-[11px] font-mono uppercase tracking-[0.22em] text-muted-foreground">
+            El pool del Mundial 2026
+          </p>
+        </header>
 
-      <section className="mt-10 text-center md:mt-12">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight leading-[1.1] sm:text-4xl md:text-5xl">
-          Qué se predice
-        </h1>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground md:max-w-md md:text-base">
-          14 predicciones por jugador. El que más acierta se lleva todo el pozo del grupo.
-        </p>
+        <section className="mt-10 text-center md:mt-12">
+          <h1 className="text-balance text-3xl font-semibold tracking-tight leading-[1.1] sm:text-4xl md:text-5xl">
+            Qué se predice
+          </h1>
+          <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground md:max-w-md md:text-base">
+            14 predicciones por jugador. El que más acierta se lleva todo el pozo del grupo.
+          </p>
 
-        <div className="mt-6 inline-flex items-baseline gap-1.5 rounded-full border border-border bg-card px-4 py-1.5">
-          <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            hasta
-          </span>
-          <span className="text-base font-semibold tabular-nums">{TOTAL_MAX}</span>
-          <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
-            puntos
-          </span>
+          <div className="mt-6 inline-flex items-baseline gap-1.5 rounded-full border border-border bg-card px-4 py-1.5">
+            <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              hasta
+            </span>
+            <span className="text-base font-semibold tabular-nums">{TOTAL_MAX}</span>
+            <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+              puntos
+            </span>
+          </div>
+        </section>
+
+        <div className="mt-8 space-y-5 md:mt-12 md:grid md:grid-cols-3 md:gap-5 md:space-y-0">
+          {SECTIONS.map((sec) => (
+            <SectionCard key={sec.id} section={sec} />
+          ))}
         </div>
-      </section>
 
-      <div className="mt-8 space-y-5 md:mt-12 md:grid md:grid-cols-3 md:gap-5 md:space-y-0">
-        {SECTIONS.map((sec) => {
-          const a = accentClasses(sec.accent)
-          const Icon = sec.icon
-          return (
-            <article
-              key={sec.id}
-              className={`relative overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-[0_1px_0_0_rgba(255,255,255,0.04)_inset] ${a.ring}`}
-            >
-              <header className="flex items-center justify-between gap-3">
-                <div className="flex items-center gap-2.5">
-                  <div className={`grid h-8 w-8 place-items-center rounded-lg ${a.icon}`}>
-                    <Icon className="h-4 w-4" />
-                  </div>
-                  <h2 className="text-[11px] font-mono font-semibold uppercase tracking-[0.18em] text-foreground">
-                    {sec.label}
-                  </h2>
-                </div>
-                <span className={`font-mono text-[11px] uppercase tracking-[0.14em] ${a.label}`}>
-                  {sec.subtotal} pts
-                </span>
-              </header>
+        <section className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-card/60 p-5 text-center md:mt-10 md:p-6">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Cómo se juega
+          </p>
+          <p className="mt-3 text-sm leading-relaxed text-foreground/90">
+            Las predicciones se cierran antes del partido inaugural. Después del Mundial, el que más
+            puntos hizo se lleva todo.
+          </p>
+        </section>
 
-              <ul className="mt-4 divide-y divide-border/70">
-                {sec.items.map((it) => (
-                  <li
-                    key={it.name}
-                    className="flex items-start justify-between gap-3 py-2.5 first:pt-0 last:pb-0"
-                  >
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-medium leading-tight">{it.name}</p>
-                      {it.hint && (
-                        <p className="mt-0.5 text-[11px] leading-snug text-muted-foreground">
-                          {it.hint}
-                        </p>
-                      )}
-                    </div>
-                    <span
-                      className={`shrink-0 rounded-full border px-2 py-0.5 font-mono text-[11px] font-semibold tabular-nums ${a.chip}`}
-                    >
-                      {it.points}
-                    </span>
-                  </li>
-                ))}
-              </ul>
-            </article>
-          )
-        })}
-      </div>
-
-      <section className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-card/60 p-5 text-center md:mt-10 md:p-6">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Cómo se juega
-        </p>
-        <p className="mt-3 text-sm leading-relaxed text-foreground/90">
-          Las predicciones se cierran antes del partido inaugural. Después del Mundial, el que más
-          puntos hizo se lleva todo.
-        </p>
-      </section>
-
-      <footer className="mt-10 flex flex-col items-center gap-1 text-center">
-        <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
-          Entra a
-        </p>
-        <p className="text-lg font-semibold tracking-tight">mundial-pool.vercel.app</p>
-      </footer>
+        <footer className="mt-10 flex flex-col items-center gap-1 text-center">
+          <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
+            Entra a
+          </p>
+          <p className="text-lg font-semibold tracking-tight">mundial-pool.vercel.app</p>
+        </footer>
       </div>
 
       <div className="mt-8 flex justify-center">
         <ShareComprobanteButton
-          targetId="faq-card"
+          targetId="faq-share-card"
           fileName="mundial-pool-faq"
           shareTitle="mundial-pool · qué se predice"
           shareText="El pool del Mundial 2026 entre amigos. mundial-pool.vercel.app"
         />
+      </div>
+
+      {/*
+       * 21:9 horizontal share canvas — siempre montado pero off-screen.
+       * html-to-image necesita un elemento visible (no display:none) para
+       * clonarlo, así que lo movemos a left:-20000px. El botón Compartir
+       * captura este nodo en lugar del visible para que el flyer salga
+       * en proporción 2100×900 (21:9) en mobile o desktop.
+       */}
+      <div
+        id="faq-share-card"
+        aria-hidden="true"
+        className="pointer-events-none"
+        style={{
+          position: 'fixed',
+          left: '-20000px',
+          top: 0,
+          width: '2100px',
+          height: '900px',
+        }}
+      >
+        <div className="flex h-full w-full flex-col bg-background p-12">
+          <header className="flex items-start justify-between gap-6">
+            <div className="flex flex-col gap-1">
+              <Wordmark size="lg" />
+              <p className="font-mono text-xs uppercase tracking-[0.22em] text-muted-foreground">
+                El pool del Mundial 2026
+              </p>
+            </div>
+            <div className="flex flex-col items-end gap-1.5">
+              <h2 className="text-3xl font-semibold tracking-tight leading-none">
+                Qué se predice
+              </h2>
+              <div className="inline-flex items-baseline gap-1.5 rounded-full border border-border bg-card px-4 py-1.5">
+                <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  hasta
+                </span>
+                <span className="text-base font-semibold tabular-nums">{TOTAL_MAX}</span>
+                <span className="font-mono text-xs uppercase tracking-[0.16em] text-muted-foreground">
+                  puntos
+                </span>
+              </div>
+            </div>
+          </header>
+
+          <div className="mt-6 grid flex-1 grid-cols-3 gap-6">
+            {SECTIONS.map((sec) => (
+              <SectionCard key={sec.id} section={sec} scale="large" />
+            ))}
+          </div>
+
+          <footer className="mt-6 flex items-center justify-between gap-3">
+            <p className="font-mono text-xs uppercase tracking-[0.18em] text-muted-foreground">
+              Las predicciones se cierran antes del partido inaugural · gana el que más acierta
+            </p>
+            <p className="text-xl font-semibold tracking-tight">mundial-pool.vercel.app</p>
+          </footer>
+        </div>
       </div>
     </main>
   )
