@@ -102,7 +102,7 @@ function accentClasses(accent: string) {
 
 export default function FaqPage() {
   return (
-    <main className="mx-auto w-full max-w-md flex-1 px-6 py-10 sm:px-8 sm:py-14">
+    <main className="mx-auto w-full max-w-md flex-1 px-6 py-10 sm:px-8 sm:py-14 md:max-w-5xl md:py-16 lg:py-20">
       <div id="faq-card">
       <header className="flex flex-col items-center gap-2 text-center">
         <Wordmark size="lg" />
@@ -111,11 +111,11 @@ export default function FaqPage() {
         </p>
       </header>
 
-      <section className="mt-10 text-center">
-        <h1 className="text-balance text-3xl font-semibold tracking-tight leading-[1.1] sm:text-4xl">
+      <section className="mt-10 text-center md:mt-12">
+        <h1 className="text-balance text-3xl font-semibold tracking-tight leading-[1.1] sm:text-4xl md:text-5xl">
           Qué se predice
         </h1>
-        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground">
+        <p className="mx-auto mt-3 max-w-xs text-sm leading-relaxed text-muted-foreground md:max-w-md md:text-base">
           14 predicciones por jugador. El que más acierta se lleva todo el pozo del grupo.
         </p>
 
@@ -130,7 +130,7 @@ export default function FaqPage() {
         </div>
       </section>
 
-      <div className="mt-8 space-y-5">
+      <div className="mt-8 space-y-5 md:mt-12 md:grid md:grid-cols-3 md:gap-5 md:space-y-0">
         {SECTIONS.map((sec) => {
           const a = accentClasses(sec.accent)
           const Icon = sec.icon
@@ -180,7 +180,7 @@ export default function FaqPage() {
         })}
       </div>
 
-      <section className="mt-8 rounded-2xl border border-border bg-card/60 p-5 text-center">
+      <section className="mx-auto mt-8 max-w-xl rounded-2xl border border-border bg-card/60 p-5 text-center md:mt-10 md:p-6">
         <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-muted-foreground">
           Cómo se juega
         </p>
