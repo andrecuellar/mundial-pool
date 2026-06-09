@@ -14,6 +14,7 @@ export const dynamic = 'force-dynamic'
 export const metadata: Metadata = {
   title: 'Inicia sesión',
   description: 'Entra a mundial-pool para crear o unirte a un pool del Mundial 2026.',
+  alternates: { canonical: '/' },
 }
 
 function daysUntilOpener(): number {
