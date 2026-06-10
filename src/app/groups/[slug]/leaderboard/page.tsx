@@ -7,7 +7,7 @@ import { LeaderboardTabs } from '@/components/leaderboard/leaderboard-tabs'
 import { PoolBand } from '@/components/pool/pool-band'
 import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
-import { getPoolContributorIds, getPoolSummary } from '@/features/pool/queries'
+import { getPoolContributorPaidAt, getPoolSummary } from '@/features/pool/queries'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
 import { getLeaderboard } from '@/features/scoring/queries'
 import { formatTimeOnly } from '@/lib/format'
@@ -44,7 +44,7 @@ export default async function LeaderboardPage({ params }: Params) {
   })
   if (!membership) notFound()
 
-  const [leaderboard, catsRaw, pool, paidUserIds] = await Promise.all([
+  const [leaderboard, catsRaw, pool, paidAt] = await Promise.all([
     getLeaderboard(group.id),
     db
       .select({
@@ -57,7 +57,7 @@ export default async function LeaderboardPage({ params }: Params) {
       .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
       .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
     getPoolSummary(group.id),
-    getPoolContributorIds(group.id),
+    getPoolContributorPaidAt(group.id),
   ])
   const cats = sortByCategoryOrder(catsRaw)
 
@@ -98,7 +98,7 @@ export default async function LeaderboardPage({ params }: Params) {
             categories={cats}
             currentUserId={user.id}
             poolEnabled={pool.enabled}
-            paidUserIds={Array.from(paidUserIds)}
+            paidAt={paidAt}
             lockAt={group.predictionsLockAt.toISOString()}
             groupSlug={slug}
             groupName={group.name}

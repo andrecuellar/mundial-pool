@@ -6,6 +6,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import type { LeaderboardRow } from '@/features/scoring/queries'
 import { formatDayShort } from '@/lib/format'
 import { CategoryBreakdownTable } from './category-breakdown-table'
+import type { PaidAt } from './ranking-table'
 import { RankingTable } from './ranking-table'
 
 type Category = { id: string; name: string; key: string; points: number }
@@ -15,7 +16,7 @@ type Props = {
   categories: Category[]
   currentUserId: string
   poolEnabled: boolean
-  paidUserIds: string[]
+  paidAt: PaidAt[]
   lockAt: string
   groupSlug: string
   groupName: string
@@ -27,7 +28,7 @@ export function LeaderboardTabs({
   categories,
   currentUserId,
   poolEnabled,
-  paidUserIds,
+  paidAt,
   lockAt,
   groupSlug,
   groupName,
@@ -58,7 +59,7 @@ export function LeaderboardTabs({
               rows={leaderboard}
               currentUserId={currentUserId}
               poolEnabled={poolEnabled}
-              paidUserIds={paidUserIds}
+              paidAt={paidAt}
               lockAt={lockAt}
               groupSlug={groupSlug}
               isAdmin={isAdmin}

@@ -90,10 +90,7 @@ export async function listPoolTransactions(
 ): Promise<PoolTransactionRow[]> {
   const limit = opts.limit ?? POOL_LEDGER_PAGE_SIZE
   const whereClause = opts.before
-    ? and(
-        eq(poolTransactions.groupId, groupId),
-        lt(poolTransactions.createdAt, opts.before),
-      )
+    ? and(eq(poolTransactions.groupId, groupId), lt(poolTransactions.createdAt, opts.before))
     : eq(poolTransactions.groupId, groupId)
 
   const rows = await db
@@ -136,6 +133,29 @@ export async function getPoolContributorIds(groupId: string): Promise<Set<string
     )
   const out = new Set<string>()
   for (const r of rows) if (r.userId) out.add(r.userId)
+  return out
+}
+
+// userId → fecha del primer aporte. Lo usa la tabla de líderes para mostrar
+// "Pagó tarde" (rojo) cuando el primer pago fue posterior al cierre del grupo.
+export type PaidEntry = { userId: string; paidAt: string }
+export async function getPoolContributorPaidAt(groupId: string): Promise<PaidEntry[]> {
+  const rows = await db
+    .select({
+      userId: poolTransactions.contributorUserId,
+      firstAt: sql<string>`MIN(${poolTransactions.createdAt})`,
+    })
+    .from(poolTransactions)
+    .where(
+      and(eq(poolTransactions.groupId, groupId), isNotNull(poolTransactions.contributorUserId)),
+    )
+    .groupBy(poolTransactions.contributorUserId)
+  const out: PaidEntry[] = []
+  for (const r of rows) {
+    if (r.userId && r.firstAt) {
+      out.push({ userId: r.userId, paidAt: new Date(r.firstAt).toISOString() })
+    }
+  }
   return out
 }
 
