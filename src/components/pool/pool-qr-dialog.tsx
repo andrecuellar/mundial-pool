@@ -1,7 +1,7 @@
 'use client'
 
-import { QrCode } from 'lucide-react'
-import { useState } from 'react'
+import { Maximize2, QrCode, X } from 'lucide-react'
+import { useEffect, useState } from 'react'
 import { PoolDisclaimer } from '@/components/legal/pool-disclaimer'
 import { QrImage } from '@/components/pool/qr-image'
 import { Button } from '@/components/ui/button'
@@ -32,7 +32,9 @@ export function PoolQrDialog({
   creatorEmail,
 }: Props) {
   const [open, setOpen] = useState(false)
+  const [fullscreen, setFullscreen] = useState(false)
   useDialogBackButton(open, setOpen)
+  useDialogBackButton(fullscreen, setFullscreen)
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
@@ -84,9 +86,57 @@ export function PoolQrDialog({
               registre tu depósito.
             </p>
             <QrImage src={qrUrl} alt="QR de depósito" />
+            <Button
+              variant="secondary"
+              size="sm"
+              type="button"
+              onClick={() => setFullscreen(true)}
+              className="w-full"
+            >
+              <Maximize2 className="h-3.5 w-3.5" />
+              Pantalla completa
+            </Button>
           </div>
         </div>
       </DialogContent>
+
+      {fullscreen && <FullscreenQrOverlay src={qrUrl} onClose={() => setFullscreen(false)} />}
     </Dialog>
+  )
+}
+
+function FullscreenQrOverlay({ src, onClose }: { src: string; onClose: () => void }) {
+  useEffect(() => {
+    const prev = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+    return () => {
+      document.body.style.overflow = prev
+    }
+  }, [])
+
+  return (
+    <div
+      role="dialog"
+      aria-modal="true"
+      aria-label="QR ampliado"
+      className="fixed inset-0 z-[100] grid place-items-center bg-black p-4 sm:p-8"
+      onClick={onClose}
+    >
+      {/* biome-ignore lint/performance/noImgElement: external QR (Supabase storage URL) */}
+      <img
+        src={src}
+        alt="QR de depósito ampliado"
+        className="max-h-full max-w-full object-contain"
+        onClick={(e) => e.stopPropagation()}
+      />
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Cerrar"
+        className="absolute top-4 right-4 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white backdrop-blur transition hover:bg-white/20"
+      >
+        <X className="h-5 w-5" />
+      </button>
+    </div>
   )
 }
