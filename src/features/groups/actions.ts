@@ -135,9 +135,7 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
     where: eq(profiles.id, userId),
     columns: { canCreateGroups: true, email: true },
   })
-  const creatorIsAdmin = creatorProfile?.email
-    ? isSuperAdminEmail(creatorProfile.email)
-    : false
+  const creatorIsAdmin = creatorProfile?.email ? isSuperAdminEmail(creatorProfile.email) : false
   if (!creatorIsAdmin && !creatorProfile?.canCreateGroups) {
     return {
       ok: false,
@@ -251,6 +249,9 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
   })
   if (!group) {
     return { ok: false, error: 'No encontramos un grupo con ese código.' }
+  }
+  if (new Date() >= group.predictionsLockAt) {
+    return { ok: false, error: 'Este grupo ya cerró sus predicciones — no se pueden unir nuevos miembros.' }
   }
 
   const inserted = await db

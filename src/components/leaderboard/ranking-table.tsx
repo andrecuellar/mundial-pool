@@ -1,10 +1,12 @@
-import { AlertTriangle, CheckCircle2, Wallet } from 'lucide-react'
+import { AlertTriangle, CheckCircle2, Wallet, XCircle } from 'lucide-react'
 import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import type { LeaderboardRow } from '@/features/scoring/queries'
 import { formatDayShort } from '@/lib/format'
+
+export type PaidAt = { userId: string; paidAt: string }
 
 type RankInfo = { rank: number; tied: boolean }
 
@@ -62,7 +64,7 @@ type Props = {
   rows: LeaderboardRow[]
   currentUserId: string
   poolEnabled: boolean
-  paidUserIds: string[]
+  paidAt: PaidAt[]
   lockAt: string
   groupSlug: string
   isAdmin: boolean
@@ -72,15 +74,15 @@ export function RankingTable({
   rows,
   currentUserId,
   poolEnabled,
-  paidUserIds,
+  paidAt,
   lockAt,
   groupSlug,
   isAdmin,
 }: Props) {
   const hasScores = rows.some((r) => r.totalPoints > 0)
   const ranks = competitionRanks(rows)
-  const paidSet = new Set(paidUserIds)
-  const paidCount = poolEnabled ? rows.filter((r) => paidSet.has(r.userId)).length : 0
+  const paidAtByUser = new Map(paidAt.map((p) => [p.userId, new Date(p.paidAt)]))
+  const paidCount = poolEnabled ? rows.filter((r) => paidAtByUser.has(r.userId)).length : 0
   const pendingCount = poolEnabled ? rows.length - paidCount : 0
   const lockDate = new Date(lockAt)
   const locked = Date.now() >= lockDate.getTime()
@@ -112,7 +114,9 @@ export function RankingTable({
         {rows.map((r, i) => {
           const info = ranks[i]
           const isMe = r.userId === currentUserId
-          const hasPaid = paidSet.has(r.userId)
+          const paidWhen = paidAtByUser.get(r.userId) ?? null
+          const hasPaid = paidWhen !== null
+          const paidLate = hasPaid && paidWhen > lockDate
           return (
             <div
               key={r.userId}
@@ -141,12 +145,32 @@ export function RankingTable({
                     )}
                     {poolEnabled &&
                       (hasPaid ? (
+                        paidLate ? (
+                          <Badge
+                            variant="secondary"
+                            className="border-destructive/40 bg-destructive/10 text-destructive gap-1"
+                            title={`Pago registrado ${formatDayShort(paidWhen)}, después del cierre del ${formatDayShort(lockDate)}`}
+                          >
+                            <AlertTriangle className="h-3 w-3" />
+                            Pagó tarde
+                          </Badge>
+                        ) : (
+                          <Badge
+                            variant="secondary"
+                            className="border-accent/30 bg-accent/10 text-accent gap-1"
+                          >
+                            <CheckCircle2 className="h-3 w-3" />
+                            Aportó
+                          </Badge>
+                        )
+                      ) : locked ? (
                         <Badge
                           variant="secondary"
-                          className="border-accent/30 bg-accent/10 text-accent gap-1"
+                          className="border-destructive/40 bg-destructive/10 text-destructive gap-1"
+                          title="No aportó al pozo antes del cierre del grupo"
                         >
-                          <CheckCircle2 className="h-3 w-3" />
-                          Aportó
+                          <XCircle className="h-3 w-3" />
+                          No pagó
                         </Badge>
                       ) : (
                         <Link
@@ -188,10 +212,11 @@ export function RankingTable({
             <span className="font-medium text-foreground">
               Aviso para los {pendingCount} pendientes:
             </span>{' '}
-            quienes no aporten al pozo antes del cierre del{' '}
-            <span className="font-medium text-foreground">{formatDayShort(lockDate)}</span> serán
-            eliminados de la tabla por el administrador del grupo y quedarán fuera del reparto del
-            premio.
+            después del cierre del{' '}
+            <span className="font-medium text-foreground">{formatDayShort(lockDate)}</span> quienes
+            no hayan aportado quedan marcados como{' '}
+            <span className="font-medium text-destructive">No pagó</span> en la tabla y fuera del
+            reparto del premio.
           </p>
         </div>
       )}
