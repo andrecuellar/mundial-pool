@@ -10,29 +10,30 @@ config({ path: '.env' })
 const databaseUrl = process.env.DATABASE_URL
 if (!databaseUrl) throw new Error('DATABASE_URL is required')
 
-// FIFA Men's World Ranking — April 1, 2026 snapshot.
-// Source for top 50: ESPN / Wikipedia summary of the official FIFA release.
+// FIFA Men's World Ranking — June 11, 2026 snapshot (último publicado antes
+// del arranque del Mundial 2026).
+// Source for top 50: official FIFA release on inside.fifa.com + cross-checked
+// against the football-ranking.com live tracker.
 // Source for the 11 sub-50 teams below: per-team web lookups against the
-// same April 1, 2026 publication.
-// Next FIFA update: June 9, 2026 (2 days before the World Cup opening match).
+// same June 11, 2026 publication.
 const RANKING: Record<string, number> = {
-  FRA: 1,
+  ARG: 1,
   ESP: 2,
-  ARG: 3,
+  FRA: 3,
   ENG: 4,
   POR: 5,
   BRA: 6,
-  NED: 7,
-  MAR: 8,
+  MAR: 7,
+  NED: 8,
   BEL: 9,
   GER: 10,
   CRO: 11,
   // 12. Italy — did not qualify
   COL: 13,
-  SEN: 14,
-  MEX: 15,
-  USA: 16,
-  URU: 17,
+  MEX: 14,
+  SEN: 15,
+  URU: 16,
+  USA: 17,
   JPN: 18,
   SUI: 19,
   // 20. Denmark — did not qualify
@@ -48,34 +49,34 @@ const RANKING: Record<string, number> = {
   CAN: 30,
   NOR: 31,
   // 32. Ukraine — did not qualify
-  PAN: 33,
-  CIV: 34,
-  // 35. Poland — did not qualify
-  // 36. Russia — banned
+  CIV: 33,
+  PAN: 34,
+  // 35. Russia — banned
+  // 36. Poland — did not qualify
   // 37. Wales — did not qualify
   SWE: 38,
-  // 39. Serbia — did not qualify
+  CZE: 39,
   PAR: 40,
-  CZE: 41,
-  // 42. Hungary — did not qualify
-  SCO: 43,
-  TUN: 44,
-  // 45. Cameroon — did not qualify
-  COD: 46,
-  // 47. Greece — did not qualify
-  // 48. Slovakia — did not qualify
+  // 41. Hungary — did not qualify
+  SCO: 42,
+  // 43. Serbia — did not qualify
+  // 44. Cameroon — did not qualify
+  COD: 45,
+  TUN: 46,
+  // 47. Slovakia — did not qualify
+  // 48. Greece — did not qualify
   // 49. Venezuela — did not qualify
   UZB: 50,
 
   // Sub-50 qualifiers (positions 51+).
-  QAT: 55,
-  IRQ: 57,
+  IRQ: 56,
+  QAT: 57,
   RSA: 60,
   KSA: 61,
   JOR: 63,
-  BIH: 65,
-  CPV: 69,
-  GHA: 74,
+  BIH: 64,
+  CPV: 67,
+  GHA: 73,
   CUW: 82,
   HAI: 83,
   NZL: 85,

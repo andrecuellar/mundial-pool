@@ -50,6 +50,13 @@ function rankingLabel(r: number | null | undefined): string {
   return `#${r}`
 }
 
+// Extra search terms folded into a team's cmdk `value` so the user can find
+// them by a common nickname or alternate name. "Holanda" is the colloquial
+// name many people still use for Países Bajos / Netherlands.
+const SEARCH_ALIASES: Record<string, string> = {
+  'Países Bajos': 'Holanda',
+}
+
 export function TeamComboBox({
   teams,
   value,
@@ -116,7 +123,7 @@ export function TeamComboBox({
               {sortedTeams.map((t) => (
                 <CommandItem
                   key={t.id}
-                  value={`${t.name} ${t.fifaCode ?? ''}`}
+                  value={`${t.name} ${t.fifaCode ?? ''} ${SEARCH_ALIASES[t.name] ?? ''}`}
                   onSelect={() => {
                     onChange(t.id === value ? null : t.id)
                     setOpen(false)

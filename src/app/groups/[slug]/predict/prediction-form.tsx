@@ -342,8 +342,8 @@ export function PredictionForm({ groupSlug, categories, teams, players, locked }
     const internal = new Map<string, number>()
     ascending.forEach((t, i) => internal.set(t.id, i + 1))
     return {
-      topFavoriteIds: new Set(ascending.slice(0, 5).map((t) => t.id)),
-      bottomFavoriteIds: new Set(ascending.slice(-5).map((t) => t.id)),
+      topFavoriteIds: new Set(ascending.slice(0, 10).map((t) => t.id)),
+      bottomFavoriteIds: new Set(ascending.slice(-10).map((t) => t.id)),
       internalRanks: internal,
     }
   }, [teams])
