@@ -126,7 +126,7 @@ function FullscreenQrOverlay({ src, onClose }: { src: string; onClose: () => voi
       <img
         src={src}
         alt="QR de depósito ampliado"
-        className="max-h-full max-w-full object-contain"
+        className="max-h-[85vh] max-w-[85vw] object-contain"
         onClick={(e) => e.stopPropagation()}
       />
       <button
