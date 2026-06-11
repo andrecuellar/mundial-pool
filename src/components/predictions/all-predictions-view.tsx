@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ReactionBar } from '@/components/predictions/reaction-bar'
 import { renderPick } from '@/components/predictions/render-pick'
+import { ShareCardIconButton } from '@/components/predictions/share-card-icon-button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -50,6 +51,9 @@ type Props = {
   currentUserId: string
   /** When true and reactions are wired in `view`, shows the reaction bar. */
   enableReactions?: boolean
+  /** Group name + slug — used to build the share-as-image filename and copy. */
+  groupName: string
+  groupSlug: string
 }
 
 function normalize(s: string): string {
@@ -60,7 +64,24 @@ function normalize(s: string): string {
     .trim()
 }
 
-export function AllPredictionsView({ view, currentUserId, enableReactions = false }: Props) {
+function slugifyName(name: string): string {
+  return (
+    name
+      .toLowerCase()
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'jugador'
+  )
+}
+
+export function AllPredictionsView({
+  view,
+  currentUserId,
+  enableReactions = false,
+  groupName,
+  groupSlug,
+}: Props) {
   const { members, categories } = view
   const [query, setQuery] = useState('')
   const [categoryKey, setCategoryKey] = useState<string>('all')
@@ -170,9 +191,12 @@ export function AllPredictionsView({ view, currentUserId, enableReactions = fals
         filteredMembers.map((m) => {
           const isMe = m.userId === currentUserId
           const memberPicks = view.picksByMemberCategory[m.userId] ?? {}
+          const cardId = `member-share-${m.userId}`
+          const nameSlug = slugifyName(m.displayName)
           return (
             <Card
               key={m.userId}
+              id={cardId}
               className={`overflow-hidden p-0 ${isMe ? 'border-primary/40' : ''}`}
             >
               <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-5 py-3">
@@ -180,7 +204,7 @@ export function AllPredictionsView({ view, currentUserId, enableReactions = fals
                   {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
                   <AvatarFallback className="text-xs">{initials(m.displayName)}</AvatarFallback>
                 </Avatar>
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 flex-1 items-center gap-2">
                   <span className="truncate text-sm font-semibold">{m.displayName}</span>
                   {isMe && (
                     <Badge
@@ -191,6 +215,13 @@ export function AllPredictionsView({ view, currentUserId, enableReactions = fals
                     </Badge>
                   )}
                 </div>
+                <ShareCardIconButton
+                  targetId={cardId}
+                  fileName={`mundial-pool-${groupSlug}-${nameSlug}`}
+                  shareTitle={`Apuestas de ${m.displayName} · ${groupName}`}
+                  shareText={`Mira la apuesta de ${m.displayName} en ${groupName} para el Mundial 2026 en mundial•pool.`}
+                  ariaLabel={`Compartir apuesta de ${m.displayName} como imagen`}
+                />
               </div>
               <ul className="divide-y divide-border">
                 {categories.map((cat) => (
@@ -205,6 +236,9 @@ export function AllPredictionsView({ view, currentUserId, enableReactions = fals
                   </li>
                 ))}
               </ul>
+              <div className="border-t border-border bg-muted/20 px-5 py-2 text-center text-[11px] text-muted-foreground">
+                mundial•pool · {groupName} · Mundial 2026
+              </div>
             </Card>
           )
         })
