@@ -121,7 +121,12 @@ export default async function AdminGroupDetailPage({ params }: Params) {
           {predictionsView.members.length === 0 ? (
             <AdminDataTable empty emptyText="Aún no hay miembros con predicciones." />
           ) : (
-            <AllPredictionsView view={predictionsView} currentUserId="" />
+            <AllPredictionsView
+              view={predictionsView}
+              currentUserId=""
+              groupName={detail.group.name}
+              groupSlug={detail.group.slug}
+            />
           )}
         </TabsContent>
 

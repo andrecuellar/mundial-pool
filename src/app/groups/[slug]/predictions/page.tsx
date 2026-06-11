@@ -82,7 +82,13 @@ export default async function PredictionsPage({ params }: Params) {
 
         {locked && viewWithReactions ? (
           <div className="mt-6">
-            <AllPredictionsView view={viewWithReactions} currentUserId={user.id} enableReactions />
+            <AllPredictionsView
+              view={viewWithReactions}
+              currentUserId={user.id}
+              enableReactions
+              groupName={group.name}
+              groupSlug={slug}
+            />
           </div>
         ) : (
           <Card className="mt-6 p-8 sm:p-10 text-center">
