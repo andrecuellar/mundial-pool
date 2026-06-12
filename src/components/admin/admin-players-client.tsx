@@ -255,7 +255,8 @@ function AddPlayerForm({ teams }: { teams: AdminTeamRow[] }) {
         Agregar jugador
       </p>
       <p className="mt-1 text-xs text-muted-foreground">
-        Para jugadores que aún no aparecen porque no metieron gol (típicamente: asistentes).
+        Para jugadores que ESPN no detecta. El cron diario es la fuente principal; esto es para
+        casos excepcionales.
       </p>
       <div className="mt-4 grid gap-3 sm:grid-cols-[2fr_2fr_1fr_1fr_auto]">
         <div className="space-y-1.5">
