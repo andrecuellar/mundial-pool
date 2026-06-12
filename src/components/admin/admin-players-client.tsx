@@ -1,7 +1,7 @@
 'use client'
 
-import { Check, Plus, Trash2 } from 'lucide-react'
-import { useState, useTransition } from 'react'
+import { Check, ChevronLeft, ChevronRight, Plus, Search, Trash2, X } from 'lucide-react'
+import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
 import { AdminDataTable } from '@/components/admin/data-table'
 import { Button } from '@/components/ui/button'
@@ -29,6 +29,16 @@ import {
   updatePlayerGoals,
 } from '@/features/admin/player-actions'
 
+const PAGE_SIZE = 25
+const ALL_TEAMS = '__all__'
+
+function normalize(s: string): string {
+  return s
+    .toLowerCase()
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+}
+
 export type AdminPlayerRow = {
   id: string
   externalId: string | null
@@ -53,10 +63,156 @@ type Props = {
 }
 
 export function AdminPlayersClient({ players, teams }: Props) {
+  const [search, setSearch] = useState('')
+  const [teamFilter, setTeamFilter] = useState<string>(ALL_TEAMS)
+  const [page, setPage] = useState(1)
+
+  const filtered = useMemo(() => {
+    const q = normalize(search.trim())
+    return players.filter((p) => {
+      if (teamFilter !== ALL_TEAMS && p.teamId !== teamFilter) return false
+      if (q && !normalize(p.fullName).includes(q)) return false
+      return true
+    })
+  }, [players, search, teamFilter])
+
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE))
+  const safePage = Math.min(page, totalPages)
+  const pageStart = (safePage - 1) * PAGE_SIZE
+  const pageRows = filtered.slice(pageStart, pageStart + PAGE_SIZE)
+
+  function resetPageAnd<T>(setter: (v: T) => void) {
+    return (v: T) => {
+      setter(v)
+      setPage(1)
+    }
+  }
+
   return (
     <div className="space-y-6">
       <AddPlayerForm teams={teams} />
-      <PlayersTable players={players} />
+      <FiltersBar
+        teams={teams}
+        search={search}
+        onSearchChange={resetPageAnd(setSearch)}
+        teamFilter={teamFilter}
+        onTeamFilterChange={resetPageAnd(setTeamFilter)}
+        filteredCount={filtered.length}
+        totalCount={players.length}
+      />
+      <PlayersTable players={pageRows} />
+      {filtered.length > PAGE_SIZE && (
+        <Pagination page={safePage} totalPages={totalPages} onPageChange={setPage} />
+      )}
+    </div>
+  )
+}
+
+function FiltersBar({
+  teams,
+  search,
+  onSearchChange,
+  teamFilter,
+  onTeamFilterChange,
+  filteredCount,
+  totalCount,
+}: {
+  teams: AdminTeamRow[]
+  search: string
+  onSearchChange: (v: string) => void
+  teamFilter: string
+  onTeamFilterChange: (v: string) => void
+  filteredCount: number
+  totalCount: number
+}) {
+  const isFiltered = filteredCount !== totalCount
+  return (
+    <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+      <div className="flex-1 space-y-1.5">
+        <Label htmlFor="players-search" className="text-xs">
+          Buscar
+        </Label>
+        <div className="relative">
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            id="players-search"
+            value={search}
+            onChange={(e) => onSearchChange(e.target.value)}
+            placeholder="Nombre del jugador"
+            className="pl-9 pr-9"
+          />
+          {search && (
+            <button
+              type="button"
+              onClick={() => onSearchChange('')}
+              aria-label="Limpiar búsqueda"
+              className="absolute right-2 top-1/2 -translate-y-1/2 rounded p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
+            >
+              <X className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
+      <div className="w-full space-y-1.5 sm:w-64">
+        <Label htmlFor="players-team-filter" className="text-xs">
+          Selección
+        </Label>
+        <Select value={teamFilter} onValueChange={onTeamFilterChange}>
+          <SelectTrigger id="players-team-filter">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={ALL_TEAMS}>Todas las selecciones</SelectItem>
+            {teams.map((t) => (
+              <SelectItem key={t.id} value={t.id}>
+                <span className="inline-flex items-center gap-1.5">
+                  <span>{t.flagEmoji ?? '🏳️'}</span>
+                  {t.name}
+                </span>
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="sm:pb-2 text-xs text-muted-foreground tabular-nums">
+        {isFiltered ? `${filteredCount} de ${totalCount}` : `${totalCount} jugadores`}
+      </div>
+    </div>
+  )
+}
+
+function Pagination({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number
+  totalPages: number
+  onPageChange: (n: number) => void
+}) {
+  return (
+    <div className="flex items-center justify-between gap-3">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page <= 1}
+      >
+        <ChevronLeft className="h-4 w-4" />
+        Anterior
+      </Button>
+      <span className="text-xs text-muted-foreground tabular-nums">
+        Página <span className="font-medium text-foreground">{page}</span> de {totalPages}
+      </span>
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page >= totalPages}
+      >
+        Siguiente
+        <ChevronRight className="h-4 w-4" />
+      </Button>
     </div>
   )
 }
@@ -176,7 +332,7 @@ function AddPlayerForm({ teams }: { teams: AdminTeamRow[] }) {
 
 function PlayersTable({ players }: { players: AdminPlayerRow[] }) {
   return (
-    <AdminDataTable title={`${players.length} jugadores`} empty={players.length === 0}>
+    <AdminDataTable empty={players.length === 0} emptyText="Sin resultados.">
       <Table>
         <TableHeader>
           <TableRow>
