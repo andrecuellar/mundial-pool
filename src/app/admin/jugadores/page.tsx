@@ -34,8 +34,8 @@ export default async function AdminPlayersPage() {
       <div>
         <h1 className="text-2xl font-semibold tracking-tight sm:text-3xl">Jugadores</h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          Goles vienen automáticos del cron (worldcup26.ir). Asistencias se editan a mano — la
-          fuente actual no las expone.
+          Goles y asistencias vienen automáticos del cron diario (ESPN). Editá a mano solo para
+          corregir o cubrir jugadores que ESPN no detecta.
         </p>
       </div>
 
@@ -43,19 +43,22 @@ export default async function AdminPlayersPage() {
         <p className="font-medium text-foreground">Cómo funciona</p>
         <ul className="mt-2 space-y-1 list-disc pl-4">
           <li>
-            Los jugadores aparecen acá automáticamente cuando meten un gol (vienen del cron diario).
+            Los jugadores aparecen acá automáticamente cuando ESPN registra que metieron un gol o
+            dieron una asistencia.
           </li>
           <li>
-            <span className="font-medium text-foreground">Goles</span> — editables, pero se
-            sobreescriben en el próximo sync del cron si la fuente cambió. Solo editar para corregir
-            o agregar jugadores manuales.
+            <span className="font-medium text-foreground">Goles y asistencias</span> son editables,
+            pero el cron es la fuente de verdad y los sobreescribe en el próximo sync. Usá la
+            edición para correcciones puntuales (vas a perderlas al día siguiente si ESPN no
+            coincide).
           </li>
           <li>
-            <span className="font-medium text-foreground">Asistencias</span> — solo manuales. El
-            cron NO las toca. Tu valor persiste para siempre.
+            <span className="font-medium text-foreground">Origen</span>: "cron" lo agregó ESPN
+            automáticamente; "manual" lo agregaste vos desde acá. Solo los "manual" se pueden
+            borrar.
           </li>
           <li>
-            Para sumar a un jugador que no metió goles pero dio asistencias, usa "Agregar jugador".
+            Si ESPN no detecta un jugador (raro), usá "Agregar jugador" para sumarlo a mano.
           </li>
         </ul>
       </Card>
