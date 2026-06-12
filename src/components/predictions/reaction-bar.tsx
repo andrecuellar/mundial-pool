@@ -80,6 +80,7 @@ export function ReactionBar({ predictionId, initialBuckets }: Props) {
           <button
             type="button"
             aria-label="Reaccionar"
+            data-share-hide
             className="grid h-5 w-5 place-items-center rounded-full border border-border bg-card text-muted-foreground hover:border-primary/30 hover:text-foreground"
           >
             <Plus className="h-3 w-3" />

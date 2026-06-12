@@ -44,7 +44,14 @@ export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult>
     // realmente toca el botón.
     const { toPng } = await import('html-to-image')
     const bg = getComputedStyle(document.body).backgroundColor || '#0a0a0a'
-    const dataUrl = await toPng(node, { pixelRatio: 2, backgroundColor: bg, cacheBust: true })
+    // Filtra elementos marcados como `data-share-hide` (ej: botón "+" de
+    // agregar reacción) — son UI interactiva que no aporta nada en la imagen.
+    const dataUrl = await toPng(node, {
+      pixelRatio: 2,
+      backgroundColor: bg,
+      cacheBust: true,
+      filter: (n) => !(n instanceof Element) || !n.hasAttribute('data-share-hide'),
+    })
     const blob = await fetch(dataUrl).then((r) => r.blob())
     const file = new File([blob], `${args.fileName}.png`, { type: 'image/png' })
 
