@@ -206,7 +206,6 @@ function PlayerTable({ rows, metric }: { rows: PlayerRow[]; metric: 'goals' | 'a
               <th className="px-3 py-2 text-left font-medium">Jugador</th>
               <th className="hidden px-3 py-2 text-left font-medium sm:table-cell">Selección</th>
               <th className="px-3 py-2 text-right font-medium">{metricLabel}</th>
-              <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Min.</th>
             </tr>
           </thead>
           <tbody>
@@ -233,9 +232,6 @@ function PlayerTable({ rows, metric }: { rows: PlayerRow[]; metric: 'goals' | 'a
                 </td>
                 <td className="px-3 py-2 align-middle text-right font-mono font-semibold tabular-nums">
                   {metric === 'goals' ? p.goals : p.assists}
-                </td>
-                <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
-                  {p.minutesPlayed}
                 </td>
               </tr>
             ))}
