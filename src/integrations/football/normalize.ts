@@ -44,6 +44,7 @@ const PROVIDER_TO_DB: Record<string, string> = {
   southafrica: 'sudafrica',
   southkorea: 'coreadelsur',
   koreareublic: 'coreadelsur',
+  korearepublic: 'coreadelsur',
   koreasouth: 'coreadelsur',
   spain: 'espana',
   sweden: 'suecia',
