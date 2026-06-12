@@ -3,6 +3,7 @@
 import {
   AlertTriangle,
   Database,
+  Goal,
   Layers,
   LayoutDashboard,
   Megaphone,
@@ -23,6 +24,7 @@ const LINKS = [
   { href: '/admin/usuarios', label: 'Usuarios', icon: Users },
   { href: '/admin/grupos', label: 'Grupos', icon: Layers },
   { href: '/admin/predicciones', label: 'Predicciones', icon: Vote },
+  { href: '/admin/jugadores', label: 'Jugadores', icon: Goal },
   { href: '/admin/pozos', label: 'Pozos', icon: Wallet },
   { href: '/admin/datos', label: 'Datos', icon: Database },
   { href: '/admin/notificar', label: 'Notificar', icon: Megaphone },

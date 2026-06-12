@@ -200,6 +200,11 @@ export const players = pgTable('players', {
   teamId: uuid('team_id').references(() => teams.id),
   position: text('position'),
   dateOfBirth: date('date_of_birth'),
+  photoUrl: text('photo_url'),
+  goals: integer('goals').notNull().default(0),
+  assists: integer('assists').notNull().default(0),
+  minutesPlayed: integer('minutes_played').notNull().default(0),
+  lastSyncedAt: timestamp('last_synced_at', { withTimezone: true }),
 })
 
 export const categories = pgTable('categories', {

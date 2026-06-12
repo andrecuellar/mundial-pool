@@ -1,10 +1,14 @@
-import { Clock, Goal, HandHeart } from 'lucide-react'
+import { desc, eq, isNotNull } from 'drizzle-orm'
+import { Clock, Goal, HandHeart, RefreshCw } from 'lucide-react'
 import type { Metadata } from 'next'
+import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { db } from '@/db'
+import { players, teams } from '@/db/schema'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
 export const dynamic = 'force-dynamic'
@@ -14,12 +18,80 @@ export const metadata: Metadata = {
   description: 'Cómo se decide la Bota de Oro y el Máximo Asistente del Mundial 2026.',
 }
 
+type PlayerRow = {
+  id: string
+  fullName: string
+  position: string | null
+  goals: number
+  assists: number
+  minutesPlayed: number
+  lastSyncedAt: Date | null
+  teamName: string | null
+  teamFlag: string | null
+}
+
+// Mismo patrón que /torneo/selecciones: snapshot global cacheado por tag,
+// invalidado por el cron /api/cron/player-stats (revalidateTag('players')).
+// El TTL es safety fallback si el cron deja de correr.
+const getPlayerLeaderboard = unstable_cache(
+  async (): Promise<PlayerRow[]> => {
+    const rows = await db
+      .select({
+        id: players.id,
+        fullName: players.fullName,
+        position: players.position,
+        goals: players.goals,
+        assists: players.assists,
+        minutesPlayed: players.minutesPlayed,
+        lastSyncedAt: players.lastSyncedAt,
+        teamName: teams.name,
+        teamFlag: teams.flagEmoji,
+      })
+      .from(players)
+      .leftJoin(teams, eq(players.teamId, teams.id))
+      .where(isNotNull(players.lastSyncedAt))
+      .orderBy(desc(players.goals), desc(players.assists))
+    return rows
+  },
+  ['players-leaderboard-v1'],
+  { revalidate: 3600, tags: ['players'] },
+)
+
+function formatRelative(when: Date): string {
+  const diffMs = Date.now() - when.getTime()
+  const min = Math.floor(diffMs / 60000)
+  if (min < 1) return 'hace menos de 1 min'
+  if (min < 60) return `hace ${min} min`
+  const hr = Math.floor(min / 60)
+  if (hr < 24) return `hace ${hr} ${hr === 1 ? 'hora' : 'horas'}`
+  const days = Math.floor(hr / 24)
+  return `hace ${days} ${days === 1 ? 'día' : 'días'}`
+}
+
 export default async function TableJugadoresPage() {
   const supabase = await createSupabaseServerClient()
   const {
     data: { user },
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
+
+  const playerRows = await getPlayerLeaderboard()
+
+  const topScorers = playerRows
+    .filter((p) => p.goals > 0)
+    .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.minutesPlayed - b.minutesPlayed)
+    .slice(0, 20)
+
+  const topAssistants = playerRows
+    .filter((p) => p.assists > 0)
+    .sort((a, b) => b.assists - a.assists || b.goals - a.goals || a.minutesPlayed - b.minutesPlayed)
+    .slice(0, 20)
+
+  const lastSyncedAt = playerRows.reduce<Date | null>((acc, p) => {
+    if (!p.lastSyncedAt) return acc
+    if (!acc || p.lastSyncedAt > acc) return p.lastSyncedAt
+    return acc
+  }, null)
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ?? user.email ?? 'Player'
@@ -39,6 +111,18 @@ export default async function TableJugadoresPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Goleadores y asistentes del Mundial 2026 según las estadísticas oficiales de FIFA.
         </p>
+
+        {lastSyncedAt && (
+          <Card className="mt-3 border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed">
+            <div className="flex flex-wrap items-center gap-2">
+              <RefreshCw className="h-3.5 w-3.5 text-primary" />
+              <span className="text-foreground">
+                <span className="font-medium">Última actualización:</span>{' '}
+                {formatRelative(lastSyncedAt)}
+              </span>
+            </div>
+          </Card>
+        )}
 
         <Card className="mt-5 border-warning/30 bg-warning/5 p-4 text-xs leading-relaxed text-muted-foreground">
           <p className="font-medium text-foreground">¿Qué cuenta y qué no cuenta?</p>
@@ -84,21 +168,81 @@ export default async function TableJugadoresPage() {
           </TabsList>
 
           <TabsContent value="goals">
-            <EmptyTable
-              title="Aún no hay goleadores"
-              description="La tabla se llena con cada partido del Mundial. La Bota de Oro la decide FIFA al cierre del torneo: total de goles → asistencias → menos minutos jugados → fair play."
-            />
+            {topScorers.length === 0 ? (
+              <EmptyTable
+                title="Aún no hay goleadores"
+                description="La tabla se llena con cada partido del Mundial. La Bota de Oro la decide FIFA al cierre del torneo: total de goles → asistencias → menos minutos jugados → fair play."
+              />
+            ) : (
+              <PlayerTable rows={topScorers} metric="goals" />
+            )}
           </TabsContent>
 
           <TabsContent value="assists">
-            <EmptyTable
-              title="Aún no hay asistencias"
-              description="La tabla se llena con cada partido del Mundial. El Máximo Asistente se decide según las estadísticas oficiales de FIFA al cierre del torneo: total de asistencias → menos minutos jugados → fair play."
-            />
+            {topAssistants.length === 0 ? (
+              <EmptyTable
+                title="Aún no hay asistencias"
+                description="La tabla se llena con cada partido del Mundial. El Máximo Asistente se decide según las estadísticas oficiales de FIFA al cierre del torneo: total de asistencias → menos minutos jugados → fair play."
+              />
+            ) : (
+              <PlayerTable rows={topAssistants} metric="assists" />
+            )}
           </TabsContent>
         </Tabs>
       </main>
     </>
+  )
+}
+
+function PlayerTable({ rows, metric }: { rows: PlayerRow[]; metric: 'goals' | 'assists' }) {
+  const metricLabel = metric === 'goals' ? 'Goles' : 'Asist.'
+  return (
+    <Card className="mt-3 overflow-hidden p-0">
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium">#</th>
+              <th className="px-3 py-2 text-left font-medium">Jugador</th>
+              <th className="hidden px-3 py-2 text-left font-medium sm:table-cell">Selección</th>
+              <th className="px-3 py-2 text-right font-medium">{metricLabel}</th>
+              <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">Min.</th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((p, i) => (
+              <tr key={p.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
+                <td className="px-3 py-2 align-middle">
+                  <span className="inline-flex items-center rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
+                    {i + 1}
+                  </span>
+                </td>
+                <td className="px-3 py-2 align-middle">
+                  <div className="flex flex-col">
+                    <span className="font-medium">{p.fullName}</span>
+                    <span className="text-[11px] text-muted-foreground sm:hidden">
+                      {p.teamFlag ?? '🏳️'} {p.teamName ?? '—'}
+                    </span>
+                  </div>
+                </td>
+                <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground sm:table-cell">
+                  <span className="inline-flex items-center gap-1.5">
+                    <span className="text-base leading-none">{p.teamFlag ?? '🏳️'}</span>
+                    {p.teamName ?? '—'}
+                  </span>
+                </td>
+                <td className="px-3 py-2 align-middle text-right font-mono font-semibold tabular-nums">
+                  {metric === 'goals' ? p.goals : p.assists}
+                </td>
+                <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
+                  {p.minutesPlayed}
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </Card>
   )
 }
 

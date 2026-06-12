@@ -14,7 +14,7 @@ type Props = {
   ariaLabel: string
 }
 
-// Versión chiquita del share-as-image para usar en un header de card (icon-only).
+// Versión compacta del share-as-image para usar en un header de card.
 // Comparte la misma lógica que `ShareComprobanteButton` via `shareDomNodeAsImage`,
 // pero sin auto-trigger por ?share=1 y con estilo discreto.
 export function ShareCardIconButton({
@@ -39,13 +39,14 @@ export function ShareCardIconButton({
     <Button
       onClick={handleShare}
       disabled={pending}
-      variant="ghost"
-      size="icon"
+      variant="outline"
+      size="sm"
       type="button"
       aria-label={ariaLabel}
-      className="h-8 w-8 shrink-0 text-muted-foreground hover:text-foreground"
+      className="shrink-0 text-muted-foreground hover:text-foreground"
     >
       <Share2 className={`h-4 w-4 ${pending ? 'animate-pulse' : ''}`} />
+      <span>Compartir</span>
     </Button>
   )
 }
