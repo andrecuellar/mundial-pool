@@ -25,6 +25,7 @@ const PROVIDER_TO_DB: Record<string, string> = {
   czechia: 'republicacheca',
   drcongo: 'rdcongo',
   democraticrepublicofthecongo: 'rdcongo',
+  congodr: 'rdcongo', // ESPN usa "Congo DR"
   egypt: 'egipto',
   england: 'inglaterra',
   france: 'francia',
@@ -51,6 +52,7 @@ const PROVIDER_TO_DB: Record<string, string> = {
   switzerland: 'suiza',
   tunisia: 'tunez',
   turkey: 'turquia',
+  turkiye: 'turquia', // ESPN usa "Türkiye" (nombre oficial)
   usa: 'estadosunidos',
   unitedstates: 'estadosunidos',
 }
