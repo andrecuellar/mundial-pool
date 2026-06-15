@@ -46,7 +46,11 @@ export type RawPlayerStat = {
 
 // Captura: "Goal! TeamA X, TeamB Y. SCORER (Team) descripción..."
 // Group 1 = scorer fullname, Group 2 = team del scorer.
-const GOAL_RE = /Goal!\s+[\w\s\-.]+?\s+\d+,\s+[\w\s\-.]+?\s+\d+\.\s+([^(]+?)\s+\(([^)]+)\)/u
+// Los placeholders de equipo usan \p{L}\p{N} (no \w) porque en JS \w es solo
+// [A-Za-z0-9_] incluso con flag /u: nombres con tilde como "Curaçao" o
+// "Türkiye" rompían el match y se perdían TODOS los goles de esos partidos.
+const GOAL_RE =
+  /Goal!\s+[\p{L}\p{N}\s\-.]+?\s+\d+,\s+[\p{L}\p{N}\s\-.]+?\s+\d+\.\s+([^(]+?)\s+\(([^)]+)\)/u
 
 // Captura "Assisted by NAME" hasta el primer separador natural (with, following,
 // after, coma, punto). Sin esto se incluye "with a cross" en el nombre.
@@ -64,7 +68,9 @@ function slugify(s: string): string {
 }
 
 async function fetchEvents(): Promise<ScoreboardEvent[]> {
-  const url = `${ESPN_BASE}/scoreboard?dates=${WC_START}-${WC_END}`
+  // El scoreboard corta en 100 resultados sin `&limit`; el Mundial tiene 104
+  // partidos, así que sin esto perderíamos goleadores de semis/final.
+  const url = `${ESPN_BASE}/scoreboard?dates=${WC_START}-${WC_END}&limit=500`
   const res = await fetch(url, { cache: 'no-store' })
   if (!res.ok) throw new Error(`espn /scoreboard failed: HTTP ${res.status}`)
   const data = (await res.json()) as { events?: ScoreboardEvent[] }

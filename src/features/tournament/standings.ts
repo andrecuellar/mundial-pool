@@ -1,5 +1,5 @@
 import 'server-only'
-import { eq } from 'drizzle-orm'
+import { eq, like } from 'drizzle-orm'
 import { revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { matches as matchesTable, teams } from '@/db/schema'
@@ -45,9 +45,24 @@ type ResolvedMatch = RawMatch & {
   teamBId: string | null
 }
 
+// El externalId lleva el prefijo del proveedor (`espn-...`, `tsdb-...`), así
+// que la columna `source` se deriva de ahí sin acoplar esta función a un
+// proveedor concreto.
+function sourceFromExternalId(externalId: string): string {
+  if (externalId.startsWith('espn-')) return 'espn'
+  if (externalId.startsWith('tsdb-')) return 'thesportsdb'
+  return 'unknown'
+}
+
 export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void> {
   // Idempotent on empty input. The mock provider returns [].
   if (rawMatches.length === 0) return
+
+  // Limpieza de la migración TheSportsDB → ESPN: las filas viejas tienen
+  // externalId `tsdb-...` y ya no se actualizan, así que las borramos para que
+  // no queden duplicados de fixture en la tabla `matches`. No-op tras la
+  // primera corrida con el provider de ESPN.
+  await db.delete(matchesTable).where(like(matchesTable.externalId, 'tsdb-%'))
 
   const allTeams = await db.select({ id: teams.id, name: teams.name }).from(teams)
   const nameToId = new Map<string, string>()
@@ -76,7 +91,7 @@ export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void>
         scoreB: m.scoreB,
         penaltyA: m.penaltyA,
         penaltyB: m.penaltyB,
-        source: 'thesportsdb',
+        source: sourceFromExternalId(m.externalId),
         updatedAt: new Date(),
       })
       .onConflictDoUpdate({
@@ -241,10 +256,7 @@ export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void>
     // No knockout loss found. If they played any finalized group match, mark
     // them as 'group'. Otherwise leave null (pre-Mundial or unknown).
     const playedGroup = resolved.some(
-      (m) =>
-        m.stage === 'group' &&
-        isFinalized(m) &&
-        (m.teamAId === t.id || m.teamBId === t.id),
+      (m) => m.stage === 'group' && isFinalized(m) && (m.teamAId === t.id || m.teamBId === t.id),
     )
     if (playedGroup) agg.reachedRound = 'group'
   }
