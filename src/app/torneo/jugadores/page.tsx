@@ -5,7 +5,7 @@ import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
-import { ShareableImageFrame } from '@/components/share/shareable-image-frame'
+import { PlayerLeaderboardTable } from '@/components/share/player-leaderboard-table'
 import { Card } from '@/components/ui/card'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { db } from '@/db'
@@ -79,15 +79,14 @@ export default async function TableJugadoresPage() {
 
   const playerRows = await getPlayerLeaderboard()
 
-  const topScorers = playerRows
+  // Listas completas; la tabla muestra el top 20 con opción de expandir.
+  const scorers = playerRows
     .filter((p) => p.goals > 0)
     .sort((a, b) => b.goals - a.goals || b.assists - a.assists || a.minutesPlayed - b.minutesPlayed)
-    .slice(0, 20)
 
-  const topAssistants = playerRows
+  const assistants = playerRows
     .filter((p) => p.assists > 0)
     .sort((a, b) => b.assists - a.assists || b.goals - a.goals || a.minutesPlayed - b.minutesPlayed)
-    .slice(0, 20)
 
   const lastSyncedAt = playerRows.reduce<Date | null>((acc, p) => {
     if (!p.lastSyncedAt) return acc
@@ -171,97 +170,47 @@ export default async function TableJugadoresPage() {
           </TabsList>
 
           <TabsContent value="goals">
-            {topScorers.length === 0 ? (
+            {scorers.length === 0 ? (
               <EmptyTable
                 title="Aún no hay goleadores"
                 description="La tabla se llena con cada partido del Mundial. La Bota de Oro la decide FIFA al cierre del torneo: total de goles → asistencias → menos minutos jugados → fair play."
               />
             ) : (
-              <div className="mt-3">
-                <ShareableImageFrame
-                  id="tabla-goleadores-card"
-                  label="Goleadores"
-                  subtitle={`Mundial 2026 · ${today}`}
-                  fileName="mundial-pool-goleadores"
-                  shareTitle="Goleadores · Mundial 2026"
-                  shareText="Tabla de goleadores del Mundial 2026 ⚽ en mundial-pool"
-                >
-                  <PlayerTable rows={topScorers} metric="goals" />
-                </ShareableImageFrame>
-              </div>
+              <PlayerLeaderboardTable
+                rows={scorers}
+                metric="goals"
+                id="tabla-goleadores-card"
+                label="Goleadores"
+                subtitle={`Mundial 2026 · ${today}`}
+                fileName="mundial-pool-goleadores"
+                shareTitle="Goleadores · Mundial 2026"
+                shareText="Tabla de goleadores del Mundial 2026 ⚽ en mundial-pool"
+              />
             )}
           </TabsContent>
 
           <TabsContent value="assists">
-            {topAssistants.length === 0 ? (
+            {assistants.length === 0 ? (
               <EmptyTable
                 title="Aún no hay asistencias"
                 description="La tabla se llena con cada partido del Mundial. El Máximo Asistente se decide según las estadísticas oficiales de FIFA al cierre del torneo: total de asistencias → menos minutos jugados → fair play."
               />
             ) : (
-              <div className="mt-3">
-                <ShareableImageFrame
-                  id="tabla-asistentes-card"
-                  label="Asistencias"
-                  subtitle={`Mundial 2026 · ${today}`}
-                  fileName="mundial-pool-asistentes"
-                  shareTitle="Asistencias · Mundial 2026"
-                  shareText="Tabla de asistentes del Mundial 2026 🅰️ en mundial-pool"
-                >
-                  <PlayerTable rows={topAssistants} metric="assists" />
-                </ShareableImageFrame>
-              </div>
+              <PlayerLeaderboardTable
+                rows={assistants}
+                metric="assists"
+                id="tabla-asistentes-card"
+                label="Asistencias"
+                subtitle={`Mundial 2026 · ${today}`}
+                fileName="mundial-pool-asistentes"
+                shareTitle="Asistencias · Mundial 2026"
+                shareText="Tabla de asistentes del Mundial 2026 🅰️ en mundial-pool"
+              />
             )}
           </TabsContent>
         </Tabs>
       </main>
     </>
-  )
-}
-
-function PlayerTable({ rows, metric }: { rows: PlayerRow[]; metric: 'goals' | 'assists' }) {
-  const metricLabel = metric === 'goals' ? 'Goles' : 'Asist.'
-  return (
-    <div className="overflow-x-auto">
-      <table className="w-full text-sm">
-        <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-          <tr>
-            <th className="px-3 py-2 text-left font-medium">#</th>
-            <th className="px-3 py-2 text-left font-medium">Jugador</th>
-            <th className="hidden px-3 py-2 text-left font-medium sm:table-cell">Selección</th>
-            <th className="px-3 py-2 text-right font-medium">{metricLabel}</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((p, i) => (
-            <tr key={p.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
-              <td className="px-3 py-2 align-middle">
-                <span className="inline-flex items-center rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
-                  {i + 1}
-                </span>
-              </td>
-              <td className="px-3 py-2 align-middle">
-                <div className="flex flex-col">
-                  <span className="font-medium">{p.fullName}</span>
-                  <span className="text-[11px] text-muted-foreground sm:hidden">
-                    {p.teamFlag ?? '🏳️'} {p.teamName ?? '—'}
-                  </span>
-                </div>
-              </td>
-              <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground sm:table-cell">
-                <span className="inline-flex items-center gap-1.5">
-                  <span className="text-base leading-none">{p.teamFlag ?? '🏳️'}</span>
-                  {p.teamName ?? '—'}
-                </span>
-              </td>
-              <td className="px-3 py-2 align-middle text-right font-mono font-semibold tabular-nums">
-                {metric === 'goals' ? p.goals : p.assists}
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-    </div>
   )
 }
 

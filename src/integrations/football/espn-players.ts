@@ -46,11 +46,12 @@ export type RawPlayerStat = {
 
 // Captura: "Goal! TeamA X, TeamB Y. SCORER (Team) descripción..."
 // Group 1 = scorer fullname, Group 2 = team del scorer.
-// Los placeholders de equipo usan \p{L}\p{N} (no \w) porque en JS \w es solo
-// [A-Za-z0-9_] incluso con flag /u: nombres con tilde como "Curaçao" o
-// "Türkiye" rompían el match y se perdían TODOS los goles de esos partidos.
-const GOAL_RE =
-  /Goal!\s+[\p{L}\p{N}\s\-.]+?\s+\d+,\s+[\p{L}\p{N}\s\-.]+?\s+\d+\.\s+([^(]+?)\s+\(([^)]+)\)/u
+// Los placeholders de equipo usan `.+?` (no una clase de caracteres) porque
+// cualquier set explícito termina dejando afuera algún carácter de nombres de
+// país: \w no matchea tildes ("Curaçao", "Türkiye") y \p{L} tampoco matchea el
+// apóstrofe de "Côte d'Ivoire". Con `.+?` (no-greedy, anclado por ` \d+,` y
+// ` \d+.`) andan todos sin enumerar caracteres.
+const GOAL_RE = /Goal!\s+.+?\s+\d+,\s+.+?\s+\d+\.\s+([^(]+?)\s+\(([^)]+)\)/u
 
 // Captura "Assisted by NAME" hasta el primer separador natural (with, following,
 // after, coma, punto). Sin esto se incluye "with a cross" en el nombre.
