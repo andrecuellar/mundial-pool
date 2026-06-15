@@ -5,6 +5,7 @@ import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
+import { ShareableImageFrame } from '@/components/share/shareable-image-frame'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { resolutionRuns, teams } from '@/db/schema'
@@ -12,6 +13,7 @@ import {
   computeTournamentRanks,
   type TournamentTeamInput,
 } from '@/features/scoring/tournament-rank'
+import { formatDayShort } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 import { CRON_HOUR_UTC, WORLD_CUP_START } from '@/lib/world-cup'
 
@@ -129,11 +131,11 @@ export default async function TableSeleccionesPage() {
 
   // Normalize global FIFA ranking to 1-48 across only the 48 World Cup teams.
   // The algorithm expects this normalized rank, not the raw global value.
-  const sortedByFifa = [...rowsRaw].sort(
-    (a, b) => (a.fifaRanking ?? 999) - (b.fifaRanking ?? 999),
-  )
+  const sortedByFifa = [...rowsRaw].sort((a, b) => (a.fifaRanking ?? 999) - (b.fifaRanking ?? 999))
   const normalizedFifaRank = new Map<string, number>()
-  sortedByFifa.forEach((t, i) => normalizedFifaRank.set(t.id, i + 1))
+  sortedByFifa.forEach((t, i) => {
+    normalizedFifaRank.set(t.id, i + 1)
+  })
 
   const algoInput: TournamentTeamInput[] = rowsRaw.map((t) => ({
     teamId: t.id,
@@ -199,15 +201,16 @@ export default async function TableSeleccionesPage() {
               </span>
               <span className="text-muted-foreground">·</span>
               <span className="text-muted-foreground">
-                Próxima: <span className="font-medium text-foreground">{formatInBolivia(nextRun)}</span>{' '}
+                Próxima:{' '}
+                <span className="font-medium text-foreground">{formatInBolivia(nextRun)}</span>{' '}
                 (hora de Bolivia)
               </span>
             </div>
             <p className="mt-1.5 text-muted-foreground">
               La tabla se actualiza automáticamente cuando termina el cron. Si un equipo todavía
               está en carrera, aparece como{' '}
-              <span className="font-medium text-foreground">Activo</span> y se reposiciona
-              recién cuando se decide su eliminación.
+              <span className="font-medium text-foreground">Activo</span> y se reposiciona recién
+              cuando se decide su eliminación.
             </p>
           </Card>
         )}
@@ -278,61 +281,70 @@ export default async function TableSeleccionesPage() {
           </Card>
         )}
 
-        <Card className="mt-5 overflow-hidden p-0">
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
-                <tr>
-                  <th className="px-3 py-2 text-left font-medium">
-                    {tournamentStarted ? 'Mundial' : 'M (pre)'}
-                  </th>
-                  <th className="px-3 py-2 text-left font-medium">Selección</th>
-                  {tournamentStarted && (
-                    <th className="hidden px-3 py-2 text-left font-medium md:table-cell">
-                      Etapa
+        <div className="mt-5">
+          <ShareableImageFrame
+            id="tabla-selecciones-card"
+            label="Tabla de selecciones"
+            subtitle={`Las 48 del Mundial 2026 · ${formatDayShort(new Date())}`}
+            fileName="mundial-pool-selecciones"
+            shareTitle="Tabla de las 48 selecciones · Mundial 2026"
+            shareText="Ranking general de las 48 selecciones del Mundial 2026 🏆 en mundial-pool"
+          >
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-muted/40 text-[11px] uppercase tracking-wider text-muted-foreground">
+                  <tr>
+                    <th className="px-3 py-2 text-left font-medium">
+                      {tournamentStarted ? 'Mundial' : 'M (pre)'}
                     </th>
-                  )}
-                  <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">
-                    FIFA global
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {ranked.map((t, i) => (
-                  <tr key={t.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
-                    <td className="px-3 py-2 align-middle">
-                      <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
-                        {t.mundialRank === 1 && tournamentStarted && (
-                          <Trophy className="h-3 w-3 text-gold" />
-                        )}
-                        {t.mundialRank}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 align-middle">
-                      <span className="inline-flex items-center gap-2">
-                        <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
-                        <span className="font-medium">{t.name}</span>
-                        {t.fifaCode && (
-                          <span className="font-mono text-[11px] text-muted-foreground">
-                            {t.fifaCode}
-                          </span>
-                        )}
-                      </span>
-                    </td>
+                    <th className="px-3 py-2 text-left font-medium">Selección</th>
                     {tournamentStarted && (
-                      <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground md:table-cell">
-                        {reachedLabel(t.reachedRound, tournamentStarted)}
-                      </td>
+                      <th className="hidden px-3 py-2 text-left font-medium md:table-cell">
+                        Etapa
+                      </th>
                     )}
-                    <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
-                      #{t.fifaRanking ?? '—'}
-                    </td>
+                    <th className="hidden px-3 py-2 text-right font-medium sm:table-cell">
+                      FIFA global
+                    </th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </Card>
+                </thead>
+                <tbody>
+                  {ranked.map((t, i) => (
+                    <tr key={t.id} className={i % 2 === 0 ? 'bg-card' : 'bg-muted/15'}>
+                      <td className="px-3 py-2 align-middle">
+                        <span className="inline-flex items-center gap-1.5 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 font-mono text-[11px] font-semibold tabular-nums">
+                          {t.mundialRank === 1 && tournamentStarted && (
+                            <Trophy className="h-3 w-3 text-gold" />
+                          )}
+                          {t.mundialRank}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 align-middle">
+                        <span className="inline-flex items-center gap-2">
+                          <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
+                          <span className="font-medium">{t.name}</span>
+                          {t.fifaCode && (
+                            <span className="font-mono text-[11px] text-muted-foreground">
+                              {t.fifaCode}
+                            </span>
+                          )}
+                        </span>
+                      </td>
+                      {tournamentStarted && (
+                        <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground md:table-cell">
+                          {reachedLabel(t.reachedRound, tournamentStarted)}
+                        </td>
+                      )}
+                      <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
+                        #{t.fifaRanking ?? '—'}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </ShareableImageFrame>
+        </div>
       </main>
     </>
   )
