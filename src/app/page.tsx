@@ -6,6 +6,7 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
 import { CreateGroupCTA } from '@/components/groups/create-group-cta'
 import { DualPendingBanner } from '@/components/groups/dual-pending-banner'
+import { GroupRequestRejectedBanner } from '@/components/groups/group-request-rejected-banner'
 import { GroupCardChips } from '@/components/groups/group-card-chips'
 import { DataMundialSection } from '@/components/home/data-mundial-section'
 import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
@@ -53,12 +54,14 @@ export default async function Home() {
   // tune the CTA between "pendiente" / "volver a pedir" / "pedir".
   let pendingRequestId: string | null = null
   let lastRejectedAt: Date | null = null
+  let lastRejectionReason: string | null = null
   if (!canCreateGroups) {
     const recent = await db
       .select({
         id: groupCreationRequests.id,
         status: groupCreationRequests.status,
         reviewedAt: groupCreationRequests.reviewedAt,
+        rejectionReason: groupCreationRequests.rejectionReason,
       })
       .from(groupCreationRequests)
       .where(eq(groupCreationRequests.userId, user.id))
@@ -66,7 +69,10 @@ export default async function Home() {
       .limit(1)
     const last = recent[0]
     if (last?.status === 'pending') pendingRequestId = last.id
-    else if (last?.status === 'rejected') lastRejectedAt = last.reviewedAt
+    else if (last?.status === 'rejected') {
+      lastRejectedAt = last.reviewedAt
+      lastRejectionReason = last.rejectionReason
+    }
   }
 
   const myGroups = await db
@@ -192,6 +198,14 @@ export default async function Home() {
           </span>
         </div>
 
+        {lastRejectedAt && (
+          <GroupRequestRejectedBanner
+            reason={lastRejectionReason}
+            rejectedAt={lastRejectedAt}
+            className="mt-4"
+          />
+        )}
+
         <PoolDisclaimerHome className="mt-4" />
 
         {dualPendingGroups.length > 0 && (
@@ -221,6 +235,7 @@ export default async function Home() {
                 canCreate={canCreateGroups}
                 pendingRequestId={pendingRequestId}
                 lastRejectedAt={lastRejectedAt}
+                lastRejectionReason={lastRejectionReason}
                 variant="primary"
                 isFirstGroup
               />
@@ -303,6 +318,7 @@ export default async function Home() {
               canCreate={canCreateGroups}
               pendingRequestId={pendingRequestId}
               lastRejectedAt={lastRejectedAt}
+              lastRejectionReason={lastRejectionReason}
               variant="grid"
             />
             <NavButton href="/groups/join" variant="secondary" className="h-12">

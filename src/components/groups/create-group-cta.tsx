@@ -10,6 +10,8 @@ type Props = {
   pendingRequestId: string | null
   /** Set when the user's most recent request was rejected (no pending one). */
   lastRejectedAt: Date | null
+  /** The admin's reason for that rejection, surfaced inside the retry dialog. */
+  lastRejectionReason?: string | null
   /** Render flavor — the empty-state Card uses a bigger button, the grid uses h-12. */
   variant?: 'primary' | 'grid'
   /** Used by the empty-state to read "Pedir permiso para crear mi primer grupo". */
@@ -23,6 +25,7 @@ export function CreateGroupCTA({
   canCreate,
   pendingRequestId,
   lastRejectedAt,
+  lastRejectionReason,
   variant = 'grid',
   isFirstGroup = false,
 }: Props) {
@@ -55,6 +58,7 @@ export function CreateGroupCTA({
     return (
       <RequestPermissionDialog
         variant="retry"
+        previousReason={lastRejectionReason}
         trigger={
           <Button type="button" className={gridHeight}>
             <RefreshCw className="h-4 w-4" />
