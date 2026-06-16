@@ -30,6 +30,7 @@ const PROVIDER_TO_DB: Record<string, string> = {
   england: 'inglaterra',
   france: 'francia',
   germany: 'alemania',
+  iriran: 'iran', // ESPN commentary usa el nombre FIFA "IR Iran"; el scoreboard usa "Iran"
   iraq: 'irak',
   ivorycoast: 'costademarfil',
   cotedivoire: 'costademarfil',
