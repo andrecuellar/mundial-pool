@@ -88,9 +88,15 @@ export default async function TableJugadoresPage() {
     .filter((p) => p.assists > 0)
     .sort((a, b) => b.assists - a.assists || b.goals - a.goals || a.minutesPlayed - b.minutesPlayed)
 
+  // unstable_cache serializa su retorno a JSON: en un cache hit los Date vuelven
+  // como strings ISO, no como objetos Date. Reconstruimos un Date real aquí —
+  // si no, formatRelative(when) llama when.getTime() sobre un string y revienta
+  // el render del server (digest → global-error). new Date(...) acepta tanto el
+  // Date del cache miss como el string del cache hit.
   const lastSyncedAt = playerRows.reduce<Date | null>((acc, p) => {
     if (!p.lastSyncedAt) return acc
-    if (!acc || p.lastSyncedAt > acc) return p.lastSyncedAt
+    const when = new Date(p.lastSyncedAt)
+    if (!acc || when > acc) return when
     return acc
   }, null)
 
