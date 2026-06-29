@@ -8,9 +8,10 @@ import type { RawMatch, RawMatchStage } from '@/integrations/football/types'
 
 // Per-team accumulator used while we walk the matches. Mirrors the columns
 // we persist on `teams`. `reachedRound` stays null for teams still alive in
-// the tournament — the page treats null as "group bracket" so they show up
-// among the group-stage finishers, but they'll resolve correctly once the
-// tournament ends (every team gets a definitive reachedRound).
+// the tournament (qualified past groups, not yet eliminated) — the board maps
+// null to the provisional 'alive' bracket so they rank above the teams that
+// went out in the group stage. Only teams actually eliminated in groups get
+// 'group'. Every team gets a definitive reachedRound once the tournament ends.
 type TeamAgg = {
   groupPoints: number
   groupGoalDiff: number
@@ -253,8 +254,15 @@ export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void>
     }
     if (assigned) continue
 
-    // No knockout loss found. If they played any finalized group match, mark
-    // them as 'group'. Otherwise leave null (pre-Mundial or unknown).
+    // No knockout loss found. Two live cases to tell apart:
+    //  - The team appears in a drawn knockout fixture (r32+) but hasn't lost
+    //    yet → it qualified and is still alive. Leave reachedRound null so the
+    //    board shows it as "Activo" and ranks it above the eliminated teams.
+    //  - It played group matches but is in NO knockout fixture → eliminated in
+    //    the group stage → 'group'.
+    // Pre-Mundial (no group matches played) also stays null.
+    const advancedToKnockouts = (myKo?.size ?? 0) > 0
+    if (advancedToKnockouts) continue
     const playedGroup = resolved.some(
       (m) => m.stage === 'group' && isFinalized(m) && (m.teamAId === t.id || m.teamBId === t.id),
     )
