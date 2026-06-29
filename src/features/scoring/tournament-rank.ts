@@ -22,9 +22,13 @@ export type TournamentTeamInput = {
   /**
    * Reached round in the bracket. 'group' = eliminated in group stage.
    * 'r32' = lost in round of 32, etc. 'champion' / 'runner_up' / 'third' /
-   * 'fourth' for the semis/final outcomes.
+   * 'fourth' for the semis/final outcomes. 'alive' = still in the running
+   * (qualified past groups, not yet eliminated) — a provisional value used only
+   * mid-tournament. It ranks above the group-stage finishers and below any
+   * decided knockout-loser. No team is 'alive' once the tournament ends, so the
+   * final standings are unaffected.
    */
-  reached: 'group' | 'r32' | 'r16' | 'qf' | 'fourth' | 'third' | 'runner_up' | 'champion'
+  reached: 'group' | 'alive' | 'r32' | 'r16' | 'qf' | 'fourth' | 'third' | 'runner_up' | 'champion'
   /** Group-stage stats — used for the 33-48 bracket and as a last-resort tiebreaker. */
   groupPoints: number
   groupGoalDiff: number
@@ -56,7 +60,10 @@ export type TeamRank = {
 }
 
 // Numeric bracket index: lower = better, matches the table in the criteria
-// dialog (1 = champion bracket, 5 = QF losers bracket, 8 = group-stage bracket).
+// dialog (1 = champion bracket, 5 = QF losers bracket, 9 = group-stage
+// bracket). Bracket 8 ('alive') is provisional: teams still in the running
+// during a live tournament sit above the group-stage finishers and below any
+// decided knockout-loser. It collapses to nothing once the tournament ends.
 function bracketOf(reached: TournamentTeamInput['reached']): number {
   switch (reached) {
     case 'champion':
@@ -73,8 +80,10 @@ function bracketOf(reached: TournamentTeamInput['reached']): number {
       return 6
     case 'r32':
       return 7
-    case 'group':
+    case 'alive':
       return 8
+    case 'group':
+      return 9
   }
 }
 
@@ -135,7 +144,7 @@ export function computeTournamentRanks(teams: TournamentTeamInput[]): TeamRank[]
 
   const out: TeamRank[] = []
   let nextRank = 1
-  for (let b = 1; b <= 8; b++) {
+  for (let b = 1; b <= 9; b++) {
     const arr = byBracket.get(b) ?? []
     if (arr.length === 0) continue
 
@@ -154,8 +163,10 @@ export function computeTournamentRanks(teams: TournamentTeamInput[]): TeamRank[]
       continue
     }
 
+    // Brackets 8 ('alive') and 9 (group finishers) are ordered by group-stage
+    // performance; the knockout-loser brackets (5-7) use the elimination match.
     const sorted =
-      b === 8 ? [...arr].sort(compareGroupStageLosers) : [...arr].sort(compareKnockoutLosers)
+      b >= 8 ? [...arr].sort(compareGroupStageLosers) : [...arr].sort(compareKnockoutLosers)
     for (const t of sorted) {
       out.push({
         teamId: t.teamId,

@@ -6,10 +6,12 @@ import { redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
 import { ShareableImageFrame } from '@/components/share/shareable-image-frame'
+import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { resolutionRuns, teams } from '@/db/schema'
 import {
+  computeRevelationAndDisappointment,
   computeTournamentRanks,
   type TournamentTeamInput,
 } from '@/features/scoring/tournament-rank'
@@ -141,7 +143,11 @@ export default async function TableSeleccionesPage() {
     teamId: t.id,
     teamName: t.name,
     fifaRank: normalizedFifaRank.get(t.id) ?? 48,
-    reached: (t.reachedRound ?? 'group') as Reached,
+    // null = pre-Mundial or qualified-and-still-alive. Mid-tournament the
+    // 'alive' bracket ranks these above the group-stage finishers; pre-Mundial
+    // every team is 'alive' with zero group stats, so the order falls back to
+    // the FIFA seeding (same flat pre-tournament ranking as before).
+    reached: (t.reachedRound ?? 'alive') as Reached,
     groupPoints: t.groupPoints,
     groupGoalDiff: t.groupGoalDiff,
     groupGoalsFor: t.groupGoalsFor,
@@ -158,6 +164,15 @@ export default async function TableSeleccionesPage() {
   }))
 
   const algoRanks = computeTournamentRanks(algoInput)
+
+  // Revelación / decepción del momento. Solo una vez arrancado el Mundial y con
+  // un delta real (pre-Mundial todos los deltas son 0 → no marcamos a nadie).
+  const outcome = tournamentStarted ? computeRevelationAndDisappointment(algoInput) : null
+  const revelationId = outcome && outcome.revelation.delta > 0 ? outcome.revelation.teamId : null
+  const disappointmentId =
+    outcome && outcome.disappointment.delta < 0 ? outcome.disappointment.teamId : null
+  const tournamentFinished = rowsRaw.some((t) => t.reachedRound === 'champion')
+
   const teamById = new Map(rowsRaw.map((t) => [t.id, t]))
   const ranked = algoRanks.map((r) => {
     const t = teamById.get(r.teamId)
@@ -190,6 +205,19 @@ export default async function TableSeleccionesPage() {
         <p className="mt-1 text-sm text-muted-foreground">
           Ranking general del Mundial 2026 (1 = mejor del torneo, 48 = última).
         </p>
+
+        {tournamentStarted && (revelationId || disappointmentId) && (
+          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
+            <Badge className="border-accent/30 bg-accent/15 text-accent">Revelación</Badge>
+            <Badge variant="destructive">Decepción</Badge>
+            <span>
+              marcan{!tournamentFinished && ', por ahora,'} a la selección que más subió y la que
+              más bajó frente a su ranking FIFA.
+              {!tournamentFinished &&
+                ' Son provisionales: se recalculan en cada actualización y pueden cambiar hasta que termine el Mundial.'}
+            </span>
+          </p>
+        )}
 
         {tournamentStarted && (
           <Card className="mt-3 border-primary/20 bg-primary/5 p-3 text-xs leading-relaxed">
@@ -320,13 +348,37 @@ export default async function TableSeleccionesPage() {
                         </span>
                       </td>
                       <td className="px-3 py-2 align-middle">
-                        <span className="inline-flex items-center gap-2">
+                        <span className="inline-flex flex-wrap items-center gap-x-2 gap-y-1">
                           <span className="text-base leading-none">{t.flagEmoji ?? '🏳️'}</span>
                           <span className="font-medium">{t.name}</span>
                           {t.fifaCode && (
                             <span className="font-mono text-[11px] text-muted-foreground">
                               {t.fifaCode}
                             </span>
+                          )}
+                          {t.id === revelationId && (
+                            <Badge
+                              className="border-accent/30 bg-accent/15 text-accent"
+                              title={
+                                tournamentFinished
+                                  ? 'Revelación del Mundial'
+                                  : 'Revelación provisional — puede cambiar hasta que termine el Mundial'
+                              }
+                            >
+                              Revelación{tournamentFinished ? '' : ' (provisional)'}
+                            </Badge>
+                          )}
+                          {t.id === disappointmentId && (
+                            <Badge
+                              variant="destructive"
+                              title={
+                                tournamentFinished
+                                  ? 'Decepción del Mundial'
+                                  : 'Decepción provisional — puede cambiar hasta que termine el Mundial'
+                              }
+                            >
+                              Decepción{tournamentFinished ? '' : ' (provisional)'}
+                            </Badge>
                           )}
                         </span>
                       </td>
