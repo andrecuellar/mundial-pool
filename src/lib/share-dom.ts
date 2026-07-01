@@ -44,10 +44,31 @@ export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult>
     // realmente toca el botón.
     const { toPng } = await import('html-to-image')
     const bg = getComputedStyle(document.body).backgroundColor || '#0a0a0a'
+    // Esperar a que las webfonts terminen de cargar. Si se captura con la fuente
+    // de fallback (filas más bajas), html-to-image mide un alto corto y al
+    // renderizar con la fuente real —filas más altas— la última fila se desborda
+    // y `overflow-hidden` la recorta. Con tablas largas (48 selecciones) eso hace
+    // desaparecer la fila #48.
+    if (document.fonts?.ready) {
+      try {
+        await document.fonts.ready
+      } catch {
+        // Font loading API no disponible/roto — seguimos igual.
+      }
+    }
+    // html-to-image, sin alto/ancho explícitos, usa offsetWidth/Height =
+    // round(tamaño). Con sub-píxeles ese redondeo puede quedar 1px por debajo del
+    // contenido y recortar la última fila. Fijamos el border-box redondeado hacia
+    // ARRIBA (ceil) para garantizar que la tabla completa entre en el canvas.
+    const rect = node.getBoundingClientRect()
+    const width = Math.ceil(rect.width)
+    const height = Math.ceil(rect.height)
     // Filtra elementos marcados como `data-share-hide` (ej: botón "+" de
     // agregar reacción) — son UI interactiva que no aporta nada en la imagen.
     const dataUrl = await toPng(node, {
       pixelRatio: 2,
+      width,
+      height,
       backgroundColor: bg,
       cacheBust: true,
       filter: (n) => !(n instanceof Element) || !n.hasAttribute('data-share-hide'),
