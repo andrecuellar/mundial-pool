@@ -53,7 +53,7 @@ const getTeamsForBoard = unstable_cache(
       })
       .from(teams)
       .orderBy(asc(teams.fifaRanking)),
-  ['teams-board-v2'],
+  ['teams-board-v3'],
   { revalidate: 3600, tags: ['teams'] },
 )
 
@@ -68,6 +68,14 @@ function reachedLabel(r: string | null, started: boolean): string {
       return '3er lugar'
     case 'fourth':
       return '4to lugar'
+    case 'alive_final':
+      return 'Activo · final'
+    case 'alive_sf':
+      return 'Activo · semis'
+    case 'alive_qf':
+      return 'Activo · cuartos'
+    case 'alive_r16':
+      return 'Activo · octavos'
     case 'qf':
       return 'Cuartos'
     case 'r16':
@@ -143,11 +151,12 @@ export default async function TableSeleccionesPage() {
     teamId: t.id,
     teamName: t.name,
     fifaRank: normalizedFifaRank.get(t.id) ?? 48,
-    // null = pre-Mundial or qualified-and-still-alive. Mid-tournament the
-    // 'alive' bracket ranks these above the group-stage finishers; pre-Mundial
-    // every team is 'alive' with zero group stats, so the order falls back to
-    // the FIFA seeding (same flat pre-tournament ranking as before).
-    reached: (t.reachedRound ?? 'alive') as Reached,
+    // null = pre-Mundial or qualified-and-still-in-the-round-of-32 → the
+    // 'alive_r32' bracket, which ranks above the group-stage finishers. Teams
+    // that won a knockout tie carry an 'alive_r16'/'alive_qf'/… value instead.
+    // Pre-Mundial every team is 'alive_r32' with zero group stats, so the order
+    // falls back to the FIFA seeding (same flat pre-tournament ranking as before).
+    reached: (t.reachedRound ?? 'alive_r32') as Reached,
     groupPoints: t.groupPoints,
     groupGoalDiff: t.groupGoalDiff,
     groupGoalsFor: t.groupGoalsFor,
