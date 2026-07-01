@@ -7,11 +7,14 @@ import { teamMatchKey } from '@/integrations/football/normalize'
 import type { RawMatch, RawMatchStage } from '@/integrations/football/types'
 
 // Per-team accumulator used while we walk the matches. Mirrors the columns
-// we persist on `teams`. `reachedRound` stays null for teams still alive in
-// the tournament (qualified past groups, not yet eliminated) — the board maps
-// null to the provisional 'alive' bracket so they rank above the teams that
-// went out in the group stage. Only teams actually eliminated in groups get
-// 'group'. Every team gets a definitive reachedRound once the tournament ends.
+// we persist on `teams`. For teams still alive, `reachedRound` records the
+// round they are CURRENTLY IN via the 'alive_*' values (e.g. a team that won
+// its round-of-32 tie becomes 'alive_r16'), so the board ranks a team that
+// advanced above the teams eliminated in a shallower round. A team that only
+// qualified from its group and hasn't won a knockout tie yet stays null — the
+// board maps null to the 'alive_r32' bracket (also the pre-tournament default).
+// Only teams actually eliminated in groups get 'group'. Every team gets a
+// definitive reachedRound once the tournament ends.
 type TeamAgg = {
   groupPoints: number
   groupGoalDiff: number
@@ -39,6 +42,16 @@ function winnerSide(m: RawMatch): 'A' | 'B' | null {
   if (m.scoreA! < m.scoreB!) return 'B'
   if (!wentToPenalties(m)) return null
   return m.penaltyA! > m.penaltyB! ? 'A' : 'B'
+}
+
+// Knockout stages shallow → deep. A still-alive team is ranked by the round it
+// is currently IN, which is one past the deepest tie it has already won.
+const KO_STAGES_BY_DEPTH = ['r32', 'r16', 'qf', 'sf'] as const
+const ALIVE_AFTER_WIN: Record<(typeof KO_STAGES_BY_DEPTH)[number], string> = {
+  r32: 'alive_r16',
+  r16: 'alive_qf',
+  qf: 'alive_sf',
+  sf: 'alive_final',
 }
 
 type ResolvedMatch = RawMatch & {
@@ -227,9 +240,7 @@ export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void>
       continue
     }
 
-    // SF loser waiting for third_place: leave null until that match resolves.
     const myKo = teamMatchAt.get(t.id)
-    if (myKo?.has('sf') && !thirdPlaceMatch) continue
 
     // Knockout-stage losers (qf/r16/r32). Walk from latest to earliest.
     let assigned = false
@@ -254,13 +265,31 @@ export async function updateTeamStandings(rawMatches: RawMatch[]): Promise<void>
     }
     if (assigned) continue
 
-    // No knockout loss found. Two live cases to tell apart:
-    //  - The team appears in a drawn knockout fixture (r32+) but hasn't lost
-    //    yet → it qualified and is still alive. Leave reachedRound null so the
-    //    board shows it as "Activo" and ranks it above the eliminated teams.
-    //  - It played group matches but is in NO knockout fixture → eliminated in
-    //    the group stage → 'group'.
-    // Pre-Mundial (no group matches played) also stays null.
+    // Not eliminated in a knockout tie. Rank a still-alive team by the round it
+    // is currently IN — the deepest knockout tie it has already won, plus one.
+    // A team that won its round-of-32 tie is now in the round of 16 → 'alive_r16'
+    // and outranks the teams that lost in the round of 32. (An SF loser awaiting
+    // the third-place match lands on 'alive_sf' here, keeping it in the top-4
+    // band until that match assigns it 'third'/'fourth'.)
+    let deepestWinStage: (typeof KO_STAGES_BY_DEPTH)[number] | null = null
+    if (myKo) {
+      for (const stage of KO_STAGES_BY_DEPTH) {
+        const m = myKo.get(stage)
+        if (!m || !isFinalized(m)) continue
+        if (winnerSide(m) === (m.teamAId === t.id ? 'A' : 'B')) deepestWinStage = stage
+      }
+    }
+    if (deepestWinStage) {
+      agg.reachedRound = ALIVE_AFTER_WIN[deepestWinStage]
+      continue
+    }
+
+    // No knockout win yet. Two remaining cases:
+    //  - Appears in a knockout fixture but hasn't won a tie → qualified and
+    //    still in the round of 32. Leave reachedRound null so the board maps it
+    //    to the 'alive_r32' bracket, above the eliminated teams.
+    //  - Played group matches but is in NO knockout fixture → eliminated in the
+    //    group stage → 'group'. Pre-Mundial (no group matches played) stays null.
     const advancedToKnockouts = (myKo?.size ?? 0) > 0
     if (advancedToKnockouts) continue
     const playedGroup = resolved.some(
