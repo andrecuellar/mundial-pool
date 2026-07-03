@@ -87,8 +87,7 @@ export function PoolLedgerTable({
       </Table>
       <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3 text-xs text-muted-foreground">
         <span>
-          Mostrando {rows.length} de {totalCount}{' '}
-          {totalCount === 1 ? 'depósito' : 'depósitos'}
+          Mostrando {rows.length} de {totalCount} {totalCount === 1 ? 'depósito' : 'depósitos'}
         </span>
         <span className="font-mono">
           Total:{' '}

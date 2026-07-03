@@ -69,83 +69,83 @@ export function BanUserButton({ userId, displayName, isBanned }: Props) {
   if (isBanned) {
     return (
       <>
-      <SavingOverlay
-        phase={phase}
-        icon={ShieldCheck}
-        savingTitle="Desbaneando"
-        successTitle="¡Desbaneado!"
-      />
-      <Dialog open={open} onOpenChange={setOpen}>
-        <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
-          <ShieldCheck className="h-3.5 w-3.5" />
-          Desbanear
-        </Button>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>¿Desbanear a {displayName}?</DialogTitle>
-            <DialogDescription>
-              El usuario podrá volver a entrar a mundial-pool inmediatamente.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
-              Cancelar
-            </Button>
-            <Button onClick={handleUnban} disabled={pending}>
-              {pending ? 'Desbaneando…' : 'Desbanear'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+        <SavingOverlay
+          phase={phase}
+          icon={ShieldCheck}
+          savingTitle="Desbaneando"
+          successTitle="¡Desbaneado!"
+        />
+        <Dialog open={open} onOpenChange={setOpen}>
+          <Button variant="outline" size="sm" onClick={() => setOpen(true)}>
+            <ShieldCheck className="h-3.5 w-3.5" />
+            Desbanear
+          </Button>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>¿Desbanear a {displayName}?</DialogTitle>
+              <DialogDescription>
+                El usuario podrá volver a entrar a mundial-pool inmediatamente.
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
+                Cancelar
+              </Button>
+              <Button onClick={handleUnban} disabled={pending}>
+                {pending ? 'Desbaneando…' : 'Desbanear'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
       </>
     )
   }
 
   return (
     <>
-    <SavingOverlay
-      phase={phase}
-      icon={Ban}
-      savingTitle="Baneando usuario"
-      successTitle="¡Listo, baneado!"
-    />
-    <Dialog open={open} onOpenChange={setOpen}>
-      <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
-        <Ban className="h-3.5 w-3.5" />
-        Banear
-      </Button>
-      <DialogContent className="sm:max-w-md">
-        <DialogHeader>
-          <DialogTitle>¿Banear a {displayName}?</DialogTitle>
-          <DialogDescription>
-            Sus datos (grupos, predicciones, aportes) no se eliminan. Solo pierde el acceso a la
-            app. Puedes desbanear después.
-          </DialogDescription>
-        </DialogHeader>
-        <div className="space-y-2">
-          <Label htmlFor="reason">Motivo (opcional)</Label>
-          <Textarea
-            id="reason"
-            value={reason}
-            onChange={(e) => setReason(e.target.value)}
-            placeholder="Ej: usuario desconocido creó un pozo sin consentimiento"
-            maxLength={500}
-            rows={3}
-          />
-          <p className="text-xs text-muted-foreground">
-            El usuario verá este motivo en la pantalla de baneo.
-          </p>
-        </div>
-        <DialogFooter>
-          <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
-            Cancelar
-          </Button>
-          <Button variant="destructive" onClick={handleBan} disabled={pending}>
-            {pending ? 'Baneando…' : 'Banear'}
-          </Button>
-        </DialogFooter>
-      </DialogContent>
-    </Dialog>
+      <SavingOverlay
+        phase={phase}
+        icon={Ban}
+        savingTitle="Baneando usuario"
+        successTitle="¡Listo, baneado!"
+      />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <Button variant="destructive" size="sm" onClick={() => setOpen(true)}>
+          <Ban className="h-3.5 w-3.5" />
+          Banear
+        </Button>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>¿Banear a {displayName}?</DialogTitle>
+            <DialogDescription>
+              Sus datos (grupos, predicciones, aportes) no se eliminan. Solo pierde el acceso a la
+              app. Puedes desbanear después.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="reason">Motivo (opcional)</Label>
+            <Textarea
+              id="reason"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+              placeholder="Ej: usuario desconocido creó un pozo sin consentimiento"
+              maxLength={500}
+              rows={3}
+            />
+            <p className="text-xs text-muted-foreground">
+              El usuario verá este motivo en la pantalla de baneo.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setOpen(false)} disabled={pending}>
+              Cancelar
+            </Button>
+            <Button variant="destructive" onClick={handleBan} disabled={pending}>
+              {pending ? 'Baneando…' : 'Banear'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   )
 }

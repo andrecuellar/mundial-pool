@@ -55,9 +55,7 @@ export function PoolDisclaimerHome({ className }: Props) {
           {collapsed ? 'Ver más' : 'Ocultar'}
           <ChevronDown
             aria-hidden
-            className={`h-4 w-4 transition-transform duration-300 ${
-              collapsed ? '' : 'rotate-180'
-            }`}
+            className={`h-4 w-4 transition-transform duration-300 ${collapsed ? '' : 'rotate-180'}`}
           />
         </span>
       </button>
@@ -71,8 +69,8 @@ export function PoolDisclaimerHome({ className }: Props) {
           <div className="px-4 pb-3 pl-[2.375rem] text-muted-foreground">
             <p>
               La app solo lleva el registro — el dinero lo manejan ustedes fuera de la app y el
-              reparto lo hace cada administrador de grupo. Únete solo a grupos de gente que conozcas.
-              No nos hacemos responsables por pérdidas, fraudes o disputas entre miembros.
+              reparto lo hace cada administrador de grupo. Únete solo a grupos de gente que
+              conozcas. No nos hacemos responsables por pérdidas, fraudes o disputas entre miembros.
             </p>
           </div>
         </div>

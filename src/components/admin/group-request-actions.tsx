@@ -15,10 +15,7 @@ import {
 } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import {
-  approveGroupCreationRequest,
-  rejectGroupCreationRequest,
-} from '@/features/groups/requests'
+import { approveGroupCreationRequest, rejectGroupCreationRequest } from '@/features/groups/requests'
 
 type Props = {
   requestId: string

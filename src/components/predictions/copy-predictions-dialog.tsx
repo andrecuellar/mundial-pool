@@ -5,6 +5,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useMemo, useState, useTransition } from 'react'
 import { toast } from 'sonner'
+import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import {
   AlertDialog,
   AlertDialogAction,
@@ -15,7 +16,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog'
-import { SavingOverlay } from '@/components/app-shell/saving-overlay'
 import { Button } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
 import {
@@ -86,10 +86,7 @@ export function CopyPredictionsDialog({
 
   // Available sources: groups with at least one prediction (you can't copy
   // from a group you haven't filled in yet).
-  const sourceOptions = useMemo(
-    () => myGroups.filter((g) => g.predictionsCount > 0),
-    [myGroups],
-  )
+  const sourceOptions = useMemo(() => myGroups.filter((g) => g.predictionsCount > 0), [myGroups])
 
   // Available destinations: unlocked groups, excluding the chosen source.
   const destOptions = useMemo(
@@ -239,8 +236,7 @@ export function CopyPredictionsDialog({
                       <div className="space-y-1.5">
                         {destOptions.map((g) => {
                           const checked = destGroupIds.has(g.id)
-                          const disabled =
-                            lockDestSelection && defaultDestGroupIds?.includes(g.id)
+                          const disabled = lockDestSelection && defaultDestGroupIds?.includes(g.id)
                           return (
                             <label
                               key={g.id}
@@ -377,8 +373,8 @@ export function CopyPredictionsDialog({
             <AlertDialogDescription asChild>
               <div className="space-y-2">
                 <p>
-                  Los siguientes grupos ya tienen predicciones tuyas. Si continúas, sus
-                  predicciones se reemplazarán por las del grupo de origen:
+                  Los siguientes grupos ya tienen predicciones tuyas. Si continúas, sus predicciones
+                  se reemplazarán por las del grupo de origen:
                 </p>
                 <ul className="space-y-0.5 pl-4 text-sm text-foreground">
                   {conflicts.map((c) => (

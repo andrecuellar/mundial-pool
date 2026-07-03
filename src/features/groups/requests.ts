@@ -116,10 +116,7 @@ export async function approveGroupCreationRequest(input: unknown): Promise<Reque
         reviewedAt: new Date(),
       })
       .where(eq(groupCreationRequests.id, request.id))
-    await tx
-      .update(profiles)
-      .set({ canCreateGroups: true })
-      .where(eq(profiles.id, request.userId))
+    await tx.update(profiles).set({ canCreateGroups: true }).where(eq(profiles.id, request.userId))
   })
 
   revalidatePath('/admin/solicitudes')
