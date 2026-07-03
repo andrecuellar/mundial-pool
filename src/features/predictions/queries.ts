@@ -95,26 +95,26 @@ export type PlayerOption = {
 
 export const listAllPlayers = unstable_cache(
   async (): Promise<PlayerOption[]> => {
-  const rows = await db
-    .select({
-      id: players.id,
-      fullName: players.fullName,
-      teamName: teams.name,
-      teamFlag: teams.flagEmoji,
-      position: players.position,
-      dateOfBirth: players.dateOfBirth,
-    })
-    .from(players)
-    .leftJoin(teams, eq(teams.id, players.teamId))
-    .orderBy(asc(players.fullName))
-  return rows.map((r) => ({
-    id: r.id,
-    fullName: r.fullName,
-    teamName: r.teamName ?? '',
-    teamFlag: r.teamFlag,
-    position: r.position,
-    dateOfBirth: r.dateOfBirth,
-  }))
+    const rows = await db
+      .select({
+        id: players.id,
+        fullName: players.fullName,
+        teamName: teams.name,
+        teamFlag: teams.flagEmoji,
+        position: players.position,
+        dateOfBirth: players.dateOfBirth,
+      })
+      .from(players)
+      .leftJoin(teams, eq(teams.id, players.teamId))
+      .orderBy(asc(players.fullName))
+    return rows.map((r) => ({
+      id: r.id,
+      fullName: r.fullName,
+      teamName: r.teamName ?? '',
+      teamFlag: r.teamFlag,
+      position: r.position,
+      dateOfBirth: r.dateOfBirth,
+    }))
   },
   ['list-all-players'],
   { revalidate: 3600, tags: ['players'] },

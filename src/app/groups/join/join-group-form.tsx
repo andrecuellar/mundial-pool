@@ -46,69 +46,71 @@ export function JoinGroupForm() {
 
   return (
     <>
-    <SavingOverlay
-      phase={phase}
-      icon={UserPlus}
-      savingTitle="Uniéndote al grupo"
-      savingSubtitle="Verificando el código"
-      successTitle="¡Listo!"
-      successSubtitle="Te llevamos a tu nuevo grupo"
-    />
-    <form onSubmit={handleSubmit} className="space-y-5">
-      <Input
-        value={code}
-        onChange={(e) => {
-          setError(null)
-          setCode(sanitize(e.target.value))
-        }}
-        type="text"
-        inputMode="text"
-        autoCapitalize="characters"
-        autoComplete="off"
-        autoCorrect="off"
-        spellCheck={false}
-        maxLength={CODE_LEN}
-        placeholder="K7M2XQ"
-        aria-label="Código de invitación"
-        className={`h-16 text-center font-mono text-3xl font-semibold uppercase tabular-nums tracking-[0.4em] sm:tracking-[0.6em] ${
-          error
-            ? 'border-destructive bg-destructive/5'
-            : code.length === CODE_LEN
-              ? 'border-primary bg-primary/5 text-foreground'
-              : ''
-        }`}
+      <SavingOverlay
+        phase={phase}
+        icon={UserPlus}
+        savingTitle="Uniéndote al grupo"
+        savingSubtitle="Verificando el código"
+        successTitle="¡Listo!"
+        successSubtitle="Te llevamos a tu nuevo grupo"
       />
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Input
+          value={code}
+          onChange={(e) => {
+            setError(null)
+            setCode(sanitize(e.target.value))
+          }}
+          type="text"
+          inputMode="text"
+          autoCapitalize="characters"
+          autoComplete="off"
+          autoCorrect="off"
+          spellCheck={false}
+          maxLength={CODE_LEN}
+          placeholder="K7M2XQ"
+          aria-label="Código de invitación"
+          className={`h-16 text-center font-mono text-3xl font-semibold uppercase tabular-nums tracking-[0.4em] sm:tracking-[0.6em] ${
+            error
+              ? 'border-destructive bg-destructive/5'
+              : code.length === CODE_LEN
+                ? 'border-primary bg-primary/5 text-foreground'
+                : ''
+          }`}
+        />
 
-      <p className="text-center text-xs text-muted-foreground">
-        Pega el código directamente o escríbelo. {code.length} / {CODE_LEN}
-      </p>
+        <p className="text-center text-xs text-muted-foreground">
+          Pega el código directamente o escríbelo. {code.length} / {CODE_LEN}
+        </p>
 
-      {error && (
-        <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
-          <div className="flex items-start gap-2.5">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
-            <p className="text-sm leading-relaxed">
-              <span className="font-medium">{error}</span>{' '}
-              <span className="text-muted-foreground">Verifica el código con quien te invitó.</span>
-            </p>
+        {error && (
+          <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+            <div className="flex items-start gap-2.5">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-destructive" />
+              <p className="text-sm leading-relaxed">
+                <span className="font-medium">{error}</span>{' '}
+                <span className="text-muted-foreground">
+                  Verifica el código con quien te invitó.
+                </span>
+              </p>
+            </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="space-y-2 pt-2">
-        <Button
-          type="submit"
-          disabled={pending || code.length !== CODE_LEN}
-          size="lg"
-          className="w-full"
-        >
-          {pending ? 'Verificando…' : 'Unirme'}
-        </Button>
-        <Button asChild variant="ghost" size="lg" className="w-full">
-          <a href="/">Cancelar</a>
-        </Button>
-      </div>
-    </form>
+        <div className="space-y-2 pt-2">
+          <Button
+            type="submit"
+            disabled={pending || code.length !== CODE_LEN}
+            size="lg"
+            className="w-full"
+          >
+            {pending ? 'Verificando…' : 'Unirme'}
+          </Button>
+          <Button asChild variant="ghost" size="lg" className="w-full">
+            <a href="/">Cancelar</a>
+          </Button>
+        </div>
+      </form>
     </>
   )
 }

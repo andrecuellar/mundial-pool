@@ -1,4 +1,5 @@
 import { desc, eq } from 'drizzle-orm'
+import { alias } from 'drizzle-orm/pg-core'
 import Link from 'next/link'
 import { AdminDataTable } from '@/components/admin/data-table'
 import { GroupRequestActions } from '@/components/admin/group-request-actions'
@@ -13,7 +14,6 @@ import {
 } from '@/components/ui/table'
 import { db } from '@/db'
 import { groupCreationRequests, profiles } from '@/db/schema'
-import { alias } from 'drizzle-orm/pg-core'
 
 export const dynamic = 'force-dynamic'
 
@@ -132,9 +132,7 @@ export default async function AdminSolicitudesPage() {
                   >
                     {r.displayName}
                   </Link>
-                  {r.email && (
-                    <p className="text-xs text-muted-foreground">{r.email}</p>
-                  )}
+                  {r.email && <p className="text-xs text-muted-foreground">{r.email}</p>}
                 </TableCell>
                 <TableCell className="hidden sm:table-cell max-w-[20rem] text-sm text-muted-foreground">
                   {r.message ?? <span className="italic">(sin mensaje)</span>}
@@ -176,13 +174,14 @@ export default async function AdminSolicitudesPage() {
                   >
                     {r.displayName}
                   </Link>
-                  {r.email && (
-                    <p className="text-xs text-muted-foreground">{r.email}</p>
-                  )}
+                  {r.email && <p className="text-xs text-muted-foreground">{r.email}</p>}
                 </TableCell>
                 <TableCell>
                   {r.status === 'approved' ? (
-                    <Badge variant="secondary" className="border-accent/30 bg-accent/10 text-accent">
+                    <Badge
+                      variant="secondary"
+                      className="border-accent/30 bg-accent/10 text-accent"
+                    >
                       Aprobada
                     </Badge>
                   ) : (
@@ -198,7 +197,8 @@ export default async function AdminSolicitudesPage() {
                   {r.reviewerName ?? '—'}
                 </TableCell>
                 <TableCell className="hidden md:table-cell text-xs text-muted-foreground max-w-[16rem]">
-                  {r.rejectionReason ?? (r.status === 'rejected' ? <span className="italic">(sin motivo)</span> : '—')}
+                  {r.rejectionReason ??
+                    (r.status === 'rejected' ? <span className="italic">(sin motivo)</span> : '—')}
                 </TableCell>
                 <TableCell className="hidden lg:table-cell text-xs text-muted-foreground text-right">
                   {r.reviewedAt ? formatRelative(r.reviewedAt) : '—'}
