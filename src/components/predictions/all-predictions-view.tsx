@@ -5,6 +5,10 @@ import { useMemo, useState } from 'react'
 import { ReactionBar } from '@/components/predictions/reaction-bar'
 import { renderPick } from '@/components/predictions/render-pick'
 import { ShareCardIconButton } from '@/components/predictions/share-card-icon-button'
+import {
+  ShareCategoryStoryCard,
+  type StoryRow,
+} from '@/components/predictions/share-category-story-card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
@@ -145,104 +149,135 @@ export function AllPredictionsView({
         </Card>
       )}
 
-      {focusedCategory ? (
-        <Card className="overflow-hidden p-0">
-          <div className="border-b border-border bg-muted/30 px-5 py-3">
-            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-              {focusedCategory.name}
-            </p>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Lo que eligió cada miembro en esta categoría.
-            </p>
-          </div>
-          <ul className="divide-y divide-border">
-            {filteredMembers.map((m) => {
-              const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
-              const isMe = m.userId === currentUserId
-              return (
-                <li key={m.userId} className="px-5 py-3">
-                  <div className="flex items-center justify-between gap-3">
-                    <div className="flex min-w-0 items-center gap-2.5">
-                      <Avatar className="h-8 w-8">
-                        {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
-                        <AvatarFallback className="text-xs">
-                          {initials(m.displayName)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <span className="truncate text-sm font-medium">{m.displayName}</span>
-                      {isMe && (
-                        <Badge
-                          variant="secondary"
-                          className="border-primary/20 bg-primary/10 text-primary"
-                        >
-                          Tú
-                        </Badge>
-                      )}
+      {focusedCategory
+        ? (() => {
+            const storyId = `category-share-${focusedCategory.key}`
+            const storyRows: StoryRow[] = filteredMembers.map((m) => ({
+              userId: m.userId,
+              displayName: m.displayName,
+              avatarUrl: m.avatarUrl,
+              pick: view.picksByMemberCategory[m.userId]?.[focusedCategory.id],
+              reactions: view.reactionsByKey?.[`${m.userId}-${focusedCategory.id}`] ?? [],
+            }))
+            return (
+              <>
+                <Card className="overflow-hidden p-0">
+                  <div className="flex items-start justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3">
+                    <div className="min-w-0">
+                      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                        {focusedCategory.name}
+                      </p>
+                      <p className="mt-0.5 text-xs text-muted-foreground">
+                        Lo que eligió cada miembro en esta categoría.
+                      </p>
                     </div>
-                    <div className="text-right text-sm">{renderPick(p)}</div>
+                    {filteredMembers.length > 0 && (
+                      <ShareCardIconButton
+                        targetId={storyId}
+                        fileName={`mundial-pool-${groupSlug}-${focusedCategory.key}`}
+                        shareTitle={`${focusedCategory.name} · ${groupName}`}
+                        shareText={`Mira lo que apostó el grupo para ${focusedCategory.name} en ${groupName} · Mundial 2026.`}
+                        ariaLabel={`Compartir ${focusedCategory.name} del grupo como imagen`}
+                      />
+                    )}
                   </div>
-                  {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
-                </li>
-              )
-            })}
-          </ul>
-        </Card>
-      ) : (
-        filteredMembers.map((m) => {
-          const isMe = m.userId === currentUserId
-          const memberPicks = view.picksByMemberCategory[m.userId] ?? {}
-          const cardId = `member-share-${m.userId}`
-          const nameSlug = slugifyName(m.displayName)
-          return (
-            <Card
-              key={m.userId}
-              id={cardId}
-              className={`overflow-hidden p-0 ${isMe ? 'border-primary/40' : ''}`}
-            >
-              <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-5 py-3">
-                <Avatar className="h-9 w-9">
-                  {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
-                  <AvatarFallback className="text-xs">{initials(m.displayName)}</AvatarFallback>
-                </Avatar>
-                <div className="flex min-w-0 flex-1 items-center gap-2">
-                  <span className="truncate text-sm font-semibold">{m.displayName}</span>
-                  {isMe && (
-                    <Badge
-                      variant="secondary"
-                      className="border-primary/20 bg-primary/10 text-primary"
-                    >
-                      Tú
-                    </Badge>
-                  )}
-                </div>
-                <ShareCardIconButton
-                  targetId={cardId}
-                  fileName={`mundial-pool-${groupSlug}-${nameSlug}`}
-                  shareTitle={`Apuestas de ${m.displayName} · ${groupName}`}
-                  shareText={`Mira la apuesta de ${m.displayName} en ${groupName} para el Mundial 2026 en mundial•pool.`}
-                  ariaLabel={`Compartir apuesta de ${m.displayName} como imagen`}
+                  <ul className="divide-y divide-border">
+                    {filteredMembers.map((m) => {
+                      const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
+                      const isMe = m.userId === currentUserId
+                      return (
+                        <li key={m.userId} className="px-5 py-3">
+                          <div className="flex items-center justify-between gap-3">
+                            <div className="flex min-w-0 items-center gap-2.5">
+                              <Avatar className="h-8 w-8">
+                                {m.avatarUrl && (
+                                  <AvatarImage src={m.avatarUrl} alt={m.displayName} />
+                                )}
+                                <AvatarFallback className="text-xs">
+                                  {initials(m.displayName)}
+                                </AvatarFallback>
+                              </Avatar>
+                              <span className="truncate text-sm font-medium">{m.displayName}</span>
+                              {isMe && (
+                                <Badge
+                                  variant="secondary"
+                                  className="border-primary/20 bg-primary/10 text-primary"
+                                >
+                                  Tú
+                                </Badge>
+                              )}
+                            </div>
+                            <div className="text-right text-sm">{renderPick(p)}</div>
+                          </div>
+                          {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
+                        </li>
+                      )
+                    })}
+                  </ul>
+                </Card>
+                <ShareCategoryStoryCard
+                  id={storyId}
+                  categoryName={focusedCategory.name}
+                  groupName={groupName}
+                  rows={storyRows}
                 />
-              </div>
-              <ul className="divide-y divide-border">
-                {categories.map((cat) => (
-                  <li key={cat.id} className="px-5 py-2.5 text-sm">
-                    <div className="flex items-start justify-between gap-3">
-                      <span className="min-w-0 text-muted-foreground">{cat.name}</span>
-                      <span className="text-right text-foreground">
-                        {renderPick(memberPicks[cat.id])}
-                      </span>
-                    </div>
-                    {!isMe && reactionBarFor(m.userId, cat.id)}
-                  </li>
-                ))}
-              </ul>
-              <div className="border-t border-border bg-muted/20 px-5 py-2 text-center text-[11px] text-muted-foreground">
-                mundial•pool · {groupName} · Mundial 2026
-              </div>
-            </Card>
-          )
-        })
-      )}
+              </>
+            )
+          })()
+        : filteredMembers.map((m) => {
+            const isMe = m.userId === currentUserId
+            const memberPicks = view.picksByMemberCategory[m.userId] ?? {}
+            const cardId = `member-share-${m.userId}`
+            const nameSlug = slugifyName(m.displayName)
+            return (
+              <Card
+                key={m.userId}
+                id={cardId}
+                className={`overflow-hidden p-0 ${isMe ? 'border-primary/40' : ''}`}
+              >
+                <div className="flex items-center gap-3 border-b border-border bg-muted/30 px-5 py-3">
+                  <Avatar className="h-9 w-9">
+                    {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
+                    <AvatarFallback className="text-xs">{initials(m.displayName)}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex min-w-0 flex-1 items-center gap-2">
+                    <span className="truncate text-sm font-semibold">{m.displayName}</span>
+                    {isMe && (
+                      <Badge
+                        variant="secondary"
+                        className="border-primary/20 bg-primary/10 text-primary"
+                      >
+                        Tú
+                      </Badge>
+                    )}
+                  </div>
+                  <ShareCardIconButton
+                    targetId={cardId}
+                    fileName={`mundial-pool-${groupSlug}-${nameSlug}`}
+                    shareTitle={`Apuestas de ${m.displayName} · ${groupName}`}
+                    shareText={`Mira la apuesta de ${m.displayName} en ${groupName} para el Mundial 2026 en mundial•pool.`}
+                    ariaLabel={`Compartir apuesta de ${m.displayName} como imagen`}
+                  />
+                </div>
+                <ul className="divide-y divide-border">
+                  {categories.map((cat) => (
+                    <li key={cat.id} className="px-5 py-2.5 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 text-muted-foreground">{cat.name}</span>
+                        <span className="text-right text-foreground">
+                          {renderPick(memberPicks[cat.id])}
+                        </span>
+                      </div>
+                      {!isMe && reactionBarFor(m.userId, cat.id)}
+                    </li>
+                  ))}
+                </ul>
+                <div className="border-t border-border bg-muted/20 px-5 py-2 text-center text-[11px] text-muted-foreground">
+                  mundial•pool · {groupName} · Mundial 2026
+                </div>
+              </Card>
+            )
+          })}
     </div>
   )
 }
