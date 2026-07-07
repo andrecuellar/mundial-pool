@@ -1,8 +1,17 @@
 import { and, eq, gt, sql } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
-import { categories, groupCategories, groupMembers, predictions, results, teams } from '@/db/schema'
+import {
+  categories,
+  groupCategories,
+  groupMembers,
+  groups,
+  predictions,
+  results,
+  teams,
+} from '@/db/schema'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
+import { compareRanked } from '@/features/scoring/rank'
 import { getEliminationContext, isPickDead } from '@/features/tournament/eliminations'
 
 export type LeaderboardRow = {
@@ -121,6 +130,95 @@ export async function getLostCategoryIdsByUser(
   }
   return out
 }
+
+export type RankedLeaderboardRow = LeaderboardRow & {
+  /** Categorías con puntos ganados (> 0). */
+  correctCount: number
+  /** Ceros definitivos: categorías resueltas sin acierto o con pick imposible/vacío post-cierre. */
+  failedCount: number
+  /** Banderas (únicas) de las selecciones elegidas que ya quedaron fuera del torneo. */
+  deadFlags: string[]
+}
+
+/**
+ * Leaderboard con el criterio de desempate por fallos: a igualdad de puntos va
+ * más arriba quien tiene menos ceros definitivos. Es la fuente de verdad para
+ * el orden de la tabla, la posición personal y el reparto del pozo — usar esto
+ * en vez de getLeaderboard en cualquier superficie que muestre puestos.
+ */
+export const getRankedLeaderboard = cache(
+  async (groupId: string): Promise<RankedLeaderboardRow[]> => {
+    const group = await db.query.groups.findFirst({
+      where: eq(groups.id, groupId),
+      columns: { predictionsLockAt: true },
+    })
+    const lockAt = group?.predictionsLockAt ?? new Date(0)
+
+    const [rows, lostByUser, resolvedIds, catRows, predRows, teamRows, ctx] = await Promise.all([
+      getLeaderboard(groupId),
+      getLostCategoryIdsByUser(groupId, lockAt),
+      getResolvedCategoryIds(),
+      db
+        .select({ id: categories.id })
+        .from(categories)
+        .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+        .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+      db
+        .select({
+          userId: predictions.userId,
+          categoryId: predictions.categoryId,
+          teamId: predictions.teamId,
+          teamSet: predictions.teamSet,
+        })
+        .from(predictions)
+        .where(eq(predictions.groupId, groupId)),
+      db.select({ id: teams.id, flagEmoji: teams.flagEmoji }).from(teams),
+      getEliminationContext(),
+    ])
+
+    const resolved = new Set(resolvedIds)
+    const enabledCatIds = new Set(catRows.map((c) => c.id))
+    const flagByTeamId = new Map(teamRows.map((t) => [t.id, t.flagEmoji]))
+
+    // Banderas de selecciones eliminadas del torneo que el usuario eligió en
+    // cualquier categoría de equipos. Dedupe por bandera (elegir a Portugal
+    // campeón Y finalista cuenta una sola vez en la carta compartible).
+    const deadFlagsByUser = new Map<string, string[]>()
+    for (const p of predRows) {
+      if (!enabledCatIds.has(p.categoryId)) continue
+      const teamIds: string[] = []
+      if (p.teamId) teamIds.push(p.teamId)
+      if (Array.isArray(p.teamSet)) teamIds.push(...(p.teamSet as string[]))
+      for (const tid of teamIds) {
+        const fate = ctx.fatesByTeamId[tid]
+        if (!fate || fate.stillPlaying) continue
+        const flag = flagByTeamId.get(tid)
+        if (!flag) continue
+        const arr = deadFlagsByUser.get(p.userId) ?? []
+        if (!arr.includes(flag)) arr.push(flag)
+        deadFlagsByUser.set(p.userId, arr)
+      }
+    }
+
+    const ranked = rows.map((r) => {
+      const lost = new Set(lostByUser[r.userId] ?? [])
+      let correctCount = 0
+      let failedCount = 0
+      for (const c of catRows) {
+        const pts = r.breakdown[c.id] ?? 0
+        if (pts > 0) correctCount++
+        else if (resolved.has(c.id) || lost.has(c.id)) failedCount++
+      }
+      return {
+        ...r,
+        correctCount,
+        failedCount,
+        deadFlags: deadFlagsByUser.get(r.userId) ?? [],
+      }
+    })
+    return ranked.sort(compareRanked)
+  },
+)
 
 export type UserCategoryBreakdownRow = {
   key: string

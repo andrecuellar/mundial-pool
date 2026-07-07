@@ -11,9 +11,19 @@ type Props = {
   fileName: string
   shareTitle: string
   shareText: string
+  label?: string
+  /** Apagar cuando hay más de un botón en la página, para que ?share=1 no dispare ambos. */
+  autoShare?: boolean
 }
 
-export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareText }: Props) {
+export function ShareComprobanteButton({
+  targetId,
+  fileName,
+  shareTitle,
+  shareText,
+  label = 'Compartir como imagen',
+  autoShare = true,
+}: Props) {
   const [pending, setPending] = useState(false)
   const autoTriggered = useRef(false)
 
@@ -22,6 +32,7 @@ export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareTe
   // disparamos el share automáticamente al montar. Limpiamos el query
   // param para que un reload no lo dispare otra vez.
   useEffect(() => {
+    if (!autoShare) return
     if (autoTriggered.current) return
     if (typeof window === 'undefined') return
     const params = new URLSearchParams(window.location.search)
@@ -37,7 +48,7 @@ export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareTe
     }, 350)
     return () => window.clearTimeout(t)
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+  }, [autoShare])
 
   async function handleShare() {
     setPending(true)
@@ -58,7 +69,7 @@ export function ShareComprobanteButton({ targetId, fileName, shareTitle, shareTe
       type="button"
     >
       <Share2 className="h-3.5 w-3.5" />
-      {pending ? 'Generando imagen…' : 'Compartir como imagen'}
+      {pending ? 'Generando imagen…' : label}
     </Button>
   )
 }

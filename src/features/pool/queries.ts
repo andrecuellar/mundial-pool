@@ -2,7 +2,7 @@ import { and, desc, eq, isNotNull, lt, sql } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
 import { groups, poolTransactions, profiles } from '@/db/schema'
-import { getLeaderboard } from '@/features/scoring/queries'
+import { getRankedLeaderboard } from '@/features/scoring/queries'
 
 export type PoolSummary = {
   enabled: boolean
@@ -171,7 +171,7 @@ export type PayoutEntry = {
 export async function computePayout(groupId: string): Promise<PayoutEntry[]> {
   const summary = await getPoolSummary(groupId)
   if (!summary.enabled || summary.total === 0) return []
-  const leaderboard = await getLeaderboard(groupId)
+  const leaderboard = await getRankedLeaderboard(groupId)
   if (leaderboard.length === 0) return []
 
   const splits: Record<PoolSummary['payoutRule'], number[]> = {
@@ -182,17 +182,23 @@ export async function computePayout(groupId: string): Promise<PayoutEntry[]> {
   const percents = splits[summary.payoutRule]
   if (percents.length === 0) return []
 
-  // Group by points using competition ranking: tied players share a rank and
-  // split their slice proportionally; the next distinct group's rank skips by
-  // the size of the tie (1, 1, 3, 3, 5).
-  const groups: { rank: number; points: number; users: typeof leaderboard }[] = []
+  // Group using competition ranking with the same tiebreak as the table: tied
+  // on points AND definitive failures share a rank and split their slice
+  // proportionally; the next distinct group's rank skips by the size of the
+  // tie (1, 1, 3, 3, 5). Fewer failures on equal points = better rank.
+  const groups: { rank: number; points: number; failed: number; users: typeof leaderboard }[] = []
   let position = 1
   for (const row of leaderboard) {
     const last = groups.at(-1)
-    if (last && last.points === row.totalPoints) {
+    if (last && last.points === row.totalPoints && last.failed === row.failedCount) {
       last.users.push(row)
     } else {
-      groups.push({ rank: position, points: row.totalPoints, users: [row] })
+      groups.push({
+        rank: position,
+        points: row.totalPoints,
+        failed: row.failedCount,
+        users: [row],
+      })
     }
     position++
   }

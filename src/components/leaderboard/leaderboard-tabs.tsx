@@ -3,16 +3,17 @@
 import { useState } from 'react'
 import { ShareComprobanteButton } from '@/components/predictions/share-comprobante-button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import type { LeaderboardRow } from '@/features/scoring/queries'
+import type { RankedLeaderboardRow } from '@/features/scoring/queries'
 import { formatDayShort } from '@/lib/format'
 import { CategoryBreakdownTable } from './category-breakdown-table'
 import type { PaidAt } from './ranking-table'
 import { RankingTable } from './ranking-table'
+import { ShareLeaderboardStoryCard } from './share-leaderboard-story-card'
 
 type Category = { id: string; name: string; key: string; points: number }
 
 type Props = {
-  leaderboard: LeaderboardRow[]
+  leaderboard: RankedLeaderboardRow[]
   categories: Category[]
   /** Categorías con resultado oficial — sus celdas ya son definitivas. */
   resolvedCategoryIds: string[]
@@ -75,14 +76,30 @@ export function LeaderboardTabs({
             />
           </div>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 grid gap-2 sm:grid-cols-2">
           <ShareComprobanteButton
             targetId="leaderboard-card"
             fileName={`mundial-pool-tabla-${groupSlug}`}
             shareTitle={`Tabla · ${groupName}`}
             shareText={`Ranking actual del pool ${groupName} en mundial-pool 🏆`}
+            label="Compartir tabla"
+          />
+          <ShareComprobanteButton
+            targetId="leaderboard-story-card"
+            fileName={`mundial-pool-story-${groupSlug}`}
+            shareTitle={`Tabla · ${groupName}`}
+            shareText={`Así va el pool ${groupName} en mundial-pool 🏆 — aciertos, fallos y selecciones eliminadas de cada uno.`}
+            label="Compartir para historias"
+            autoShare={false}
           />
         </div>
+        <ShareLeaderboardStoryCard
+          id="leaderboard-story-card"
+          groupName={groupName}
+          rows={leaderboard}
+          currentUserId={currentUserId}
+          dateLabel={formatDayShort(new Date())}
+        />
       </TabsContent>
       <TabsContent value="breakdown">
         <CategoryBreakdownTable
