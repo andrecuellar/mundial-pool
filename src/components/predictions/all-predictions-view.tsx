@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import type { AllPredictionsPick } from '@/features/predictions/queries'
+import type { AllPredictionsPick, PickFate } from '@/features/predictions/queries'
 import type { ReactionBucket } from '@/features/reactions/types'
 
 function initials(name: string): string {
@@ -48,6 +48,8 @@ export type ViewData = {
   predictionIdsByMemberCategory?: Record<string, Record<string, string | undefined>>
   /** Optional reaction buckets keyed "userId-categoryId". */
   reactionsByKey?: Record<string, ReactionBucket[] | undefined>
+  /** Estado definitivo por (miembro, categoría): fallado / acertado / parcial. */
+  fateByMemberCategory?: Record<string, Record<string, PickFate | undefined>>
 }
 
 type Props = {
@@ -96,6 +98,25 @@ export function AllPredictionsView({
     if (!predictionId) return null
     const buckets = view.reactionsByKey?.[`${memberId}-${categoryId}`] ?? []
     return <ReactionBar predictionId={predictionId} initialBuckets={buckets} />
+  }
+
+  // Chip de estado definitivo: solo aparece cuando el pick ya está decidido
+  // (categoría resuelta o predicción matemáticamente imposible).
+  function fateChipFor(memberId: string, categoryId: string) {
+    const fate = view.fateByMemberCategory?.[memberId]?.[categoryId]
+    if (!fate) return null
+    const styles =
+      fate === 'failed'
+        ? 'border-destructive/20 bg-destructive/10 text-destructive'
+        : fate === 'partial'
+          ? 'border-warning/20 bg-warning/10 text-warning'
+          : 'border-success/20 bg-success/10 text-success'
+    const label = fate === 'failed' ? 'Fallado' : fate === 'partial' ? 'Parcial' : 'Acertado'
+    return (
+      <Badge variant="secondary" className={`shrink-0 ${styles}`}>
+        {label}
+      </Badge>
+    )
   }
 
   const filteredMembers = useMemo(() => {
@@ -207,7 +228,10 @@ export function AllPredictionsView({
                                 </Badge>
                               )}
                             </div>
-                            <div className="text-right text-sm">{renderPick(p)}</div>
+                            <div className="flex items-center justify-end gap-2 text-right text-sm">
+                              {fateChipFor(m.userId, focusedCategory.id)}
+                              {renderPick(p)}
+                            </div>
                           </div>
                           {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
                         </li>
@@ -264,7 +288,8 @@ export function AllPredictionsView({
                     <li key={cat.id} className="px-5 py-2.5 text-sm">
                       <div className="flex items-start justify-between gap-3">
                         <span className="min-w-0 text-muted-foreground">{cat.name}</span>
-                        <span className="text-right text-foreground">
+                        <span className="flex items-center justify-end gap-2 text-right text-foreground">
+                          {fateChipFor(m.userId, cat.id)}
                           {renderPick(memberPicks[cat.id])}
                         </span>
                       </div>

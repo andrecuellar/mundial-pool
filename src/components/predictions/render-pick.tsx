@@ -11,8 +11,14 @@ export function renderPick(p: AllPredictionsPick | undefined): React.ReactNode {
   if (p.kind === 'team') {
     return (
       <span className="inline-flex items-center gap-1.5 font-medium">
-        <span className="text-base leading-none">{p.teamFlag ?? '🏳️'}</span>
-        <span>{p.teamName}</span>
+        <span className={`text-base leading-none ${p.dead ? 'opacity-50' : ''}`}>
+          {p.teamFlag ?? '🏳️'}
+        </span>
+        <span
+          className={p.dead ? 'text-muted-foreground line-through decoration-destructive/60' : ''}
+        >
+          {p.teamName}
+        </span>
       </span>
     )
   }
@@ -22,17 +28,33 @@ export function renderPick(p: AllPredictionsPick | undefined): React.ReactNode {
         {p.teams.map((t) => (
           <span
             key={t.name}
-            className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-xs"
+            className={`inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5 text-xs ${
+              t.dead ? 'opacity-60' : ''
+            }`}
           >
             <span className="leading-none">{t.flag ?? '🏳️'}</span>
-            <span className="font-medium">{t.name}</span>
+            <span
+              className={`font-medium ${
+                t.dead ? 'text-muted-foreground line-through decoration-destructive/60' : ''
+              }`}
+            >
+              {t.name}
+            </span>
           </span>
         ))}
       </span>
     )
   }
   if (p.kind === 'player') {
-    return <span className="font-medium">{p.text}</span>
+    return (
+      <span
+        className={`font-medium ${
+          p.dead ? 'text-muted-foreground line-through decoration-destructive/60' : ''
+        }`}
+      >
+        {p.text}
+      </span>
+    )
   }
   return null
 }

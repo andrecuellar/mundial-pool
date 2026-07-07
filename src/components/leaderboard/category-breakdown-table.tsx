@@ -19,12 +19,17 @@ function initials(name: string): string {
 export function CategoryBreakdownTable({
   rows,
   categories,
+  resolvedCategoryIds,
+  lostByUser,
   currentUserId,
 }: {
   rows: LeaderboardRow[]
   categories: Category[]
+  resolvedCategoryIds: string[]
+  lostByUser: Record<string, string[]>
   currentUserId: string
 }) {
+  const resolvedSet = new Set(resolvedCategoryIds)
   return (
     <Card className="overflow-hidden p-0">
       <div className="overflow-x-auto">
@@ -53,6 +58,7 @@ export function CategoryBreakdownTable({
           <tbody>
             {rows.map((r, i) => {
               const isMe = r.userId === currentUserId
+              const lostSet = new Set(lostByUser[r.userId] ?? [])
               return (
                 <tr
                   key={r.userId}
@@ -75,18 +81,23 @@ export function CategoryBreakdownTable({
                   {categories.map((c) => {
                     const pts = r.breakdown[c.id] ?? 0
                     const full = pts === c.points
+                    // Definitivo con 0 puntos: categoría ya resuelta sin acierto,
+                    // o pick muerto (equipo/jugador sin chance matemática).
+                    const dead = pts === 0 && (resolvedSet.has(c.id) || lostSet.has(c.id))
                     return (
                       <td
                         key={c.id}
                         className={`px-2 py-3 text-center font-mono text-sm ${
-                          pts === 0
-                            ? 'text-muted-foreground'
-                            : full
-                              ? 'text-success font-semibold'
-                              : 'text-foreground'
+                          dead
+                            ? 'text-destructive/70'
+                            : pts === 0
+                              ? 'text-muted-foreground'
+                              : full
+                                ? 'text-success font-semibold'
+                                : 'text-foreground'
                         }`}
                       >
-                        {pts || '—'}
+                        {pts > 0 ? pts : dead ? 0 : '—'}
                       </td>
                     )
                   })}
@@ -103,9 +114,12 @@ export function CategoryBreakdownTable({
           </tbody>
         </table>
       </div>
-      <div className="flex items-center justify-between border-t border-border bg-muted/40 px-4 py-3 text-[11px] text-muted-foreground">
+      <div className="flex items-center justify-between gap-3 border-t border-border bg-muted/40 px-4 py-3 text-[11px] text-muted-foreground">
         <span>Pasa el cursor sobre el número de categoría para ver el nombre completo.</span>
-        <span className="font-mono">✓ verde = acierto completo</span>
+        <span className="shrink-0 text-right font-mono">
+          verde = acierto · <span className="text-destructive/70">0</span> = sin chance · — = en
+          juego
+        </span>
       </div>
     </Card>
   )

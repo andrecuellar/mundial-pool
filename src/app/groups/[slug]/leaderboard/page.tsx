@@ -9,7 +9,11 @@ import { db } from '@/db'
 import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
 import { getPoolContributorPaidAt, getPoolSummary } from '@/features/pool/queries'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
-import { getLeaderboard } from '@/features/scoring/queries'
+import {
+  getLeaderboard,
+  getLostCategoryIdsByUser,
+  getResolvedCategoryIds,
+} from '@/features/scoring/queries'
 import { formatTimeOnly } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -44,7 +48,7 @@ export default async function LeaderboardPage({ params }: Params) {
   })
   if (!membership) notFound()
 
-  const [leaderboard, catsRaw, pool, paidAt] = await Promise.all([
+  const [leaderboard, catsRaw, pool, paidAt, resolvedCategoryIds, lostByUser] = await Promise.all([
     getLeaderboard(group.id),
     db
       .select({
@@ -58,6 +62,8 @@ export default async function LeaderboardPage({ params }: Params) {
       .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
     getPoolSummary(group.id),
     getPoolContributorPaidAt(group.id),
+    getResolvedCategoryIds(),
+    getLostCategoryIdsByUser(group.id, group.predictionsLockAt),
   ])
   const cats = sortByCategoryOrder(catsRaw)
 
@@ -96,6 +102,8 @@ export default async function LeaderboardPage({ params }: Params) {
           <LeaderboardTabs
             leaderboard={leaderboard}
             categories={cats}
+            resolvedCategoryIds={resolvedCategoryIds}
+            lostByUser={lostByUser}
             currentUserId={user.id}
             poolEnabled={pool.enabled}
             paidAt={paidAt}
@@ -106,8 +114,8 @@ export default async function LeaderboardPage({ params }: Params) {
           />
           <p className="mt-3 text-center text-xs text-muted-foreground">
             Los puntos se recalculan automáticamente con cada partido resuelto. Si dos o más
-            jugadores empatan en puntos, comparten el puesto (verás el mismo número repetido en varias filas) y el premio correspondiente se
-            divide en partes iguales entre ellos.
+            jugadores empatan en puntos, comparten el puesto (verás el mismo número repetido en
+            varias filas) y el premio correspondiente se divide en partes iguales entre ellos.
           </p>
         </div>
       </main>

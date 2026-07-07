@@ -1,8 +1,9 @@
 import { and, eq, gt, sql } from 'drizzle-orm'
 import { cache } from 'react'
 import { db } from '@/db'
-import { categories, groupCategories, predictions, results, teams } from '@/db/schema'
+import { categories, groupCategories, groupMembers, predictions, results, teams } from '@/db/schema'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
+import { getEliminationContext, isPickDead } from '@/features/tournament/eliminations'
 
 export type LeaderboardRow = {
   userId: string
@@ -44,11 +45,88 @@ export const getLeaderboard = cache(async (groupId: string): Promise<Leaderboard
   }))
 })
 
+/** Categorías con resultado oficial cargado — sus celdas ya son definitivas. */
+export async function getResolvedCategoryIds(): Promise<string[]> {
+  const rows = await db.select({ categoryId: results.categoryId }).from(results)
+  return rows.map((r) => r.categoryId)
+}
+
+/**
+ * Por usuario, las categorías SIN resolver cuyo pick ya no puede sumar ni un
+ * punto: el equipo/jugador elegido quedó matemáticamente eliminado, o la
+ * casilla quedó vacía después del cierre. La tabla de líderes las muestra como
+ * 0 definitivo en vez de "—" pendiente. Se recalcula en cada request desde el
+ * estado del bracket que el cron diario mantiene al día.
+ */
+export async function getLostCategoryIdsByUser(
+  groupId: string,
+  lockAt: Date,
+): Promise<Record<string, string[]>> {
+  const [catRows, resolvedIds, memberRows, predRows, ctx] = await Promise.all([
+    db
+      .select({ id: categories.id, key: categories.key, valueKind: categories.valueKind })
+      .from(categories)
+      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+      .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+    getResolvedCategoryIds(),
+    db
+      .select({ userId: groupMembers.userId })
+      .from(groupMembers)
+      .where(eq(groupMembers.groupId, groupId)),
+    db
+      .select({
+        userId: predictions.userId,
+        categoryId: predictions.categoryId,
+        teamId: predictions.teamId,
+        teamSet: predictions.teamSet,
+        playerText: predictions.playerText,
+      })
+      .from(predictions)
+      .where(eq(predictions.groupId, groupId)),
+    getEliminationContext(),
+  ])
+
+  const resolved = new Set(resolvedIds)
+  const unresolvedCats = catRows.filter((c) => !resolved.has(c.id))
+  const locked = new Date() >= lockAt
+  const predByUserCat = new Map(predRows.map((p) => [`${p.userId}:${p.categoryId}`, p]))
+
+  const out: Record<string, string[]> = {}
+  for (const m of memberRows) {
+    const lost: string[] = []
+    for (const c of unresolvedCats) {
+      const pick = predByUserCat.get(`${m.userId}:${c.id}`)
+      const hasValue =
+        !!pick &&
+        (pick.teamId != null ||
+          pick.playerText != null ||
+          (Array.isArray(pick.teamSet) && pick.teamSet.length > 0))
+      if (!hasValue) {
+        // Tras el cierre una casilla vacía nunca podrá sumar.
+        if (locked) lost.push(c.id)
+        continue
+      }
+      const dead = isPickDead(
+        c,
+        {
+          teamId: pick.teamId,
+          teamSet: pick.teamSet as string[] | null,
+          playerText: pick.playerText,
+        },
+        ctx,
+      )
+      if (dead) lost.push(c.id)
+    }
+    if (lost.length > 0) out[m.userId] = lost
+  }
+  return out
+}
+
 export type UserCategoryBreakdownRow = {
   key: string
   name: string
   points: number
-  status: 'pending' | 'correct' | 'partial' | 'incorrect' | 'no_pick'
+  status: 'pending' | 'correct' | 'partial' | 'incorrect' | 'no_pick' | 'lost'
   pickLabel: string | null
   resultLabel: string | null
   earnedPoints: number
@@ -77,7 +155,7 @@ export async function getUserCategoryBreakdown(
 
   const sortedCats = sortByCategoryOrder(catRows)
 
-  const [predRows, resultRows] = await Promise.all([
+  const [predRows, resultRows, elimCtx] = await Promise.all([
     db
       .select({
         categoryId: predictions.categoryId,
@@ -99,6 +177,7 @@ export async function getUserCategoryBreakdown(
       })
       .from(results)
       .leftJoin(teams, eq(teams.id, results.teamId)),
+    getEliminationContext(),
   ])
 
   const predByCat = new Map(predRows.map((p) => [p.categoryId, p]))
@@ -155,6 +234,19 @@ export async function getUserCategoryBreakdown(
           status = 'incorrect'
         }
       }
+    } else if (pick) {
+      // Sin resultado oficial todavía, pero el pick puede estar ya muerto
+      // (equipo eliminado, jugador sin chance) → 0 asegurado.
+      const dead = isPickDead(
+        { key: c.key, valueKind: c.valueKind },
+        {
+          teamId: pick.teamId,
+          teamSet: pick.teamSet as string[] | null,
+          playerText: pick.playerText,
+        },
+        elimCtx,
+      )
+      if (dead) status = 'lost'
     }
 
     return {
