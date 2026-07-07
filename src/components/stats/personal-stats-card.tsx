@@ -93,7 +93,7 @@ export function PersonalStatsCard({ rows, totalPoints, rank, rankLabel, totalPla
                   ? 'bg-accent'
                   : r.status === 'partial'
                     ? 'bg-warning'
-                    : r.status === 'incorrect'
+                    : r.status === 'incorrect' || r.status === 'lost'
                       ? 'bg-destructive/60'
                       : r.status === 'no_pick'
                         ? 'bg-muted'

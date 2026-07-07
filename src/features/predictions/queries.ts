@@ -9,8 +9,15 @@ import {
   players,
   predictions,
   profiles,
+  results,
   teams,
 } from '@/db/schema'
+import {
+  getEliminationContext,
+  isPlayerPickDead,
+  isTeamPickDead,
+  normalizePlayerText,
+} from '@/features/tournament/eliminations'
 
 /**
  * Canonical order shown to users. Postgres doesn't guarantee a row order
@@ -185,20 +192,36 @@ export type AllPredictionsCategory = {
 }
 
 export type AllPredictionsPick =
-  | { kind: 'team'; teamName: string; teamFlag: string | null; fifaCode: string | null }
-  | { kind: 'team_set'; teams: { name: string; flag: string | null }[] }
-  | { kind: 'player'; text: string }
+  | {
+      kind: 'team'
+      teamName: string
+      teamFlag: string | null
+      fifaCode: string | null
+      /** Ya no puede ganar la categoría (eliminado o resultado en contra). */
+      dead?: boolean
+    }
+  | { kind: 'team_set'; teams: { name: string; flag: string | null; dead?: boolean }[] }
+  | { kind: 'player'; text: string; dead?: boolean }
   | { kind: 'empty' }
+
+/**
+ * Estado definitivo de un pick: 'failed' = ya no suma nada (resuelto sin
+ * acierto o imposible), 'won' = acierto confirmado, 'partial' = team_set
+ * resuelto con aciertos parciales. Sin fate = sigue en juego.
+ */
+export type PickFate = 'won' | 'partial' | 'failed'
 
 export type AllPredictionsView = {
   members: AllPredictionsMember[]
   categories: AllPredictionsCategory[]
   // member → category → pick
   picks: Map<string, Map<string, AllPredictionsPick>>
+  // member → category → fate (solo picks ya decididos)
+  fateByMemberCategory: Record<string, Record<string, PickFate | undefined>>
 }
 
 export async function getAllGroupPredictions(groupId: string): Promise<AllPredictionsView> {
-  const [members, catsRaw, predRows, teamRows] = await Promise.all([
+  const [members, catsRaw, predRows, teamRows, resultRows, elimCtx] = await Promise.all([
     db
       .select({
         userId: profiles.id,
@@ -235,38 +258,84 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
       .leftJoin(teams, eq(teams.id, predictions.teamId))
       .where(eq(predictions.groupId, groupId)),
     db.select({ id: teams.id, name: teams.name, flag: teams.flagEmoji }).from(teams),
+    db
+      .select({
+        categoryId: results.categoryId,
+        teamId: results.teamId,
+        teamSet: results.teamSet,
+        playerText: results.playerText,
+      })
+      .from(results),
+    getEliminationContext(),
   ])
 
   const teamById = new Map(teamRows.map((t) => [t.id, t]))
+  const resultByCat = new Map(resultRows.map((r) => [r.categoryId, r]))
   const cats = sortByCategoryOrder(catsRaw)
 
   const picks: Map<string, Map<string, AllPredictionsPick>> = new Map()
   for (const m of members) picks.set(m.userId, new Map())
+  const fateByMemberCategory: AllPredictionsView['fateByMemberCategory'] = {}
 
   for (const row of predRows) {
     const cat = cats.find((c) => c.id === row.categoryId)
     if (!cat) continue
+    const result = resultByCat.get(row.categoryId)
     let pick: AllPredictionsPick = { kind: 'empty' }
+    let fate: PickFate | undefined
+
     if (cat.valueKind === 'team' && row.teamId && row.teamName) {
+      if (result?.teamId) {
+        fate = result.teamId === row.teamId ? 'won' : 'failed'
+      } else if (isTeamPickDead(cat.key, row.teamId, elimCtx)) {
+        fate = 'failed'
+      }
       pick = {
         kind: 'team',
         teamName: row.teamName,
         teamFlag: row.teamFlag,
         fifaCode: row.teamFifa,
+        dead: fate === 'failed' || undefined,
       }
     } else if (cat.valueKind === 'team_set' && row.teamSet) {
-      const items = (row.teamSet as string[])
-        .map((id) => teamById.get(id))
-        .filter((t): t is { id: string; name: string; flag: string | null } => !!t)
-        .map((t) => ({ name: t.name, flag: t.flag }))
+      const resultSet = result?.teamSet ? new Set(result.teamSet as string[]) : null
+      const ids = (row.teamSet as string[]).filter((id) => teamById.has(id))
+      const items = ids.map((id) => {
+        const t = teamById.get(id) as { id: string; name: string; flag: string | null }
+        // Resuelto: muerto todo lo que no está en el resultado. Sin resolver:
+        // muerto lo matemáticamente imposible.
+        const dead = resultSet ? !resultSet.has(id) : isTeamPickDead(cat.key, id, elimCtx)
+        return { name: t.name, flag: t.flag, dead: dead || undefined }
+      })
+      if (resultSet) {
+        const hits = ids.filter((id) => resultSet.has(id)).length
+        fate =
+          hits === 0 ? 'failed' : hits === ids.length && hits === resultSet.size ? 'won' : 'partial'
+      } else if (items.length > 0 && items.every((t) => t.dead)) {
+        fate = 'failed'
+      }
       pick = { kind: 'team_set', teams: items }
     } else if (cat.valueKind === 'player' && row.playerText) {
-      pick = { kind: 'player', text: row.playerText }
+      if (result?.playerText) {
+        fate =
+          normalizePlayerText(row.playerText) === normalizePlayerText(result.playerText)
+            ? 'won'
+            : 'failed'
+      } else if (isPlayerPickDead(cat.key, row.playerText, elimCtx)) {
+        fate = 'failed'
+      }
+      pick = { kind: 'player', text: row.playerText, dead: fate === 'failed' || undefined }
     }
+
     picks.get(row.userId)?.set(row.categoryId, pick)
+    if (fate) {
+      const byCat = fateByMemberCategory[row.userId] ?? {}
+      byCat[row.categoryId] = fate
+      fateByMemberCategory[row.userId] = byCat
+    }
   }
 
-  return { members, categories: cats, picks }
+  return { members, categories: cats, picks, fateByMemberCategory }
 }
 
 export async function getPredictionIdsByMemberCategory(
@@ -297,6 +366,7 @@ export type AllPredictionsViewSerialised = {
   categories: AllPredictionsCategory[]
   picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>>
   predictionIdsByMemberCategory: Record<string, Record<string, string | undefined>>
+  fateByMemberCategory: Record<string, Record<string, PickFate | undefined>>
 }
 
 export function serialiseAllPredictionsView(
@@ -312,6 +382,7 @@ export function serialiseAllPredictionsView(
     categories: view.categories,
     picksByMemberCategory,
     predictionIdsByMemberCategory: predictionIdsByMemberCategory ?? {},
+    fateByMemberCategory: view.fateByMemberCategory,
   }
 }
 

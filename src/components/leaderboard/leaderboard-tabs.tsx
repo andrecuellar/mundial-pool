@@ -14,6 +14,10 @@ type Category = { id: string; name: string; key: string; points: number }
 type Props = {
   leaderboard: LeaderboardRow[]
   categories: Category[]
+  /** Categorías con resultado oficial — sus celdas ya son definitivas. */
+  resolvedCategoryIds: string[]
+  /** userId → categorías sin resolver cuyo pick ya no puede sumar (0 asegurado). */
+  lostByUser: Record<string, string[]>
   currentUserId: string
   poolEnabled: boolean
   paidAt: PaidAt[]
@@ -26,6 +30,8 @@ type Props = {
 export function LeaderboardTabs({
   leaderboard,
   categories,
+  resolvedCategoryIds,
+  lostByUser,
   currentUserId,
   poolEnabled,
   paidAt,
@@ -45,7 +51,10 @@ export function LeaderboardTabs({
         {/* Wrapper capturable por html-to-image. El header con el branding +
             nombre del grupo + fecha quedan dentro de la imagen compartida
             para que tenga contexto fuera del sitio. */}
-        <div id="leaderboard-card" className="overflow-hidden rounded-xl border border-border bg-card">
+        <div
+          id="leaderboard-card"
+          className="overflow-hidden rounded-xl border border-border bg-card"
+        >
           <div className="border-b border-border bg-muted/30 px-4 py-3">
             <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
               mundial-pool · Tabla de líderes
@@ -79,6 +88,8 @@ export function LeaderboardTabs({
         <CategoryBreakdownTable
           rows={leaderboard}
           categories={categories}
+          resolvedCategoryIds={resolvedCategoryIds}
+          lostByUser={lostByUser}
           currentUserId={currentUserId}
         />
       </TabsContent>
