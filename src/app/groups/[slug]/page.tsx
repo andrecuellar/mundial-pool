@@ -17,7 +17,8 @@ import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { groupMembers, groups, poolTransactions, predictions, profiles, results } from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
-import { getLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
+import { getRankedLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
+import { competitionRanks } from '@/features/scoring/rank'
 import { env } from '@/lib/env'
 import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -82,7 +83,7 @@ export default async function GroupPage({ params }: Params) {
     [latestResolution],
     [myPoolPayment],
   ] = await Promise.all([
-    getLeaderboard(group.id),
+    getRankedLeaderboard(group.id),
     getPoolSummary(group.id),
     computePayout(group.id),
     db.select({ count: count() }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
@@ -134,26 +135,12 @@ export default async function GroupPage({ params }: Params) {
   const completedCount = myPredictions[0].count
   const totalPredictions = 14
 
-  // Competition rank: ties share a position (1, 1, 3, 3, 5).
-  let myRank = -1
-  let myTied = false
-  {
-    let prevPoints: number | null = null
-    let prevRank = 0
-    for (let i = 0; i < leaderboard.length; i++) {
-      const r = leaderboard[i]
-      const rank = prevPoints !== null && r.totalPoints === prevPoints ? prevRank : i + 1
-      if (r.userId === user.id) {
-        myRank = rank
-      }
-      prevPoints = r.totalPoints
-      prevRank = rank
-    }
-    if (myRank > 0) {
-      const me = leaderboard.find((r) => r.userId === user.id)
-      myTied = leaderboard.filter((r) => r.totalPoints === me?.totalPoints).length > 1
-    }
-  }
+  // Puesto de competición con el mismo desempate de la tabla: empatan solo
+  // quienes igualan puntos Y fallos definitivos (1, 1, 3, 3, 5).
+  const ranks = competitionRanks(leaderboard)
+  const myIndex = leaderboard.findIndex((r) => r.userId === user.id)
+  const myRank = myIndex >= 0 ? ranks[myIndex].rank : -1
+  const myTied = myIndex >= 0 ? ranks[myIndex].tied : false
 
   const predictionsCtaState: 'locked' | 'empty' | 'partial' | 'done' = locked
     ? 'locked'

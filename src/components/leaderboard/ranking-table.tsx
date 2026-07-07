@@ -3,31 +3,11 @@ import Link from 'next/link'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
-import type { LeaderboardRow } from '@/features/scoring/queries'
+import type { RankedLeaderboardRow } from '@/features/scoring/queries'
+import { competitionRanks, type RankInfo } from '@/features/scoring/rank'
 import { formatDayShort } from '@/lib/format'
 
 export type PaidAt = { userId: string; paidAt: string }
-
-type RankInfo = { rank: number; tied: boolean }
-
-function competitionRanks(rows: LeaderboardRow[]): RankInfo[] {
-  // Same total points share a rank, the next rank skips by the tie size
-  // (1, 1, 3, 3, 5). Matches the rule used to split the pool.
-  const out: RankInfo[] = []
-  let prevPoints: number | null = null
-  let prevRank = 0
-  rows.forEach((r, i) => {
-    const rank = prevPoints !== null && r.totalPoints === prevPoints ? prevRank : i + 1
-    out.push({ rank, tied: false })
-    prevPoints = r.totalPoints
-    prevRank = rank
-  })
-  for (let i = 0; i < out.length; i++) {
-    const same = out.filter((x) => x.rank === out[i].rank).length
-    out[i].tied = same > 1
-  }
-  return out
-}
 
 function rankCell(info: RankInfo, isMe: boolean, hasScores: boolean) {
   if (hasScores && !info.tied) {
@@ -61,7 +41,7 @@ function initials(name: string): string {
 }
 
 type Props = {
-  rows: LeaderboardRow[]
+  rows: RankedLeaderboardRow[]
   currentUserId: string
   poolEnabled: boolean
   paidAt: PaidAt[]
@@ -191,6 +171,16 @@ export function RankingTable({
                         </Link>
                       ))}
                   </div>
+                  {hasScores && (
+                    <p
+                      className="mt-0.5 font-mono text-[10px] text-muted-foreground"
+                      title={`${r.correctCount} aciertos · ${r.failedCount} predicciones sin chance`}
+                    >
+                      <span className="text-success">✓{r.correctCount}</span>
+                      <span className="mx-1">·</span>
+                      <span className="text-destructive/80">✗{r.failedCount}</span>
+                    </p>
+                  )}
                 </div>
               </div>
               <span

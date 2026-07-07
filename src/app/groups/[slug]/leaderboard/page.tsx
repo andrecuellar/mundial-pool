@@ -10,8 +10,8 @@ import { categories, groupCategories, groupMembers, groups } from '@/db/schema'
 import { getPoolContributorPaidAt, getPoolSummary } from '@/features/pool/queries'
 import { sortByCategoryOrder } from '@/features/predictions/queries'
 import {
-  getLeaderboard,
   getLostCategoryIdsByUser,
+  getRankedLeaderboard,
   getResolvedCategoryIds,
 } from '@/features/scoring/queries'
 import { formatTimeOnly } from '@/lib/format'
@@ -49,7 +49,7 @@ export default async function LeaderboardPage({ params }: Params) {
   if (!membership) notFound()
 
   const [leaderboard, catsRaw, pool, paidAt, resolvedCategoryIds, lostByUser] = await Promise.all([
-    getLeaderboard(group.id),
+    getRankedLeaderboard(group.id),
     db
       .select({
         id: categories.id,
@@ -113,9 +113,10 @@ export default async function LeaderboardPage({ params }: Params) {
             isAdmin={membership.role === 'owner'}
           />
           <p className="mt-3 text-center text-xs text-muted-foreground">
-            Los puntos se recalculan automáticamente con cada partido resuelto. Si dos o más
-            jugadores empatan en puntos, comparten el puesto (verás el mismo número repetido en
-            varias filas) y el premio correspondiente se divide en partes iguales entre ellos.
+            Los puntos se recalculan automáticamente con cada partido resuelto. A igualdad de puntos
+            va más arriba quien tiene menos predicciones falladas (✗, los 0 del detalle); si también
+            empatan en fallos, comparten el puesto (verás el mismo número repetido) y el premio
+            correspondiente se divide en partes iguales entre ellos.
           </p>
         </div>
       </main>
