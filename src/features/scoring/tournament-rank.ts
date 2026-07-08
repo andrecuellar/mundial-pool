@@ -313,6 +313,91 @@ export function buildTournamentInputs(rows: TeamRowForRanking[]): {
   return { inputs, decided }
 }
 
+export type RaceEntry = {
+  teamId: string
+  teamName: string
+  /** Salto provisional a hoy: fifaRank normalizado − posición provisional. */
+  delta: number
+  tournamentRank: number
+  /** Sigue jugando (ronda 'alive_*') → su delta todavía puede mejorar. */
+  alive: boolean
+}
+
+export type RevelationRace = {
+  revelation: RaceEntry[]
+  disappointment: RaceEntry[]
+}
+
+// Mejor/peor posición final que un equipo puede alcanzar según su ronda. Para
+// rondas decididas la posición provisional ya es la final (su bracket quedó
+// cerrado); para los 'alive_*' usamos la banda completa de su llave.
+function finalRankBounds(
+  reached: TournamentTeamInput['reached'],
+  provisionalRank: number,
+): { best: number; worst: number } {
+  switch (reached) {
+    case 'alive_final':
+      return { best: 1, worst: 2 }
+    case 'alive_sf':
+      return { best: 1, worst: 4 }
+    case 'alive_qf':
+      return { best: 1, worst: 8 }
+    case 'alive_r16':
+      return { best: 1, worst: 16 }
+    case 'alive_r32':
+      return { best: 1, worst: 32 }
+    default:
+      return { best: provisionalRank, worst: provisionalRank }
+  }
+}
+
+/**
+ * Candidatas que TODAVÍA pueden terminar siendo la revelación / decepción.
+ *
+ * Cota necesaria (conservadora, igual que el resto de "muertes"): el delta de
+ * la revelación final será ≥ el mayor delta GARANTIZADO de algún equipo (su
+ * peor caso); un equipo sigue en carrera solo si su MEJOR caso alcanza esa
+ * cota. Espejo exacto para la decepción. Equipos eliminados tienen delta fijo,
+ * los vivos un rango [fifa−peorPos, fifa−mejorPos].
+ *
+ * Devuelve hasta `limit` candidatas por lado, ordenadas por delta provisional.
+ */
+export function computeRevelationRace(teams: TournamentTeamInput[], limit = 3): RevelationRace {
+  const ranks = computeTournamentRanks(teams)
+  if (ranks.length === 0) return { revelation: [], disappointment: [] }
+  const teamByIdInput = new Map(teams.map((t) => [t.teamId, t]))
+
+  type Bounded = RaceEntry & { deltaMax: number; deltaMin: number }
+  const bounded: Bounded[] = ranks.map((r) => {
+    const input = teamByIdInput.get(r.teamId) as TournamentTeamInput
+    const { best, worst } = finalRankBounds(input.reached, r.tournamentRank)
+    return {
+      teamId: r.teamId,
+      teamName: r.teamName,
+      delta: r.delta,
+      tournamentRank: r.tournamentRank,
+      alive: input.reached.startsWith('alive_'),
+      deltaMax: r.fifaRank - best,
+      deltaMin: r.fifaRank - worst,
+    }
+  })
+
+  const maxGuaranteed = Math.max(...bounded.map((b) => b.deltaMin))
+  const minGuaranteed = Math.min(...bounded.map((b) => b.deltaMax))
+
+  const revelation = bounded
+    .filter((b) => b.deltaMax >= maxGuaranteed)
+    .sort((a, b) => b.delta - a.delta || a.tournamentRank - b.tournamentRank)
+    .slice(0, limit)
+  const disappointment = bounded
+    .filter((b) => b.deltaMin <= minGuaranteed)
+    .sort((a, b) => a.delta - b.delta || b.tournamentRank - a.tournamentRank)
+    .slice(0, limit)
+
+  const strip = ({ deltaMax: _dx, deltaMin: _dn, ...entry }: Bounded): RaceEntry => entry
+  return { revelation: revelation.map(strip), disappointment: disappointment.map(strip) }
+}
+
 export type RevelationOutcome = {
   revelation: TeamRank
   disappointment: TeamRank
