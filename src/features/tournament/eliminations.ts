@@ -2,6 +2,7 @@ import 'server-only'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
 import { matches, players, teams } from '@/db/schema'
+import { buildTournamentInputs, computeRaceContenders } from '@/features/scoring/tournament-rank'
 
 // Determina qué predicciones ya son matemáticamente imposibles ("muertas")
 // aunque la categoría todavía no esté resuelta: p.ej. apostar a Portugal
@@ -24,6 +25,10 @@ export type TeamFate = {
   canBeTop5: boolean
   /** Le quedan partidos por jugar → sus goles a favor/en contra no están congelados. */
   stillPlaying: boolean
+  /** Sigue en carrera por la revelación (cota mejor-caso vs delta garantizado). */
+  canBeRevelation: boolean
+  /** Sigue en carrera por la decepción. */
+  canBeDisappointment: boolean
   /** Goles a favor en todo el torneo (sin definiciones por penales). */
   goalsFor: number
   /** Goles en contra en todo el torneo. */
@@ -82,7 +87,22 @@ async function computeEliminationContext(): Promise<EliminationContext> {
         penaltyB: matches.penaltyB,
       })
       .from(matches),
-    db.select({ id: teams.id, reachedRound: teams.reachedRound }).from(teams),
+    db
+      .select({
+        id: teams.id,
+        name: teams.name,
+        fifaRanking: teams.fifaRanking,
+        reachedRound: teams.reachedRound,
+        groupPoints: teams.groupPoints,
+        groupGoalDiff: teams.groupGoalDiff,
+        groupGoalsFor: teams.groupGoalsFor,
+        yellowCards: teams.yellowCards,
+        redCards: teams.redCards,
+        elimMatchGoalsFor: teams.elimMatchGoalsFor,
+        elimMatchGoalsAgainst: teams.elimMatchGoalsAgainst,
+        elimMatchWentToPenalties: teams.elimMatchWentToPenalties,
+      })
+      .from(teams),
     db
       .select({
         fullName: players.fullName,
@@ -121,6 +141,30 @@ async function computeEliminationContext(): Promise<EliminationContext> {
     accOf(loser).lostAt.add(m.stage)
     if (m.stage === 'sf') accOf(winner).wonSf = true
   }
+
+  // Carrera por revelación/decepción: si una ronda todavía tiene partidos sin
+  // definir, sus eliminados usan la banda completa de posiciones (su orden
+  // interno aún puede moverse) — dirección conservadora: matar menos.
+  const EXPECTED_STAGE_MATCHES: Record<string, number> = {
+    group: 72,
+    r32: 16,
+    r16: 8,
+    qf: 4,
+  }
+  const decidedByStage = new Map<string, number>()
+  for (const m of matchRows) {
+    const decided =
+      m.stage === 'group' ? m.scoreA != null && m.scoreB != null : winnerTeamId(m) != null
+    if (decided) decidedByStage.set(m.stage, (decidedByStage.get(m.stage) ?? 0) + 1)
+  }
+  const incompleteStages = new Set(
+    Object.keys(EXPECTED_STAGE_MATCHES).filter(
+      (s) => (decidedByStage.get(s) ?? 0) < EXPECTED_STAGE_MATCHES[s],
+    ),
+  )
+  const contenders = computeRaceContenders(buildTournamentInputs(teamRows).inputs, {
+    incompleteStages,
+  })
 
   const fatesByTeamId: Record<string, TeamFate> = {}
   let maxGoalsFor = 0
@@ -161,6 +205,8 @@ async function computeEliminationContext(): Promise<EliminationContext> {
       canBeThird,
       canBeTop5,
       stillPlaying,
+      canBeRevelation: contenders.revelation.has(t.id),
+      canBeDisappointment: contenders.disappointment.has(t.id),
       goalsFor: acc.goalsFor,
       goalsAgainst: acc.goalsAgainst,
     }
@@ -192,17 +238,18 @@ async function computeEliminationContext(): Promise<EliminationContext> {
 }
 
 // Cross-request cache con las mismas tags que invalidan los crons diarios:
-// updateTeamStandings → 'teams', syncPlayerStats → 'players'.
+// updateTeamStandings → 'teams', syncPlayerStats → 'players'. El sufijo -v2
+// versiona la forma de TeamFate: el Data Cache persiste entre deploys y una
+// entrada vieja sin los campos nuevos mataría picks por accidente.
 export const getEliminationContext = unstable_cache(
   computeEliminationContext,
-  ['elimination-context'],
+  ['elimination-context-v2'],
   { revalidate: 3600, tags: ['teams', 'players'] },
 )
 
 /**
- * ¿El equipo elegido ya no puede ganar esta categoría? Para las categorías que
- * dependen del ranking final global (revelación/decepción) o de premios FIFA
- * nunca devuelve true — no son decidibles antes de la resolución.
+ * ¿El equipo elegido ya no puede ganar esta categoría? Los premios FIFA de
+ * jugador nunca devuelven true — no son decidibles antes de la resolución.
  */
 export function isTeamPickDead(
   categoryKey: string,
@@ -227,6 +274,12 @@ export function isTeamPickDead(
       return !fate.stillPlaying && fate.goalsFor < ctx.maxGoalsFor
     case 'most_conceded_team':
       return !fate.stillPlaying && fate.goalsAgainst < ctx.maxGoalsAgainst
+    // `=== false` a propósito: ante un contexto viejo/incompleto, undefined
+    // NO mata el pick (dirección conservadora).
+    case 'revelation':
+      return fate.canBeRevelation === false
+    case 'disappointment':
+      return fate.canBeDisappointment === false
     default:
       return false
   }

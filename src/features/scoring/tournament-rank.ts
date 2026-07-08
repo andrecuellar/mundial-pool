@@ -328,12 +328,35 @@ export type RevelationRace = {
   disappointment: RaceEntry[]
 }
 
+export type RaceOptions = {
+  /**
+   * Rondas cuyo bracket aún NO está completo (partidos sin definir). Los
+   * eliminados en una ronda incompleta usan la banda completa de posiciones en
+   * vez de su posición provisional, porque su orden interno todavía puede
+   * moverse a medida que caen los demás. Sin este dato se asume todo completo
+   * (suficiente para paneles informativos; para matar picks conviene pasarlo).
+   */
+  incompleteStages?: ReadonlySet<string>
+}
+
+// Bandas de posición final por ronda en el formato de 48 (mismas estructuras
+// que bracketOf): top 4 → cuartos 5-8 → octavos 9-16 → 16vos 17-32 → grupos
+// 33-48.
+const ROUND_BANDS: Record<string, { best: number; worst: number }> = {
+  qf: { best: 5, worst: 8 },
+  r16: { best: 9, worst: 16 },
+  r32: { best: 17, worst: 32 },
+  group: { best: 33, worst: 48 },
+}
+
 // Mejor/peor posición final que un equipo puede alcanzar según su ronda. Para
-// rondas decididas la posición provisional ya es la final (su bracket quedó
-// cerrado); para los 'alive_*' usamos la banda completa de su llave.
+// rondas decididas y completas, la posición provisional ya es la final (su
+// bracket quedó cerrado); para los 'alive_*' (y los eliminados en una ronda
+// aún incompleta) usamos la banda completa.
 function finalRankBounds(
   reached: TournamentTeamInput['reached'],
   provisionalRank: number,
+  incompleteStages?: ReadonlySet<string>,
 ): { best: number; worst: number } {
   switch (reached) {
     case 'alive_final':
@@ -346,31 +369,21 @@ function finalRankBounds(
       return { best: 1, worst: 16 }
     case 'alive_r32':
       return { best: 1, worst: 32 }
-    default:
-      return { best: provisionalRank, worst: provisionalRank }
+    default: {
+      const band = incompleteStages?.has(reached) ? ROUND_BANDS[reached] : undefined
+      return band ?? { best: provisionalRank, worst: provisionalRank }
+    }
   }
 }
 
-/**
- * Candidatas que TODAVÍA pueden terminar siendo la revelación / decepción.
- *
- * Cota necesaria (conservadora, igual que el resto de "muertes"): el delta de
- * la revelación final será ≥ el mayor delta GARANTIZADO de algún equipo (su
- * peor caso); un equipo sigue en carrera solo si su MEJOR caso alcanza esa
- * cota. Espejo exacto para la decepción. Equipos eliminados tienen delta fijo,
- * los vivos un rango [fifa−peorPos, fifa−mejorPos].
- *
- * Devuelve hasta `limit` candidatas por lado, ordenadas por delta provisional.
- */
-export function computeRevelationRace(teams: TournamentTeamInput[], limit = 3): RevelationRace {
-  const ranks = computeTournamentRanks(teams)
-  if (ranks.length === 0) return { revelation: [], disappointment: [] }
-  const teamByIdInput = new Map(teams.map((t) => [t.teamId, t]))
+type BoundedEntry = RaceEntry & { deltaMax: number; deltaMin: number }
 
-  type Bounded = RaceEntry & { deltaMax: number; deltaMin: number }
-  const bounded: Bounded[] = ranks.map((r) => {
+function boundedEntries(teams: TournamentTeamInput[], opts?: RaceOptions): BoundedEntry[] {
+  const ranks = computeTournamentRanks(teams)
+  const teamByIdInput = new Map(teams.map((t) => [t.teamId, t]))
+  return ranks.map((r) => {
     const input = teamByIdInput.get(r.teamId) as TournamentTeamInput
-    const { best, worst } = finalRankBounds(input.reached, r.tournamentRank)
+    const { best, worst } = finalRankBounds(input.reached, r.tournamentRank, opts?.incompleteStages)
     return {
       teamId: r.teamId,
       teamName: r.teamName,
@@ -381,21 +394,60 @@ export function computeRevelationRace(teams: TournamentTeamInput[], limit = 3): 
       deltaMin: r.fifaRank - worst,
     }
   })
+}
 
+/**
+ * Ids de los equipos que TODAVÍA pueden terminar siendo la revelación / la
+ * decepción.
+ *
+ * Cota necesaria (conservadora, igual que el resto de "muertes"): el delta de
+ * la revelación final será ≥ el mayor delta GARANTIZADO de algún equipo (su
+ * peor caso); un equipo sigue en carrera solo si su MEJOR caso alcanza esa
+ * cota. Espejo exacto para la decepción. Equipos eliminados tienen delta fijo
+ * (o banda si su ronda sigue incompleta), los vivos un rango
+ * [fifa−peorPos, fifa−mejorPos]. Ante la duda, el equipo queda dentro.
+ */
+export function computeRaceContenders(
+  teams: TournamentTeamInput[],
+  opts?: RaceOptions,
+): { revelation: Set<string>; disappointment: Set<string> } {
+  const bounded = boundedEntries(teams, opts)
+  if (bounded.length === 0) return { revelation: new Set(), disappointment: new Set() }
   const maxGuaranteed = Math.max(...bounded.map((b) => b.deltaMin))
   const minGuaranteed = Math.min(...bounded.map((b) => b.deltaMax))
+  return {
+    revelation: new Set(bounded.filter((b) => b.deltaMax >= maxGuaranteed).map((b) => b.teamId)),
+    disappointment: new Set(
+      bounded.filter((b) => b.deltaMin <= minGuaranteed).map((b) => b.teamId),
+    ),
+  }
+}
 
+/**
+ * Hasta `limit` candidatas por lado que siguen en carrera (ver
+ * computeRaceContenders), ordenadas por delta provisional.
+ */
+export function computeRevelationRace(
+  teams: TournamentTeamInput[],
+  limit = 3,
+  opts?: RaceOptions,
+): RevelationRace {
+  const bounded = boundedEntries(teams, opts)
+  if (bounded.length === 0) return { revelation: [], disappointment: [] }
+  const contenders = computeRaceContenders(teams, opts)
+
+  const strip = ({ deltaMax: _dx, deltaMin: _dn, ...entry }: BoundedEntry): RaceEntry => entry
   const revelation = bounded
-    .filter((b) => b.deltaMax >= maxGuaranteed)
+    .filter((b) => contenders.revelation.has(b.teamId))
     .sort((a, b) => b.delta - a.delta || a.tournamentRank - b.tournamentRank)
     .slice(0, limit)
+    .map(strip)
   const disappointment = bounded
-    .filter((b) => b.deltaMin <= minGuaranteed)
+    .filter((b) => contenders.disappointment.has(b.teamId))
     .sort((a, b) => a.delta - b.delta || b.tournamentRank - a.tournamentRank)
     .slice(0, limit)
-
-  const strip = ({ deltaMax: _dx, deltaMin: _dn, ...entry }: Bounded): RaceEntry => entry
-  return { revelation: revelation.map(strip), disappointment: disappointment.map(strip) }
+    .map(strip)
+  return { revelation, disappointment }
 }
 
 export type RevelationOutcome = {
