@@ -97,6 +97,9 @@ export function LeaderboardTabs({
           id="leaderboard-story-card"
           groupName={groupName}
           rows={leaderboard}
+          categories={categories}
+          resolvedCategoryIds={resolvedCategoryIds}
+          lostByUser={lostByUser}
           currentUserId={currentUserId}
           dateLabel={formatDayShort(new Date())}
         />

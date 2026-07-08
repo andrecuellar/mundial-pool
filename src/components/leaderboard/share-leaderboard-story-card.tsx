@@ -4,13 +4,36 @@ import { competitionRanks } from '@/features/scoring/rank'
 
 // Poster off-screen en formato story vertical (540×≥1140 ≈ 9:19, entre 9:16 y
 // 9:21) que se captura como imagen desde el botón "Compartir para historias"
-// de la tabla de líderes. El espacio es reducido, así que cada fila condensa:
-// puesto, nombre, puntos, ✓aciertos / ✗fallos definitivos y las banderas de
-// las selecciones elegidas que ya quedaron eliminadas, con un 🚫 superpuesto.
-// Solo entran los primeros MAX_ROWS puestos (+ la fila propia si queda fuera).
+// de la tabla de líderes. Cada jugador lleva una tira de una celda por
+// categoría (estilo Wordle): ✓ acertada, ✗ sin chance, … todavía en juego.
+// Con encabezados cortos arriba se entiende QUÉ categoría falló cada uno sin
+// necesidad de leyendas largas. Solo entran los primeros MAX_ROWS puestos
+// (+ la fila propia si queda fuera).
 
 const MAX_ROWS = 12
-const MAX_FLAGS = 6
+
+// Encabezado corto por categoría (máx 4 chars para que entren 14 columnas en
+// 540px). Fallback: primeras 3 letras del key.
+const CATEGORY_ABBR: Record<string, string> = {
+  champion: 'CAM',
+  runner_up: 'SUB',
+  third_place: '3RO',
+  finalists: 'FIN',
+  top_5: 'TOP5',
+  revelation: 'REV',
+  disappointment: 'DEC',
+  top_scoring_team: '+GOL',
+  most_conceded_team: '-GOL',
+  top_scorer_player: 'BOTA',
+  top_assists_player: 'ASIS',
+  golden_ball: 'BAL',
+  golden_glove: 'GUAN',
+  young_player: 'JOV',
+}
+
+function abbr(key: string): string {
+  return CATEGORY_ABBR[key] ?? key.slice(0, 3).toUpperCase()
+}
 
 function initials(name: string): string {
   return (
@@ -23,17 +46,6 @@ function initials(name: string): string {
   )
 }
 
-// Bandera con el 🚫 encima. Apilado con grid (ambos en la misma celda) en vez
-// de position:absolute — html-to-image lo rasteriza de forma más fiable.
-function DeadFlag({ flag }: { flag: string }) {
-  return (
-    <span className="relative inline-grid h-5 w-5 place-items-center align-middle">
-      <span className="col-start-1 row-start-1 text-[13px] leading-none opacity-60">{flag}</span>
-      <span className="col-start-1 row-start-1 text-[17px] leading-none">🚫</span>
-    </span>
-  )
-}
-
 function rankLabel(rank: number, tied: boolean, hasScores: boolean): string {
   if (hasScores && !tied) {
     if (rank === 1) return '🏆'
@@ -43,48 +55,71 @@ function rankLabel(rank: number, tied: boolean, hasScores: boolean): string {
   return `${rank}`
 }
 
+type StoryCategory = { id: string; key: string; name: string }
+
+type CellStatus = 'won' | 'dead' | 'alive'
+
+function cellFor(status: CellStatus, key: string) {
+  if (status === 'won') {
+    return (
+      <span key={key} className="w-[29px] text-center text-[13px] font-semibold text-success">
+        ✓
+      </span>
+    )
+  }
+  if (status === 'dead') {
+    return (
+      <span
+        key={key}
+        className="w-[29px] text-center text-[13px] font-semibold text-destructive/80"
+      >
+        ✗
+      </span>
+    )
+  }
+  return (
+    <span key={key} className="w-[29px] text-center text-[13px] text-muted-foreground/70">
+      …
+    </span>
+  )
+}
+
 type StoryEntry = { row: RankedLeaderboardRow; rank: number; tied: boolean }
 
 function StoryRow({
   entry,
   isMe,
   hasScores,
+  categories,
+  statusFor,
 }: {
   entry: StoryEntry
   isMe: boolean
   hasScores: boolean
+  categories: StoryCategory[]
+  statusFor: (row: RankedLeaderboardRow, categoryId: string) => CellStatus
 }) {
   const { row, rank, tied } = entry
-  const extraFlags = row.deadFlags.length - MAX_FLAGS
   return (
-    <li className={`px-6 py-3 ${isMe ? 'bg-primary/10' : ''}`}>
-      <div className="flex items-center gap-3">
-        <span className="grid w-9 shrink-0 place-items-center font-mono text-lg font-semibold tabular-nums">
+    <li className={`px-6 py-2.5 ${isMe ? 'bg-primary/10' : ''}`}>
+      <div className="flex items-center gap-2.5">
+        <span className="grid w-7 shrink-0 place-items-center font-mono text-base font-semibold tabular-nums">
           {rankLabel(rank, tied, hasScores)}
         </span>
-        <Avatar className="h-9 w-9 shrink-0">
+        <Avatar className="h-7 w-7 shrink-0">
           {row.avatarUrl && <AvatarImage src={row.avatarUrl} alt={row.displayName} />}
-          <AvatarFallback className="text-xs">{initials(row.displayName)}</AvatarFallback>
+          <AvatarFallback className="text-[10px]">{initials(row.displayName)}</AvatarFallback>
         </Avatar>
-        <div className="min-w-0 flex-1">
-          <p className="truncate text-[15px] font-semibold leading-tight">{row.displayName}</p>
-          <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 font-mono text-[11px] text-muted-foreground">
-            <span className="text-success">✓{row.correctCount}</span>
-            <span className="text-destructive/80">✗{row.failedCount}</span>
-            {row.deadFlags.length > 0 && (
-              <span className="inline-flex items-center gap-0.5">
-                {row.deadFlags.slice(0, MAX_FLAGS).map((f) => (
-                  <DeadFlag key={f} flag={f} />
-                ))}
-                {extraFlags > 0 && <span className="text-[10px]">+{extraFlags}</span>}
-              </span>
-            )}
-          </p>
-        </div>
-        <span className="shrink-0 text-right font-mono text-xl font-bold tabular-nums">
+        <p className="min-w-0 flex-1 truncate text-[15px] font-semibold leading-tight">
+          {row.displayName}
+        </p>
+        <span className="shrink-0 text-right font-mono text-lg font-bold tabular-nums">
           {row.totalPoints}
           <span className="ml-1 text-[10px] font-normal text-muted-foreground">pts</span>
         </span>
+      </div>
+      <div className="mt-1 flex pl-[76px]">
+        {categories.map((c) => cellFor(statusFor(row, c.id), c.id))}
       </div>
     </li>
   )
@@ -95,6 +130,9 @@ type Props = {
   id: string
   groupName: string
   rows: RankedLeaderboardRow[]
+  categories: StoryCategory[]
+  resolvedCategoryIds: string[]
+  lostByUser: Record<string, string[]>
   currentUserId: string
   dateLabel: string
 }
@@ -103,6 +141,9 @@ export function ShareLeaderboardStoryCard({
   id,
   groupName,
   rows,
+  categories,
+  resolvedCategoryIds,
+  lostByUser,
   currentUserId,
   dateLabel,
 }: Props) {
@@ -113,6 +154,17 @@ export function ShareLeaderboardStoryCard({
     rank: ranks[i].rank,
     tied: ranks[i].tied,
   }))
+
+  const resolvedSet = new Set(resolvedCategoryIds)
+  const lostSets = new Map(Object.entries(lostByUser).map(([uid, ids]) => [uid, new Set(ids)]))
+  // Misma regla que las celdas del detalle: puntos > 0 → acertada; 0 definitivo
+  // (resuelta sin acierto o pick imposible) → muerta; el resto sigue en juego.
+  const statusFor = (row: RankedLeaderboardRow, categoryId: string): CellStatus => {
+    const pts = row.breakdown[categoryId] ?? 0
+    if (pts > 0) return 'won'
+    if (resolvedSet.has(categoryId) || lostSets.get(row.userId)?.has(categoryId)) return 'dead'
+    return 'alive'
+  }
 
   const top = entries.slice(0, MAX_ROWS)
   const mine = entries.find((e) => e.row.userId === currentUserId)
@@ -135,11 +187,25 @@ export function ShareLeaderboardStoryCard({
           {dateLabel} · {rows.length} {rows.length === 1 ? 'jugador' : 'jugadores'}
         </p>
         <p className="mt-3 font-mono text-[11px] text-muted-foreground">
-          <span className="text-success">✓ aciertos</span>
+          <span className="text-success">✓ acertada</span>
           <span className="mx-1.5">·</span>
           <span className="text-destructive/80">✗ sin chance</span>
-          <span className="mx-1.5">·</span>🚫 selección eliminada
+          <span className="mx-1.5">·</span>… en juego
         </p>
+      </div>
+
+      <div className="border-b border-border bg-muted/30 px-6 py-1.5">
+        <div className="flex pl-[76px]">
+          {categories.map((c) => (
+            <span
+              key={c.id}
+              title={c.name}
+              className="w-[29px] text-center font-mono text-[8px] uppercase tracking-tight text-muted-foreground"
+            >
+              {abbr(c.key)}
+            </span>
+          ))}
+        </div>
       </div>
 
       <ul className="flex-1 divide-y divide-border">
@@ -149,12 +215,20 @@ export function ShareLeaderboardStoryCard({
             entry={e}
             isMe={e.row.userId === currentUserId}
             hasScores={hasScores}
+            categories={categories}
+            statusFor={statusFor}
           />
         ))}
         {mineOutsideTop && (
           <>
             <li className="px-6 py-1 text-center font-mono text-xs text-muted-foreground">···</li>
-            <StoryRow entry={mineOutsideTop} isMe hasScores={hasScores} />
+            <StoryRow
+              entry={mineOutsideTop}
+              isMe
+              hasScores={hasScores}
+              categories={categories}
+              statusFor={statusFor}
+            />
           </>
         )}
       </ul>
