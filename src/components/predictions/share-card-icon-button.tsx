@@ -43,6 +43,9 @@ export function ShareCardIconButton({
       size="sm"
       type="button"
       aria-label={ariaLabel}
+      // Excluido de la captura: no queremos el propio botón "Compartir" incrustado
+      // en la imagen de la tarjeta.
+      data-share-hide
       className="shrink-0 text-muted-foreground hover:text-foreground"
     >
       <Share2 className={`h-4 w-4 ${pending ? 'animate-pulse' : ''}`} />

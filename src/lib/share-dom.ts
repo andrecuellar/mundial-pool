@@ -1,8 +1,8 @@
-// Captura un nodo del DOM como PNG y lo entrega via Web Share API si el
-// browser lo soporta, o lo descarga como archivo. Diseñado para nodos visibles
-// en pantalla; si el nodo está posicionado fuera del viewport (patrón
-// "captureable pero oculto", ej. left:-20000px), lo trae temporalmente con
-// z-index:-1 para evitar que el browser omita el paint del contenido.
+// Captura nodos del DOM como PNG y los entrega via Web Share API si el browser
+// lo soporta, o los descarga como archivo. Diseñado para nodos visibles en
+// pantalla; si el nodo está posicionado fuera del viewport (patrón "captureable
+// pero oculto", ej. left:-20000px), lo trae temporalmente con z-index:-1 para
+// evitar que el browser omita el paint del contenido.
 
 type ShareArgs = {
   targetId: string
@@ -11,11 +11,48 @@ type ShareArgs = {
   shareText: string
 }
 
-type ShareResult = 'shared' | 'downloaded' | 'cancelled' | 'not-found' | 'error'
+export type MultiShareTarget = {
+  targetId: string
+  fileName: string
+}
 
-export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult> {
-  const node = document.getElementById(args.targetId)
-  if (!node) return 'not-found'
+// 'blocked' = el Web Share API rechazó por falta de activación de usuario (la
+// generación tomó más que la ventana del gesto). El caller puede reintentar el
+// share desde un gesto fresco sin regenerar las imágenes.
+type ShareResult = 'shared' | 'downloaded' | 'cancelled' | 'blocked' | 'not-found' | 'error'
+
+function canShareFiles(files: File[]): boolean {
+  return (
+    typeof navigator !== 'undefined' &&
+    typeof navigator.share === 'function' &&
+    typeof navigator.canShare === 'function' &&
+    navigator.canShare({ files })
+  )
+}
+
+function downloadFile(file: File) {
+  const url = URL.createObjectURL(file)
+  const a = document.createElement('a')
+  a.href = url
+  a.download = file.name
+  document.body.appendChild(a)
+  a.click()
+  a.remove()
+  // Revocar con delay: revocar de inmediato puede cancelar la descarga en algunos
+  // browsers antes de que arranque.
+  window.setTimeout(() => URL.revokeObjectURL(url), 10_000)
+}
+
+export function downloadFiles(files: File[]) {
+  for (const file of files) downloadFile(file)
+}
+
+// Captura un único nodo (por id) a un File PNG. Devuelve null si no existe el
+// nodo o si la conversión falla. Maneja el caso "offscreen" (fixed + left/top
+// muy negativos) trayéndolo al viewport durante la captura y restaurándolo.
+async function captureNodeToFile(targetId: string, fileName: string): Promise<File | null> {
+  const node = document.getElementById(targetId)
+  if (!node) return null
 
   const cs = window.getComputedStyle(node)
   const isOffscreen =
@@ -59,12 +96,13 @@ export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult>
     // html-to-image, sin alto/ancho explícitos, usa offsetWidth/Height =
     // round(tamaño). Con sub-píxeles ese redondeo puede quedar 1px por debajo del
     // contenido y recortar la última fila. Fijamos el border-box redondeado hacia
-    // ARRIBA (ceil) para garantizar que la tabla completa entre en el canvas.
+    // ARRIBA (ceil) para garantizar que el contenido completo entre en el canvas.
     const rect = node.getBoundingClientRect()
     const width = Math.ceil(rect.width)
     const height = Math.ceil(rect.height)
-    // Filtra elementos marcados como `data-share-hide` (ej: botón "+" de
-    // agregar reacción) — son UI interactiva que no aporta nada en la imagen.
+    // Filtra elementos marcados como `data-share-hide` (ej: botón "+" de agregar
+    // reacción o el propio botón de compartir) — UI interactiva que no aporta a
+    // la imagen.
     const dataUrl = await toPng(node, {
       pixelRatio: 2,
       width,
@@ -74,33 +112,10 @@ export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult>
       filter: (n) => !(n instanceof Element) || !n.hasAttribute('data-share-hide'),
     })
     const blob = await fetch(dataUrl).then((r) => r.blob())
-    const file = new File([blob], `${args.fileName}.png`, { type: 'image/png' })
-
-    if (
-      typeof navigator !== 'undefined' &&
-      typeof navigator.share === 'function' &&
-      typeof navigator.canShare === 'function' &&
-      navigator.canShare({ files: [file] })
-    ) {
-      try {
-        await navigator.share({ files: [file], title: args.shareTitle, text: args.shareText })
-        return 'shared'
-      } catch (e) {
-        if ((e as Error).name === 'AbortError') return 'cancelled'
-        // fall through to download
-      }
-    }
-
-    const a = document.createElement('a')
-    a.href = dataUrl
-    a.download = `${args.fileName}.png`
-    document.body.appendChild(a)
-    a.click()
-    a.remove()
-    return 'downloaded'
+    return new File([blob], `${fileName}.png`, { type: 'image/png' })
   } catch (e) {
-    console.error('shareDomNodeAsImage failed', e)
-    return 'error'
+    console.error('captureNodeToFile failed', e)
+    return null
   } finally {
     if (isOffscreen) {
       node.style.left = saved.left
@@ -111,4 +126,61 @@ export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult>
       document.body.style.overflowX = saved.bodyOverflowX
     }
   }
+}
+
+// Genera un PNG por cada target, en orden, reportando progreso. Los targets que
+// no se pueden capturar se omiten (no cortan el resto).
+export async function captureNodesToFiles(
+  targets: MultiShareTarget[],
+  onProgress?: (done: number, total: number) => void,
+): Promise<File[]> {
+  const files: File[] = []
+  for (let i = 0; i < targets.length; i++) {
+    const t = targets[i]
+    const file = await captureNodeToFile(t.targetId, t.fileName)
+    if (file) files.push(file)
+    onProgress?.(i + 1, targets.length)
+  }
+  return files
+}
+
+// Comparte una lista de archivos ya generados. Debe llamarse dentro (o muy cerca)
+// de un gesto de usuario: si el Web Share API pide activación fresca devuelve
+// 'blocked' sin descargar, para que el caller ofrezca reintentar con un tap.
+export async function shareFiles(
+  files: File[],
+  meta: { shareTitle: string; shareText: string },
+): Promise<ShareResult> {
+  if (files.length === 0) return 'error'
+  if (canShareFiles(files)) {
+    try {
+      await navigator.share({ files, title: meta.shareTitle, text: meta.shareText })
+      return 'shared'
+    } catch (e) {
+      const name = (e as Error).name
+      if (name === 'AbortError') return 'cancelled'
+      if (name === 'NotAllowedError') return 'blocked'
+      // Otro error del share → caemos a descarga.
+    }
+  }
+  downloadFiles(files)
+  return 'downloaded'
+}
+
+export async function shareDomNodeAsImage(args: ShareArgs): Promise<ShareResult> {
+  if (!document.getElementById(args.targetId)) return 'not-found'
+  const file = await captureNodeToFile(args.targetId, args.fileName)
+  if (!file) return 'error'
+
+  const result = await shareFiles([file], {
+    shareTitle: args.shareTitle,
+    shareText: args.shareText,
+  })
+  // Captura simple: un bloqueo por activación es raro (la captura es rápida);
+  // si ocurre, descargamos para no dejar al usuario sin nada.
+  if (result === 'blocked') {
+    downloadFile(file)
+    return 'downloaded'
+  }
+  return result
 }
