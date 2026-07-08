@@ -4,6 +4,7 @@ import { Search, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ReactionBar } from '@/components/predictions/reaction-bar'
 import { renderPick } from '@/components/predictions/render-pick'
+import { ShareAllMembersButton } from '@/components/predictions/share-all-members-button'
 import { ShareCardIconButton } from '@/components/predictions/share-card-icon-button'
 import {
   ShareCategoryStoryCard,
@@ -170,85 +171,101 @@ export function AllPredictionsView({
         </Card>
       )}
 
-      {focusedCategory
-        ? (() => {
-            const storyId = `category-share-${focusedCategory.key}`
-            const storyRows: StoryRow[] = filteredMembers.map((m) => ({
-              userId: m.userId,
-              displayName: m.displayName,
-              avatarUrl: m.avatarUrl,
-              pick: view.picksByMemberCategory[m.userId]?.[focusedCategory.id],
-              reactions: view.reactionsByKey?.[`${m.userId}-${focusedCategory.id}`] ?? [],
-            }))
-            return (
-              <>
-                <Card className="overflow-hidden p-0">
-                  <div className="flex items-start justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3">
-                    <div className="min-w-0">
-                      <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
-                        {focusedCategory.name}
-                      </p>
-                      <p className="mt-0.5 text-xs text-muted-foreground">
-                        Lo que eligió cada miembro en esta categoría.
-                      </p>
-                    </div>
-                    {filteredMembers.length > 0 && (
-                      <ShareCardIconButton
-                        targetId={storyId}
-                        fileName={`mundial-pool-${groupSlug}-${focusedCategory.key}`}
-                        shareTitle={`${focusedCategory.name} · ${groupName}`}
-                        shareText={`Mira lo que apostó el grupo para ${focusedCategory.name} en ${groupName} · Mundial 2026.`}
-                        ariaLabel={`Compartir ${focusedCategory.name} del grupo como imagen`}
-                      />
-                    )}
+      {focusedCategory ? (
+        (() => {
+          const storyId = `category-share-${focusedCategory.key}`
+          const storyRows: StoryRow[] = filteredMembers.map((m) => ({
+            userId: m.userId,
+            displayName: m.displayName,
+            avatarUrl: m.avatarUrl,
+            pick: view.picksByMemberCategory[m.userId]?.[focusedCategory.id],
+            reactions: view.reactionsByKey?.[`${m.userId}-${focusedCategory.id}`] ?? [],
+          }))
+          return (
+            <>
+              <Card className="overflow-hidden p-0">
+                <div className="flex items-start justify-between gap-3 border-b border-border bg-muted/30 px-5 py-3">
+                  <div className="min-w-0">
+                    <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+                      {focusedCategory.name}
+                    </p>
+                    <p className="mt-0.5 text-xs text-muted-foreground">
+                      Lo que eligió cada miembro en esta categoría.
+                    </p>
                   </div>
-                  <ul className="divide-y divide-border">
-                    {filteredMembers.map((m) => {
-                      const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
-                      const isMe = m.userId === currentUserId
-                      return (
-                        <li key={m.userId} className="px-5 py-3">
-                          <div className="flex items-center justify-between gap-3">
-                            <div className="flex min-w-0 items-center gap-2.5">
-                              <Avatar className="h-8 w-8">
-                                {m.avatarUrl && (
-                                  <AvatarImage src={m.avatarUrl} alt={m.displayName} />
-                                )}
-                                <AvatarFallback className="text-xs">
-                                  {initials(m.displayName)}
-                                </AvatarFallback>
-                              </Avatar>
-                              <span className="truncate text-sm font-medium">{m.displayName}</span>
-                              {isMe && (
-                                <Badge
-                                  variant="secondary"
-                                  className="border-primary/20 bg-primary/10 text-primary"
-                                >
-                                  Tú
-                                </Badge>
-                              )}
-                            </div>
-                            <div className="flex items-center justify-end gap-2 text-right text-sm">
-                              {fateChipFor(m.userId, focusedCategory.id)}
-                              {renderPick(p)}
-                            </div>
+                  {filteredMembers.length > 0 && (
+                    <ShareCardIconButton
+                      targetId={storyId}
+                      fileName={`mundial-pool-${groupSlug}-${focusedCategory.key}`}
+                      shareTitle={`${focusedCategory.name} · ${groupName}`}
+                      shareText={`Mira lo que apostó el grupo para ${focusedCategory.name} en ${groupName} · Mundial 2026.`}
+                      ariaLabel={`Compartir ${focusedCategory.name} del grupo como imagen`}
+                    />
+                  )}
+                </div>
+                <ul className="divide-y divide-border">
+                  {filteredMembers.map((m) => {
+                    const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
+                    const isMe = m.userId === currentUserId
+                    return (
+                      <li key={m.userId} className="px-5 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <Avatar className="h-8 w-8">
+                              {m.avatarUrl && <AvatarImage src={m.avatarUrl} alt={m.displayName} />}
+                              <AvatarFallback className="text-xs">
+                                {initials(m.displayName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <span className="truncate text-sm font-medium">{m.displayName}</span>
+                            {isMe && (
+                              <Badge
+                                variant="secondary"
+                                className="border-primary/20 bg-primary/10 text-primary"
+                              >
+                                Tú
+                              </Badge>
+                            )}
                           </div>
-                          {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
-                        </li>
-                      )
-                    })}
-                  </ul>
-                </Card>
-                <ShareCategoryStoryCard
-                  id={storyId}
-                  categoryName={focusedCategory.name}
-                  groupName={groupName}
-                  rows={storyRows}
-                />
-              </>
-            )
-          })()
-        : filteredMembers.map((m) => {
+                          <div className="flex items-center justify-end gap-2 text-right text-sm">
+                            {fateChipFor(m.userId, focusedCategory.id)}
+                            {renderPick(p)}
+                          </div>
+                        </div>
+                        {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
+                      </li>
+                    )
+                  })}
+                </ul>
+              </Card>
+              <ShareCategoryStoryCard
+                id={storyId}
+                categoryName={focusedCategory.name}
+                groupName={groupName}
+                rows={storyRows}
+              />
+            </>
+          )
+        })()
+      ) : (
+        <>
+          {filteredMembers.length > 0 && (
+            <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-4 py-2.5">
+              <p className="min-w-0 text-xs text-muted-foreground">
+                Comparte la apuesta de cada miembro como un álbum de imágenes.
+              </p>
+              <ShareAllMembersButton
+                targets={filteredMembers.map((m) => ({
+                  targetId: `member-share-${m.userId}`,
+                  fileName: `mundial-pool-${groupSlug}-${slugifyName(m.displayName)}`,
+                }))}
+                shareTitle={`Apuestas de ${groupName} · Mundial 2026`}
+                shareText={`Mira las apuestas del grupo ${groupName} para el Mundial 2026 en mundial•pool.`}
+                ariaLabel="Compartir las apuestas de todos los miembros como álbum de imágenes"
+              />
+            </div>
+          )}
+          {filteredMembers.map((m) => {
             const isMe = m.userId === currentUserId
             const memberPicks = view.picksByMemberCategory[m.userId] ?? {}
             const cardId = `member-share-${m.userId}`
@@ -303,6 +320,8 @@ export function AllPredictionsView({
               </Card>
             )
           })}
+        </>
+      )}
     </div>
   )
 }
