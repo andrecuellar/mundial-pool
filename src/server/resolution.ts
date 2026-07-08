@@ -10,6 +10,12 @@ import {
   results,
   teams,
 } from '@/db/schema'
+import {
+  buildTournamentInputs,
+  computeRevelationAndDisappointment,
+  computeTournamentRanks,
+  type TournamentTeamInput,
+} from '@/features/scoring/tournament-rank'
 import { updateTeamStandings } from '@/features/tournament/standings'
 import { getFootballProvider } from '@/integrations/football'
 import { teamMatchKey } from '@/integrations/football/normalize'
@@ -22,7 +28,14 @@ type Outcome =
   | { kind: 'team_set'; teamNames: string[] }
   | { kind: 'skip'; reason: string }
 
-function planCategory(strategy: string, snapshot: TournamentSnapshot): Outcome {
+type RankingContext = { inputs: TournamentTeamInput[]; decided: boolean }
+
+function planCategory(
+  cat: { resolutionStrategy: string; metadata: Record<string, unknown> | null },
+  snapshot: TournamentSnapshot,
+  ranking: RankingContext,
+): Outcome {
+  const strategy = cat.resolutionStrategy
   switch (strategy) {
     case 'final_winner':
       return snapshot.champion
@@ -56,9 +69,32 @@ function planCategory(strategy: string, snapshot: TournamentSnapshot): Outcome {
     case 'fifa_golden_glove':
     case 'fifa_young_player':
       return { kind: 'player', reason: `${strategy} requires manual override` }
+    // Revelación / decepción / top 5 salen del ranking 1→48 del torneo, que
+    // solo es definitivo cuando ya nadie está en ronda provisional ('alive_*'):
+    // después de la final y el partido por el tercer puesto. Antes de eso se
+    // saltan — pagar puntos por un ranking que aún puede cambiar sería peor.
     case 'revelation':
-    case 'disappointment':
-    case 'top_n_teams':
+    case 'disappointment': {
+      if (!ranking.decided) {
+        return { kind: 'skip', reason: 'tournament not fully decided yet' }
+      }
+      const outcome = computeRevelationAndDisappointment(ranking.inputs)
+      if (!outcome) return { kind: 'skip', reason: 'ranking outcome unavailable' }
+      const pick = strategy === 'revelation' ? outcome.revelation : outcome.disappointment
+      return { kind: 'team', teamName: pick.teamName }
+    }
+    case 'top_n_teams': {
+      if (!ranking.decided) {
+        return { kind: 'skip', reason: 'tournament not fully decided yet' }
+      }
+      const nRaw = cat.metadata?.n
+      const n = typeof nRaw === 'number' && nRaw > 0 ? nRaw : 5
+      const top = computeTournamentRanks(ranking.inputs)
+        .filter((r) => r.tournamentRank <= n)
+        .map((r) => r.teamName)
+      if (top.length !== n) return { kind: 'skip', reason: `expected top ${n}, got ${top.length}` }
+      return { kind: 'team_set', teamNames: top }
+    }
     case 'manual':
       return { kind: 'skip', reason: `strategy "${strategy}" not implemented yet` }
     default:
@@ -66,23 +102,33 @@ function planCategory(strategy: string, snapshot: TournamentSnapshot): Outcome {
   }
 }
 
-async function loadTeamIndex() {
-  const rows = await db.select().from(teams)
-  const byKey = new Map<string, (typeof rows)[number]>()
-  for (const t of rows) byKey.set(teamMatchKey(t.name), t)
-  return byKey
-}
-
 export async function runResolution() {
   const provider = getFootballProvider()
   const [run] = await db.insert(resolutionRuns).values({ status: 'running' }).returning()
 
   try {
-    const [snapshot, teamIndex, cats] = await Promise.all([
-      provider.fetchTournamentSnapshot(),
-      loadTeamIndex(),
+    const snapshot = await provider.fetchTournamentSnapshot()
+
+    // Standings ANTES del loop de categorías: revelación/decepción/top 5 se
+    // derivan de teams.reachedRound, así que necesitan los cruces de HOY. Si
+    // esto corriera al final (como antes), la mañana después de la final el
+    // ranking seguiría siendo el de ayer y esas categorías se resolverían con
+    // un día de retraso. Best-effort: si el provider falla, las categorías
+    // que dependen del snapshot igual se resuelven con los standings de ayer.
+    try {
+      const rawMatches = await provider.fetchMatches()
+      await updateTeamStandings(rawMatches)
+    } catch (e) {
+      console.error('updateTeamStandings failed', (e as Error).message)
+    }
+
+    const [teamRows, cats] = await Promise.all([
+      db.select().from(teams),
       db.select().from(categories),
     ])
+    const teamIndex = new Map<string, (typeof teamRows)[number]>()
+    for (const t of teamRows) teamIndex.set(teamMatchKey(t.name), t)
+    const ranking = buildTournamentInputs(teamRows)
 
     const summary: Record<string, string> = {}
     const newlyResolvedCategoryIds: string[] = []
@@ -94,7 +140,7 @@ export async function runResolution() {
     const preTops = await getTopUserIdsByGroup()
 
     for (const cat of cats) {
-      const outcome = planCategory(cat.resolutionStrategy, snapshot)
+      const outcome = planCategory(cat, snapshot, ranking)
 
       if (outcome.kind === 'skip' || outcome.kind === 'player') {
         summary[cat.key] = `skip: ${outcome.reason}`
@@ -174,16 +220,6 @@ export async function runResolution() {
       await notifyClimbedToTop(preTops, postTops, run.id)
     } catch (e) {
       console.error('rank diff notifications failed', (e as Error).message)
-    }
-
-    // Tournament standings: fetch matches from the provider and update the
-    // teams table so /torneo/selecciones reflects current positions. Mock
-    // provider returns []; the function is idempotent on empty input.
-    try {
-      const rawMatches = await provider.fetchMatches()
-      await updateTeamStandings(rawMatches)
-    } catch (e) {
-      console.error('updateTeamStandings failed', (e as Error).message)
     }
 
     await db

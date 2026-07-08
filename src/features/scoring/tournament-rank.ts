@@ -218,6 +218,101 @@ export function computeTournamentRanks(teams: TournamentTeamInput[]): TeamRank[]
   return out
 }
 
+/** Subconjunto estructural de la fila de `teams` que necesita el ranking. */
+export type TeamRowForRanking = {
+  id: string
+  name: string
+  fifaRanking: number | null
+  reachedRound: string | null
+  groupPoints: number
+  groupGoalDiff: number
+  groupGoalsFor: number
+  yellowCards: number
+  redCards: number
+  elimMatchGoalsFor: number | null
+  elimMatchGoalsAgainst: number | null
+  elimMatchWentToPenalties: boolean
+}
+
+const VALID_REACHED = new Set<TournamentTeamInput['reached']>([
+  'group',
+  'alive_r32',
+  'r32',
+  'alive_r16',
+  'r16',
+  'alive_qf',
+  'qf',
+  'alive_sf',
+  'alive_final',
+  'fourth',
+  'third',
+  'runner_up',
+  'champion',
+])
+
+// Rondas definitivas: cuando TODOS los equipos tienen una de estas, el torneo
+// terminó y el ranking 1→48 deja de ser provisional.
+const FINAL_ROUNDS = new Set([
+  'group',
+  'r32',
+  'r16',
+  'qf',
+  'fourth',
+  'third',
+  'runner_up',
+  'champion',
+])
+
+/**
+ * Construye el input del ranking desde las filas de `teams` que el cron de
+ * standings mantiene. Normaliza el ranking FIFA global a 1..N entre los
+ * participantes (ver doc de fifaRank arriba); equipos sin ranking FIFA van al
+ * final en orden alfabético para mantener el resultado determinista.
+ * `decided` = ya no queda ningún equipo en ronda provisional ('alive_*' o
+ * null), es decir, la final y el tercer puesto ya se jugaron.
+ */
+export function buildTournamentInputs(rows: TeamRowForRanking[]): {
+  inputs: TournamentTeamInput[]
+  decided: boolean
+} {
+  const byFifa = [...rows].sort((a, b) => {
+    if (a.fifaRanking != null && b.fifaRanking != null) return a.fifaRanking - b.fifaRanking
+    if (a.fifaRanking != null) return -1
+    if (b.fifaRanking != null) return 1
+    return a.name.localeCompare(b.name, 'es')
+  })
+  const normFifa = new Map(byFifa.map((t, i) => [t.id, i + 1]))
+
+  const inputs = rows.map((t) => {
+    const reached = VALID_REACHED.has(t.reachedRound as TournamentTeamInput['reached'])
+      ? (t.reachedRound as TournamentTeamInput['reached'])
+      : 'alive_r32'
+    const input: TournamentTeamInput = {
+      teamId: t.id,
+      teamName: t.name,
+      fifaRank: normFifa.get(t.id) ?? rows.length,
+      reached,
+      groupPoints: t.groupPoints,
+      groupGoalDiff: t.groupGoalDiff,
+      groupGoalsFor: t.groupGoalsFor,
+      yellowCards: t.yellowCards,
+      redCards: t.redCards,
+    }
+    if (t.elimMatchGoalsFor != null && t.elimMatchGoalsAgainst != null) {
+      input.eliminationMatch = {
+        wentToPenalties: t.elimMatchWentToPenalties,
+        goalsFor: t.elimMatchGoalsFor,
+        goalsAgainst: t.elimMatchGoalsAgainst,
+      }
+    }
+    return input
+  })
+
+  const decided =
+    rows.length > 0 && rows.every((t) => t.reachedRound != null && FINAL_ROUNDS.has(t.reachedRound))
+  return { inputs, decided }
+}
+
 export type RevelationOutcome = {
   revelation: TeamRank
   disappointment: TeamRank
