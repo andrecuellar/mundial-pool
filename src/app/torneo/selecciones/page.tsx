@@ -11,9 +11,11 @@ import { Card } from '@/components/ui/card'
 import { db } from '@/db'
 import { resolutionRuns, teams } from '@/db/schema'
 import {
+  buildTournamentInputs,
   computeRevelationAndDisappointment,
+  computeRevelationRace,
   computeTournamentRanks,
-  type TournamentTeamInput,
+  type RaceEntry,
 } from '@/features/scoring/tournament-rank'
 import { formatDayShort } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -26,8 +28,6 @@ export const metadata: Metadata = {
   description:
     'Ranking 1→48 con desempates por penales, fair play y diferencia de gol del Mundial 2026.',
 }
-
-type Reached = TournamentTeamInput['reached']
 
 // Same teams for every viewer; tournament state mutates via the daily cron
 // which calls revalidateTag('teams'). Cache TTL is a safety fallback if the
@@ -89,6 +89,25 @@ function reachedLabel(r: string | null, started: boolean): string {
   }
 }
 
+function RaceChip({ entry, flag }: { entry: RaceEntry; flag: string }) {
+  const up = entry.delta >= 0
+  return (
+    <span className="inline-flex items-center gap-1 rounded-md border border-border bg-muted/40 px-1.5 py-0.5">
+      <span className="text-sm leading-none">{flag}</span>
+      <span className="font-medium text-foreground">{entry.teamName}</span>
+      <span className={`font-mono font-semibold ${up ? 'text-success' : 'text-destructive'}`}>
+        {up ? `▲+${entry.delta}` : `▼${entry.delta}`}
+      </span>
+      {entry.alive && (
+        <span
+          className="h-1.5 w-1.5 shrink-0 rounded-full bg-accent"
+          title="Sigue jugando — su salto aún puede cambiar"
+        />
+      )}
+    </span>
+  )
+}
+
 function nextCronAt(): Date {
   const next = new Date()
   next.setUTCHours(CRON_HOUR_UTC, 0, 0, 0)
@@ -139,38 +158,10 @@ export default async function TableSeleccionesPage() {
       : Promise.resolve([] as { finishedAt: Date | null }[]),
   ])
 
-  // Normalize global FIFA ranking to 1-48 across only the 48 World Cup teams.
-  // The algorithm expects this normalized rank, not the raw global value.
-  const sortedByFifa = [...rowsRaw].sort((a, b) => (a.fifaRanking ?? 999) - (b.fifaRanking ?? 999))
-  const normalizedFifaRank = new Map<string, number>()
-  sortedByFifa.forEach((t, i) => {
-    normalizedFifaRank.set(t.id, i + 1)
-  })
-
-  const algoInput: TournamentTeamInput[] = rowsRaw.map((t) => ({
-    teamId: t.id,
-    teamName: t.name,
-    fifaRank: normalizedFifaRank.get(t.id) ?? 48,
-    // null = pre-Mundial or qualified-and-still-in-the-round-of-32 → the
-    // 'alive_r32' bracket, which ranks above the group-stage finishers. Teams
-    // that won a knockout tie carry an 'alive_r16'/'alive_qf'/… value instead.
-    // Pre-Mundial every team is 'alive_r32' with zero group stats, so the order
-    // falls back to the FIFA seeding (same flat pre-tournament ranking as before).
-    reached: (t.reachedRound ?? 'alive_r32') as Reached,
-    groupPoints: t.groupPoints,
-    groupGoalDiff: t.groupGoalDiff,
-    groupGoalsFor: t.groupGoalsFor,
-    yellowCards: t.yellowCards,
-    redCards: t.redCards,
-    eliminationMatch:
-      t.elimMatchGoalsFor != null
-        ? {
-            wentToPenalties: t.elimMatchWentToPenalties,
-            goalsFor: t.elimMatchGoalsFor,
-            goalsAgainst: t.elimMatchGoalsAgainst ?? 0,
-          }
-        : undefined,
-  }))
+  // buildTournamentInputs normaliza el ranking FIFA a 1-48 entre participantes
+  // y mapea reachedRound (null → 'alive_r32') — la misma construcción que usa
+  // el resolutor del cron, así esta tabla y los resultados nunca divergen.
+  const { inputs: algoInput } = buildTournamentInputs(rowsRaw)
 
   const algoRanks = computeTournamentRanks(algoInput)
 
@@ -181,6 +172,10 @@ export default async function TableSeleccionesPage() {
   const disappointmentId =
     outcome && outcome.disappointment.delta < 0 ? outcome.disappointment.teamId : null
   const tournamentFinished = rowsRaw.some((t) => t.reachedRound === 'champion')
+  // Hasta 3 candidatas por lado que TODAVÍA pueden quedarse con la categoría
+  // (cota conservadora por ronda alcanzada). Terminado el torneo colapsa a las
+  // ganadoras definitivas.
+  const race = tournamentStarted ? computeRevelationRace(algoInput) : null
 
   const teamById = new Map(rowsRaw.map((t) => [t.id, t]))
   const ranked = algoRanks.map((r) => {
@@ -215,17 +210,50 @@ export default async function TableSeleccionesPage() {
           Ranking general del Mundial 2026 (1 = mejor del torneo, 48 = última).
         </p>
 
-        {tournamentStarted && (revelationId || disappointmentId) && (
-          <p className="mt-3 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-xs text-muted-foreground">
-            <Badge className="border-accent/30 bg-accent/15 text-accent">Revelación</Badge>
-            <Badge variant="destructive">Decepción</Badge>
-            <span>
-              marcan{!tournamentFinished && ', por ahora,'} a la selección que más subió y la que
-              más bajó frente a su ranking FIFA.
-              {!tournamentFinished &&
-                ' Son provisionales: se recalculan en cada actualización y pueden cambiar hasta que termine el Mundial.'}
-            </span>
-          </p>
+        {race && (race.revelation.length > 0 || race.disappointment.length > 0) && (
+          <Card className="mt-3 space-y-2.5 p-4 text-xs">
+            <p className="font-mono text-[11px] uppercase tracking-[0.14em] text-muted-foreground">
+              {tournamentFinished
+                ? 'Revelación y decepción del Mundial'
+                : 'La carrera por revelación y decepción'}
+            </p>
+            {race.revelation.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge className="border-accent/30 bg-accent/15 text-accent">Revelación</Badge>
+                {race.revelation.map((c) => (
+                  <RaceChip
+                    key={c.teamId}
+                    entry={c}
+                    flag={teamById.get(c.teamId)?.flagEmoji ?? '🏳️'}
+                  />
+                ))}
+              </div>
+            )}
+            {race.disappointment.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <Badge variant="destructive">Decepción</Badge>
+                {race.disappointment.map((c) => (
+                  <RaceChip
+                    key={c.teamId}
+                    entry={c}
+                    flag={teamById.get(c.teamId)?.flagEmoji ?? '🏳️'}
+                  />
+                ))}
+              </div>
+            )}
+            <p className="leading-relaxed text-muted-foreground">
+              {tournamentFinished ? (
+                'Resultado definitivo frente al ranking FIFA pre-Mundial.'
+              ) : (
+                <>
+                  Solo aparecen las selecciones que todavía pueden quedarse con la categoría. ▲/▼ =
+                  cuánto subió o bajó hasta hoy frente a su ranking FIFA; el punto verde marca a las
+                  que siguen jugando (su salto aún puede cambiar). Se recalcula con cada
+                  actualización.
+                </>
+              )}
+            </p>
+          </Card>
         )}
 
         {tournamentStarted && (
