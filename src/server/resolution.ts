@@ -1,4 +1,4 @@
-import { eq, inArray, sql } from 'drizzle-orm'
+import { and, eq, inArray, sql } from 'drizzle-orm'
 import { db } from '@/db'
 import {
   categories,
@@ -102,6 +102,23 @@ function planCategory(
   }
 }
 
+/**
+ * Stable string identity of a resolved result so we can tell whether a category
+ * changed between cron runs. The daily cron re-derives every resolvable
+ * category from the same snapshot and upserts it, so without this every morning
+ * would look like a brand-new resolution and re-fire the "you won" push.
+ */
+function resultSignature(r: {
+  teamId?: string | null
+  teamSet?: string[] | null
+  playerText?: string | null
+}): string {
+  if (r.teamId) return `team:${r.teamId}`
+  if (r.teamSet && r.teamSet.length > 0) return `set:${[...r.teamSet].sort().join(',')}`
+  if (r.playerText) return `player:${r.playerText.trim().toLowerCase()}`
+  return 'none'
+}
+
 export async function runResolution() {
   const provider = getFootballProvider()
   const [run] = await db.insert(resolutionRuns).values({ status: 'running' }).returning()
@@ -130,6 +147,20 @@ export async function runResolution() {
     for (const t of teamRows) teamIndex.set(teamMatchKey(t.name), t)
     const ranking = buildTournamentInputs(teamRows)
 
+    // Signature of every result already on record BEFORE this run. We only
+    // touch a category (and only notify its winners) when the outcome is new
+    // or actually changed — otherwise the same picks get re-celebrated every
+    // single morning the cron runs.
+    const priorResults = await db
+      .select({
+        categoryId: results.categoryId,
+        teamId: results.teamId,
+        teamSet: results.teamSet,
+        playerText: results.playerText,
+      })
+      .from(results)
+    const priorSig = new Map(priorResults.map((r) => [r.categoryId, resultSignature(r)]))
+
     const summary: Record<string, string> = {}
     const newlyResolvedCategoryIds: string[] = []
 
@@ -151,6 +182,12 @@ export async function runResolution() {
         const team = teamIndex.get(teamMatchKey(outcome.teamName))
         if (!team) {
           summary[cat.key] = `skip: team "${outcome.teamName}" not in db`
+          continue
+        }
+        // Already resolved to this same team on a prior run → leave it (and its
+        // winners) untouched so we don't re-notify or bump resolvedAt daily.
+        if (priorSig.get(cat.id) === resultSignature({ teamId: team.id })) {
+          summary[cat.key] = `unchanged:${team.fifaCode ?? team.name}`
           continue
         }
         await db
@@ -181,6 +218,11 @@ export async function runResolution() {
         }
         if (missing.length > 0) {
           summary[cat.key] = `skip: teams missing in db: ${missing.join(', ')}`
+          continue
+        }
+        // Same set as a prior run → skip the write and the winner push.
+        if (priorSig.get(cat.id) === resultSignature({ teamSet: matched })) {
+          summary[cat.key] = `unchanged:team_set:${matched.length}`
           continue
         }
         await db
@@ -293,13 +335,27 @@ async function notifyWinners(resolvedCategoryIds: string[]) {
     })
     .from(predictions)
     .innerJoin(groups, eq(groups.id, predictions.groupId))
-    .innerJoin(groupCategories, eq(groupCategories.categoryId, predictions.categoryId))
+    // Join on BOTH group AND category: group_categories holds the points for a
+    // category *within a specific group*. Matching on category alone fans each
+    // prediction out to every group that uses the category and sums their
+    // points together — inflating the total and the "N categorías" count. This
+    // has to mirror v_user_scores (group_id + category_id) or the push shows a
+    // different number than the leaderboard.
+    .innerJoin(
+      groupCategories,
+      and(
+        eq(groupCategories.categoryId, predictions.categoryId),
+        eq(groupCategories.groupId, predictions.groupId),
+        eq(groupCategories.enabled, true),
+      ),
+    )
     .where(inArray(predictions.categoryId, resolvedCategoryIds))
 
-  // userId → { points, names: string[] }
+  // Points live per group, so a win is aggregated per (user, group) — one push
+  // per group the user scored in, each matching that group's leaderboard.
   const wins = new Map<
     string,
-    { totalPoints: number; categoryNames: string[]; groupSlug: string }
+    { userId: string; totalPoints: number; categoryNames: string[]; groupSlug: string }
   >()
 
   for (const p of allPredictions) {
@@ -326,13 +382,14 @@ async function notifyWinners(resolvedCategoryIds: string[]) {
     }
     if (earned === 0) continue
 
-    const key = p.userId
+    const key = `${p.userId}:${p.groupId}`
     const prev = wins.get(key)
     if (prev) {
       prev.totalPoints += earned
       prev.categoryNames.push(cat.name)
     } else {
       wins.set(key, {
+        userId: p.userId,
         totalPoints: earned,
         categoryNames: [cat.name],
         groupSlug: p.groupSlug,
@@ -340,7 +397,7 @@ async function notifyWinners(resolvedCategoryIds: string[]) {
     }
   }
 
-  for (const [userId, { totalPoints, categoryNames, groupSlug }] of wins) {
+  for (const { userId, totalPoints, categoryNames, groupSlug } of wins.values()) {
     const body =
       categoryNames.length === 1
         ? `Acertaste ${categoryNames[0]}`
