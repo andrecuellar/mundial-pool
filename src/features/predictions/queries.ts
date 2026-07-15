@@ -508,8 +508,14 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
     const prov = buildProvisionalPick(cat, provisional, teamById)
     if (prov && prov.kind !== 'empty') {
       perfectPicks[cat.id] = prov
-      perfectStatus[cat.id] = 'provisional'
-      provisionalCount++
+      // Los finalistas proyectados salen de 'alive_final'/champion/runner_up:
+      // ganar la semifinal ya te sienta en la final, así que es un hecho
+      // confirmado, no una proyección que pueda cambiar (a diferencia de
+      // revelación/decepción/top 5/goleador, que aún pueden moverse).
+      const confirmed = cat.key === 'finalists'
+      perfectStatus[cat.id] = confirmed ? 'confirmed' : 'provisional'
+      if (confirmed) confirmedCount++
+      else provisionalCount++
       continue
     }
     perfectPicks[cat.id] = { kind: 'empty' }
