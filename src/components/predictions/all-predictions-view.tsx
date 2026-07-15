@@ -1,6 +1,6 @@
 'use client'
 
-import { Search, X } from 'lucide-react'
+import { Search, Trophy, X } from 'lucide-react'
 import { useMemo, useState } from 'react'
 import { ReactionBar } from '@/components/predictions/reaction-bar'
 import { renderPick } from '@/components/predictions/render-pick'
@@ -14,7 +14,7 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
-import type { AllPredictionsPick, PickFate } from '@/features/predictions/queries'
+import type { AllPredictionsPick, PerfectCard, PickFate } from '@/features/predictions/queries'
 import type { ReactionBucket } from '@/features/reactions/types'
 
 function initials(name: string): string {
@@ -51,6 +51,8 @@ export type ViewData = {
   reactionsByKey?: Record<string, ReactionBucket[] | undefined>
   /** Estado definitivo por (miembro, categoría): fallado / acertado / parcial. */
   fateByMemberCategory?: Record<string, Record<string, PickFate | undefined>>
+  /** El apostador perfecto: respuesta oficial por categoría. */
+  perfect?: PerfectCard | null
 }
 
 type Props = {
@@ -204,6 +206,27 @@ export function AllPredictionsView({
                   )}
                 </div>
                 <ul className="divide-y divide-border">
+                  {(() => {
+                    const answer = view.perfect?.picksByCategory[focusedCategory.id]
+                    if (!answer || answer.kind === 'empty') return null
+                    return (
+                      <li className="bg-amber-400/10 px-5 py-3">
+                        <div className="flex items-center justify-between gap-3">
+                          <div className="flex min-w-0 items-center gap-2.5">
+                            <span className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-600 dark:text-amber-400">
+                              <Trophy className="h-4 w-4" />
+                            </span>
+                            <span className="truncate text-sm font-semibold">
+                              La Carta Perfecta
+                            </span>
+                          </div>
+                          <div className="flex items-center justify-end gap-2 text-right text-sm">
+                            {renderPick(answer)}
+                          </div>
+                        </div>
+                      </li>
+                    )
+                  })()}
                   {filteredMembers.map((m) => {
                     const p = view.picksByMemberCategory[m.userId]?.[focusedCategory.id]
                     const isMe = m.userId === currentUserId
@@ -249,6 +272,54 @@ export function AllPredictionsView({
         })()
       ) : (
         <>
+          {view.perfect && view.perfect.resolvedCount > 0 && (
+            <Card
+              id="perfect-share"
+              className="overflow-hidden border-amber-400/50 bg-amber-50/40 p-0 dark:bg-amber-950/10"
+            >
+              <div className="flex items-center gap-3 border-b border-amber-400/30 bg-amber-400/10 px-5 py-3">
+                <span className="grid h-9 w-9 shrink-0 place-items-center rounded-full bg-amber-400/20 text-amber-600 dark:text-amber-400">
+                  <Trophy className="h-5 w-5" />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-sm font-semibold">La Carta Perfecta</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Resultados oficiales · {view.perfect.resolvedCount}/{view.perfect.totalCount}{' '}
+                    resueltos
+                  </p>
+                </div>
+                <ShareCardIconButton
+                  targetId="perfect-share"
+                  fileName={`mundial-pool-${groupSlug}-carta-perfecta`}
+                  shareTitle={`La Carta Perfecta · ${groupName}`}
+                  shareText={`Los resultados ganadores del Mundial 2026 en ${groupName} · mundial•pool.`}
+                  ariaLabel="Compartir La Carta Perfecta como imagen"
+                />
+              </div>
+              <ul className="divide-y divide-border">
+                {categories.map((cat) => {
+                  const p = view.perfect?.picksByCategory[cat.id]
+                  return (
+                    <li key={cat.id} className="px-5 py-2.5 text-sm">
+                      <div className="flex items-start justify-between gap-3">
+                        <span className="min-w-0 text-muted-foreground">{cat.name}</span>
+                        <span className="flex items-center justify-end gap-2 text-right text-foreground">
+                          {!p || p.kind === 'empty' ? (
+                            <span className="text-xs italic text-muted-foreground">Pendiente</span>
+                          ) : (
+                            renderPick(p)
+                          )}
+                        </span>
+                      </div>
+                    </li>
+                  )
+                })}
+              </ul>
+              <div className="border-t border-amber-400/30 bg-amber-400/5 px-5 py-2 text-center text-[11px] text-muted-foreground">
+                mundial•pool · {groupName} · Mundial 2026
+              </div>
+            </Card>
+          )}
           {filteredMembers.length > 0 && (
             <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/20 px-4 py-2.5">
               <p className="min-w-0 text-xs text-muted-foreground">

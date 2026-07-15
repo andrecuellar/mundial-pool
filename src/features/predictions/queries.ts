@@ -211,6 +211,17 @@ export type AllPredictionsPick =
  */
 export type PickFate = 'won' | 'partial' | 'failed'
 
+/**
+ * "La Carta Perfecta": el apostador perfecto. Un pick por categoría armado
+ * desde la tabla `results` (la respuesta oficial). Las categorías sin resolver
+ * quedan como pick `empty` y se muestran como "Pendiente".
+ */
+export type PerfectCard = {
+  picksByCategory: Record<string, AllPredictionsPick | undefined>
+  resolvedCount: number
+  totalCount: number
+}
+
 export type AllPredictionsView = {
   members: AllPredictionsMember[]
   categories: AllPredictionsCategory[]
@@ -218,6 +229,44 @@ export type AllPredictionsView = {
   picks: Map<string, Map<string, AllPredictionsPick>>
   // member → category → fate (solo picks ya decididos)
   fateByMemberCategory: Record<string, Record<string, PickFate | undefined>>
+  // El apostador perfecto: respuesta oficial por categoría.
+  perfect: PerfectCard
+}
+
+type ResultRow = {
+  categoryId: string
+  teamId: string | null
+  teamSet: string[] | null
+  playerText: string | null
+}
+
+/**
+ * Construye el pick "correcto" de una categoría desde su resultado oficial.
+ * Sin resultado (o categoría sin datos aún) → pick `empty`. No calcula `dead`
+ * ni `fate`: por definición esta es la respuesta ganadora.
+ */
+function buildResultPick(
+  cat: AllPredictionsCategory,
+  result: ResultRow | undefined,
+  teamById: Map<string, { id: string; name: string; flag: string | null }>,
+): AllPredictionsPick {
+  if (!result) return { kind: 'empty' }
+  if (cat.valueKind === 'team' && result.teamId) {
+    const t = teamById.get(result.teamId)
+    if (!t) return { kind: 'empty' }
+    return { kind: 'team', teamName: t.name, teamFlag: t.flag, fifaCode: null }
+  }
+  if (cat.valueKind === 'team_set' && result.teamSet) {
+    const teams = (result.teamSet as string[])
+      .map((id) => teamById.get(id))
+      .filter((t): t is { id: string; name: string; flag: string | null } => !!t)
+      .map((t) => ({ name: t.name, flag: t.flag }))
+    return teams.length > 0 ? { kind: 'team_set', teams } : { kind: 'empty' }
+  }
+  if (cat.valueKind === 'player' && result.playerText) {
+    return { kind: 'player', text: result.playerText }
+  }
+  return { kind: 'empty' }
 }
 
 export async function getAllGroupPredictions(groupId: string): Promise<AllPredictionsView> {
@@ -335,7 +384,21 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
     }
   }
 
-  return { members, categories: cats, picks, fateByMemberCategory }
+  // La Carta Perfecta: pick oficial por categoría, en el mismo orden.
+  const perfectPicks: Record<string, AllPredictionsPick | undefined> = {}
+  let resolvedCount = 0
+  for (const cat of cats) {
+    const pick = buildResultPick(cat, resultByCat.get(cat.id), teamById)
+    perfectPicks[cat.id] = pick
+    if (pick.kind !== 'empty') resolvedCount++
+  }
+  const perfect: PerfectCard = {
+    picksByCategory: perfectPicks,
+    resolvedCount,
+    totalCount: cats.length,
+  }
+
+  return { members, categories: cats, picks, fateByMemberCategory, perfect }
 }
 
 export async function getPredictionIdsByMemberCategory(
@@ -367,6 +430,7 @@ export type AllPredictionsViewSerialised = {
   picksByMemberCategory: Record<string, Record<string, AllPredictionsPick | undefined>>
   predictionIdsByMemberCategory: Record<string, Record<string, string | undefined>>
   fateByMemberCategory: Record<string, Record<string, PickFate | undefined>>
+  perfect: PerfectCard
 }
 
 export function serialiseAllPredictionsView(
@@ -383,6 +447,7 @@ export function serialiseAllPredictionsView(
     picksByMemberCategory,
     predictionIdsByMemberCategory: predictionIdsByMemberCategory ?? {},
     fateByMemberCategory: view.fateByMemberCategory,
+    perfect: view.perfect,
   }
 }
 

@@ -13,8 +13,10 @@ export const WORLD_CUP_END = new Date('2026-07-19T22:00:00Z')
 // that revelation/disappointment computations will use this snapshot.
 export const FIFA_FINAL_UPDATE = new Date('2026-06-09T00:00:00Z')
 
-// The resolution + standings cron runs daily at 08:00 UTC.
-export const CRON_HOUR_UTC = 8
+// The resolution + standings cron runs daily at 00:00 UTC = 20:00 hora Bolivia
+// (UTC-4). Se movió a la noche boliviana porque, cerca del final del Mundial,
+// ya no hay partidos de madrugada que resolver.
+export const CRON_HOUR_UTC = 0
 
 export const TOTAL_MATCHES = 104
 export const TOTAL_TEAMS = 48
