@@ -53,11 +53,18 @@ function planCategory(
       return snapshot.finalists
         ? { kind: 'team_set', teamNames: snapshot.finalists.map((t) => t.name) }
         : { kind: 'skip', reason: 'finalists unknown' }
+    // Goleadora / más goleada: los goles siguen sumando mientras queden partidos
+    // (semis, final, 3.er puesto), así que el líder del snapshot es provisional
+    // hasta que el torneo esté decidido. Resolver antes marcaría "fallado" a
+    // picks que todavía pueden alcanzar al líder (p.ej. quien juega el 3.er
+    // puesto). Igual que revelación/top_n, se gatea con ranking.decided.
     case 'top_scoring_team':
+      if (!ranking.decided) return { kind: 'skip', reason: 'tournament not fully decided yet' }
       return snapshot.topScoringTeam
         ? { kind: 'team', teamName: snapshot.topScoringTeam.team.name }
         : { kind: 'skip', reason: 'top scoring team unknown' }
     case 'most_conceded_team':
+      if (!ranking.decided) return { kind: 'skip', reason: 'tournament not fully decided yet' }
       return snapshot.mostConcededTeam
         ? { kind: 'team', teamName: snapshot.mostConcededTeam.team.name }
         : { kind: 'skip', reason: 'most conceded team unknown' }
