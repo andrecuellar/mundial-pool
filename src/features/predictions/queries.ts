@@ -1,4 +1,4 @@
-import { and, asc, eq } from 'drizzle-orm'
+import { and, asc, desc, eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
 import {
@@ -12,6 +12,11 @@ import {
   results,
   teams,
 } from '@/db/schema'
+import {
+  buildTournamentInputs,
+  computeRevelationAndDisappointment,
+  computeTournamentRanks,
+} from '@/features/scoring/tournament-rank'
 import {
   getEliminationContext,
   isPlayerPickDead,
@@ -212,13 +217,24 @@ export type AllPredictionsPick =
 export type PickFate = 'won' | 'partial' | 'failed'
 
 /**
- * "La Carta Perfecta": el apostador perfecto. Un pick por categoría armado
- * desde la tabla `results` (la respuesta oficial). Las categorías sin resolver
- * quedan como pick `empty` y se muestran como "Pendiente".
+ * Estado de un pick de La Carta Perfecta: 'confirmed' = respuesta oficial ya
+ * resuelta (tabla `results`); 'provisional' = proyección desde el estado actual
+ * del torneo, todavía puede cambiar. Sin estado = categoría pendiente.
+ */
+export type PerfectPickStatus = 'confirmed' | 'provisional'
+
+/**
+ * "La Carta Perfecta": el apostador perfecto. Un pick por categoría. Las
+ * confirmadas salen de la tabla `results`; las provisionales se proyectan del
+ * estado del torneo (revelación, decepción, top 5, finalistas y goleador/
+ * asistente líder). Las que no tienen respuesta ni proyección quedan `empty`
+ * y se muestran como "Pendiente".
  */
 export type PerfectCard = {
   picksByCategory: Record<string, AllPredictionsPick | undefined>
-  resolvedCount: number
+  statusByCategory: Record<string, PerfectPickStatus | undefined>
+  confirmedCount: number
+  provisionalCount: number
   totalCount: number
 }
 
@@ -269,56 +285,120 @@ function buildResultPick(
   return { kind: 'empty' }
 }
 
-export async function getAllGroupPredictions(groupId: string): Promise<AllPredictionsView> {
-  const [members, catsRaw, predRows, teamRows, resultRows, elimCtx] = await Promise.all([
-    db
-      .select({
-        userId: profiles.id,
-        displayName: profiles.displayName,
-        avatarUrl: profiles.avatarUrl,
-      })
-      .from(groupMembers)
-      .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
-      .where(eq(groupMembers.groupId, groupId))
-      .orderBy(asc(profiles.displayName)),
-    db
-      .select({
-        id: categories.id,
-        key: categories.key,
-        name: categories.name,
-        valueKind: categories.valueKind,
-        points: groupCategories.points,
-      })
-      .from(categories)
-      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
-      .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
-    db
-      .select({
-        userId: predictions.userId,
-        categoryId: predictions.categoryId,
-        teamId: predictions.teamId,
-        teamSet: predictions.teamSet,
-        playerText: predictions.playerText,
-        teamName: teams.name,
-        teamFlag: teams.flagEmoji,
-        teamFifa: teams.fifaCode,
-      })
-      .from(predictions)
-      .leftJoin(teams, eq(teams.id, predictions.teamId))
-      .where(eq(predictions.groupId, groupId)),
-    db.select({ id: teams.id, name: teams.name, flag: teams.flagEmoji }).from(teams),
-    db
-      .select({
-        categoryId: results.categoryId,
-        teamId: results.teamId,
-        teamSet: results.teamSet,
-        playerText: results.playerText,
-      })
-      .from(results),
-    getEliminationContext(),
-  ])
+/** Proyección "en vivo" del torneo para categorías aún sin resultado oficial. */
+type ProvisionalContext = {
+  revelationId: string | null
+  disappointmentId: string | null
+  top5Ids: string[]
+  finalistIds: string[]
+  topScorerText: string | null
+  topAssistsText: string | null
+}
 
-  const teamById = new Map(teamRows.map((t) => [t.id, t]))
+/**
+ * Pick proyectado desde el estado actual del torneo para una categoría que aún
+ * no se resolvió. Devuelve `null` cuando no hay proyección fiable o la categoría
+ * no es proyectable (campeón, subcampeón, 3.er puesto y premios FIFA quedan
+ * pendientes hasta jugarse/definirse manualmente).
+ */
+function buildProvisionalPick(
+  cat: AllPredictionsCategory,
+  ctx: ProvisionalContext,
+  teamById: Map<string, { id: string; name: string; flag: string | null }>,
+): AllPredictionsPick | null {
+  const teamPick = (id: string | null): AllPredictionsPick | null => {
+    if (!id) return null
+    const t = teamById.get(id)
+    return t ? { kind: 'team', teamName: t.name, teamFlag: t.flag, fifaCode: null } : null
+  }
+  const teamSetPick = (ids: string[]): AllPredictionsPick | null => {
+    const teams = ids
+      .map((id) => teamById.get(id))
+      .filter((t): t is { id: string; name: string; flag: string | null } => !!t)
+      .map((t) => ({ name: t.name, flag: t.flag }))
+    return teams.length > 0 ? { kind: 'team_set', teams } : null
+  }
+  switch (cat.key) {
+    case 'revelation':
+      return teamPick(ctx.revelationId)
+    case 'disappointment':
+      return teamPick(ctx.disappointmentId)
+    case 'top_5':
+      return teamSetPick(ctx.top5Ids)
+    case 'finalists':
+      return teamSetPick(ctx.finalistIds)
+    case 'top_scorer_player':
+      return ctx.topScorerText ? { kind: 'player', text: ctx.topScorerText } : null
+    case 'top_assists_player':
+      return ctx.topAssistsText ? { kind: 'player', text: ctx.topAssistsText } : null
+    default:
+      return null
+  }
+}
+
+export async function getAllGroupPredictions(groupId: string): Promise<AllPredictionsView> {
+  const [members, catsRaw, predRows, teamRows, resultRows, elimCtx, topScorerRow, topAssistsRow] =
+    await Promise.all([
+      db
+        .select({
+          userId: profiles.id,
+          displayName: profiles.displayName,
+          avatarUrl: profiles.avatarUrl,
+        })
+        .from(groupMembers)
+        .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
+        .where(eq(groupMembers.groupId, groupId))
+        .orderBy(asc(profiles.displayName)),
+      db
+        .select({
+          id: categories.id,
+          key: categories.key,
+          name: categories.name,
+          valueKind: categories.valueKind,
+          points: groupCategories.points,
+        })
+        .from(categories)
+        .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+        .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+      db
+        .select({
+          userId: predictions.userId,
+          categoryId: predictions.categoryId,
+          teamId: predictions.teamId,
+          teamSet: predictions.teamSet,
+          playerText: predictions.playerText,
+          teamName: teams.name,
+          teamFlag: teams.flagEmoji,
+          teamFifa: teams.fifaCode,
+        })
+        .from(predictions)
+        .leftJoin(teams, eq(teams.id, predictions.teamId))
+        .where(eq(predictions.groupId, groupId)),
+      db.select().from(teams),
+      db
+        .select({
+          categoryId: results.categoryId,
+          teamId: results.teamId,
+          teamSet: results.teamSet,
+          playerText: results.playerText,
+        })
+        .from(results),
+      getEliminationContext(),
+      db
+        .select({ fullName: players.fullName, goals: players.goals })
+        .from(players)
+        .orderBy(desc(players.goals))
+        .limit(1),
+      db
+        .select({ fullName: players.fullName, assists: players.assists })
+        .from(players)
+        .orderBy(desc(players.assists))
+        .limit(1),
+    ])
+
+  const teamById = new Map(
+    teamRows.map((t) => [t.id, { id: t.id, name: t.name, flag: t.flagEmoji }]),
+  )
   const resultByCat = new Map(resultRows.map((r) => [r.categoryId, r]))
   const cats = sortByCategoryOrder(catsRaw)
 
@@ -384,17 +464,61 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
     }
   }
 
-  // La Carta Perfecta: pick oficial por categoría, en el mismo orden.
+  // Proyección provisional del torneo (mismas funciones que el resolutor del
+  // cron, pero sin exigir que todo esté "decided"): adelanta la respuesta de las
+  // categorías que aún no se resolvieron oficialmente. Solo marcamos revelación/
+  // decepción con un delta real, igual que la tabla de selecciones.
+  const { inputs } = buildTournamentInputs(teamRows)
+  const ranks = computeTournamentRanks(inputs)
+  const revDis = computeRevelationAndDisappointment(inputs)
+  const provisional: ProvisionalContext = {
+    revelationId: revDis && revDis.revelation.delta > 0 ? revDis.revelation.teamId : null,
+    disappointmentId:
+      revDis && revDis.disappointment.delta < 0 ? revDis.disappointment.teamId : null,
+    top5Ids: ranks.filter((r) => r.tournamentRank <= 5).map((r) => r.teamId),
+    // Finalistas provisionales = quienes ya están en la final (ganaron su semi o
+    // ya la jugaron). Puede ser uno solo mientras falte jugarse la otra semi.
+    finalistIds: teamRows
+      .filter(
+        (t) =>
+          t.reachedRound === 'alive_final' ||
+          t.reachedRound === 'champion' ||
+          t.reachedRound === 'runner_up',
+      )
+      .map((t) => t.id),
+    topScorerText: topScorerRow[0] && topScorerRow[0].goals > 0 ? topScorerRow[0].fullName : null,
+    topAssistsText:
+      topAssistsRow[0] && topAssistsRow[0].assists > 0 ? topAssistsRow[0].fullName : null,
+  }
+
+  // La Carta Perfecta: por categoría, primero la respuesta oficial; si no hay,
+  // la proyección provisional; si tampoco, queda pendiente.
   const perfectPicks: Record<string, AllPredictionsPick | undefined> = {}
-  let resolvedCount = 0
+  const perfectStatus: Record<string, PerfectPickStatus | undefined> = {}
+  let confirmedCount = 0
+  let provisionalCount = 0
   for (const cat of cats) {
-    const pick = buildResultPick(cat, resultByCat.get(cat.id), teamById)
-    perfectPicks[cat.id] = pick
-    if (pick.kind !== 'empty') resolvedCount++
+    const official = buildResultPick(cat, resultByCat.get(cat.id), teamById)
+    if (official.kind !== 'empty') {
+      perfectPicks[cat.id] = official
+      perfectStatus[cat.id] = 'confirmed'
+      confirmedCount++
+      continue
+    }
+    const prov = buildProvisionalPick(cat, provisional, teamById)
+    if (prov && prov.kind !== 'empty') {
+      perfectPicks[cat.id] = prov
+      perfectStatus[cat.id] = 'provisional'
+      provisionalCount++
+      continue
+    }
+    perfectPicks[cat.id] = { kind: 'empty' }
   }
   const perfect: PerfectCard = {
     picksByCategory: perfectPicks,
-    resolvedCount,
+    statusByCategory: perfectStatus,
+    confirmedCount,
+    provisionalCount,
     totalCount: cats.length,
   }
 

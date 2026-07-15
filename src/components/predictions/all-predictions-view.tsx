@@ -122,6 +122,21 @@ export function AllPredictionsView({
     )
   }
 
+  // Chip "Provisional" de La Carta Perfecta: la respuesta es una proyección del
+  // estado actual del torneo, todavía no oficial.
+  function perfectChipFor(categoryId: string) {
+    if (view.perfect?.statusByCategory[categoryId] !== 'provisional') return null
+    return (
+      <Badge
+        variant="secondary"
+        className="shrink-0 border-amber-400/30 bg-amber-400/10 text-amber-700 dark:text-amber-400"
+        title="Proyección del estado actual del torneo — aún puede cambiar"
+      >
+        Provisional
+      </Badge>
+    )
+  }
+
   const filteredMembers = useMemo(() => {
     const q = normalize(query)
     if (!q) return members
@@ -221,6 +236,7 @@ export function AllPredictionsView({
                             </span>
                           </div>
                           <div className="flex items-center justify-end gap-2 text-right text-sm">
+                            {perfectChipFor(focusedCategory.id)}
                             {renderPick(answer)}
                           </div>
                         </div>
@@ -272,7 +288,7 @@ export function AllPredictionsView({
         })()
       ) : (
         <>
-          {view.perfect && view.perfect.resolvedCount > 0 && (
+          {view.perfect && view.perfect.confirmedCount + view.perfect.provisionalCount > 0 && (
             <Card
               id="perfect-share"
               className="overflow-hidden border-amber-400/50 bg-amber-50/40 p-0 dark:bg-amber-950/10"
@@ -284,8 +300,8 @@ export function AllPredictionsView({
                 <div className="min-w-0 flex-1">
                   <p className="truncate text-sm font-semibold">La Carta Perfecta</p>
                   <p className="text-[11px] text-muted-foreground">
-                    Resultados oficiales · {view.perfect.resolvedCount}/{view.perfect.totalCount}{' '}
-                    resueltos
+                    {view.perfect.confirmedCount} confirmados · {view.perfect.provisionalCount}{' '}
+                    provisionales · de {view.perfect.totalCount}
                   </p>
                 </div>
                 <ShareCardIconButton
@@ -307,7 +323,10 @@ export function AllPredictionsView({
                           {!p || p.kind === 'empty' ? (
                             <span className="text-xs italic text-muted-foreground">Pendiente</span>
                           ) : (
-                            renderPick(p)
+                            <>
+                              {perfectChipFor(cat.id)}
+                              {renderPick(p)}
+                            </>
                           )}
                         </span>
                       </div>
