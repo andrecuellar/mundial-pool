@@ -291,6 +291,8 @@ type ProvisionalContext = {
   disappointmentId: string | null
   top5Ids: string[]
   finalistIds: string[]
+  topScoringTeamId: string | null
+  mostConcededTeamId: string | null
   topScorerText: string | null
   topAssistsText: string | null
 }
@@ -327,6 +329,10 @@ function buildProvisionalPick(
       return teamSetPick(ctx.top5Ids)
     case 'finalists':
       return teamSetPick(ctx.finalistIds)
+    case 'top_scoring_team':
+      return teamPick(ctx.topScoringTeamId)
+    case 'most_conceded_team':
+      return teamPick(ctx.mostConcededTeamId)
     case 'top_scorer_player':
       return ctx.topScorerText ? { kind: 'player', text: ctx.topScorerText } : null
     case 'top_assists_player':
@@ -471,6 +477,22 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
   const { inputs } = buildTournamentInputs(teamRows)
   const ranks = computeTournamentRanks(inputs)
   const revDis = computeRevelationAndDisappointment(inputs)
+  // Líderes actuales de goles a favor / en contra (totales del torneo, sin
+  // penales) — el contexto de eliminación ya los acumula desde `matches`.
+  let topScoringTeamId: string | null = null
+  let mostConcededTeamId: string | null = null
+  let bestGoalsFor = 0
+  let bestGoalsAgainst = 0
+  for (const [id, fate] of Object.entries(elimCtx.fatesByTeamId)) {
+    if (fate.goalsFor > bestGoalsFor) {
+      bestGoalsFor = fate.goalsFor
+      topScoringTeamId = id
+    }
+    if (fate.goalsAgainst > bestGoalsAgainst) {
+      bestGoalsAgainst = fate.goalsAgainst
+      mostConcededTeamId = id
+    }
+  }
   const provisional: ProvisionalContext = {
     revelationId: revDis && revDis.revelation.delta > 0 ? revDis.revelation.teamId : null,
     disappointmentId:
@@ -486,6 +508,8 @@ export async function getAllGroupPredictions(groupId: string): Promise<AllPredic
           t.reachedRound === 'runner_up',
       )
       .map((t) => t.id),
+    topScoringTeamId,
+    mostConcededTeamId,
     topScorerText: topScorerRow[0] && topScorerRow[0].goals > 0 ? topScorerRow[0].fullName : null,
     topAssistsText:
       topAssistsRow[0] && topAssistsRow[0].assists > 0 ? topAssistsRow[0].fullName : null,
