@@ -352,6 +352,7 @@ export function AllPredictionsView({
                 shareTitle={`Apuestas de ${groupName} · Mundial 2026`}
                 shareText={`Mira las apuestas del grupo ${groupName} para el Mundial 2026 en mundial•pool.`}
                 ariaLabel="Compartir las apuestas de todos los miembros como álbum de imágenes"
+                albumFileName={`mundial-pool-${groupSlug}-apuestas`}
               />
             </div>
           )}

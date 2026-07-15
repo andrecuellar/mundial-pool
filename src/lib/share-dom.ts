@@ -4,6 +4,8 @@
 // pero oculto", ej. left:-20000px), lo trae temporalmente con z-index:-1 para
 // evitar que el browser omita el paint del contenido.
 
+import { buildZip } from '@/lib/zip'
+
 type ShareArgs = {
   targetId: string
   fileName: string
@@ -43,8 +45,35 @@ function downloadFile(file: File) {
   window.setTimeout(() => URL.revokeObjectURL(url), 10_000)
 }
 
-export function downloadFiles(files: File[]) {
-  for (const file of files) downloadFile(file)
+// Los navegadores (Chrome) cortan las descargas automáticas en lote pasadas
+// ~10 seguidas: con 12 archivos solo bajaban 10. Hasta este límite bajamos
+// imágenes sueltas; por encima, un único .zip que no puede ser recortado.
+export const MAX_BATCH_DOWNLOADS = 10
+
+export async function downloadFiles(files: File[], albumName = 'mundial-pool-album') {
+  if (files.length <= MAX_BATCH_DOWNLOADS) {
+    for (const file of files) downloadFile(file)
+    return
+  }
+  // Nombres únicos dentro del zip: dos miembros con el mismo nombre visible
+  // generan el mismo fileName y una entrada pisaría a la otra al extraer.
+  const used = new Set<string>()
+  const names = files.map((f) => {
+    let name = f.name
+    for (let i = 2; used.has(name); i++) name = f.name.replace(/(\.[^.]+)?$/, `-${i}$1`)
+    used.add(name)
+    return name
+  })
+  const entries = await Promise.all(
+    files.map(async (f, idx) => ({
+      name: names[idx],
+      data: new Uint8Array(await f.arrayBuffer()),
+    })),
+  )
+  // .buffer (ArrayBuffer exacto, el Uint8Array es de tamaño justo) evita la
+  // fricción de tipos entre Uint8Array<ArrayBufferLike> y BlobPart.
+  const zipBuffer = buildZip(entries).buffer as ArrayBuffer
+  downloadFile(new File([zipBuffer], `${albumName}.zip`, { type: 'application/zip' }))
 }
 
 // Captura un único nodo (por id) a un File PNG. Devuelve null si no existe el
@@ -149,7 +178,7 @@ export async function captureNodesToFiles(
 // 'blocked' sin descargar, para que el caller ofrezca reintentar con un tap.
 export async function shareFiles(
   files: File[],
-  meta: { shareTitle: string; shareText: string },
+  meta: { shareTitle: string; shareText: string; albumFileName?: string },
 ): Promise<ShareResult> {
   if (files.length === 0) return 'error'
   if (canShareFiles(files)) {
@@ -163,7 +192,7 @@ export async function shareFiles(
       // Otro error del share → caemos a descarga.
     }
   }
-  downloadFiles(files)
+  await downloadFiles(files, meta.albumFileName)
   return 'downloaded'
 }
 
