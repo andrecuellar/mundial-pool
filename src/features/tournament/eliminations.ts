@@ -185,8 +185,15 @@ async function computeEliminationContext(): Promise<EliminationContext> {
     const canBeChampion = !outOfBracket && !lost('final')
     const canReachFinal = !outOfBracket
     // Tercer puesto: lo juegan los perdedores de semis. Ganar la semi (ir a la
-    // final) también te saca de esta categoría.
+    // final) también te saca de esta categoría. `reachedFinal` usa la señal
+    // autoritativa de standings (reachedRound): un finalista NUNCA puede quedar
+    // 3.º aunque la fila de su semifinal todavía no esté cargada en `matches`.
+    const reachedFinal =
+      t.reachedRound === 'alive_final' ||
+      t.reachedRound === 'champion' ||
+      t.reachedRound === 'runner_up'
     const canBeThird =
+      !reachedFinal &&
       !groupElim &&
       !lost('r32') &&
       !lost('r16') &&
@@ -238,12 +245,15 @@ async function computeEliminationContext(): Promise<EliminationContext> {
 }
 
 // Cross-request cache con las mismas tags que invalidan los crons diarios:
-// updateTeamStandings → 'teams', syncPlayerStats → 'players'. El sufijo -v2
-// versiona la forma de TeamFate: el Data Cache persiste entre deploys y una
-// entrada vieja sin los campos nuevos mataría picks por accidente.
+// updateTeamStandings → 'teams', syncPlayerStats → 'players'. El sufijo -v3
+// versiona la LÓGICA de TeamFate (además de su forma): el Data Cache persiste
+// entre deploys, así que subir la versión fuerza un recálculo fresco en el
+// próximo deploy — necesario cuando la lógica cambia o cuando los standings se
+// actualizaron fuera de banda (p.ej. una resolución forzada por script que no
+// pudo invalidar el tag 'teams' desde el runtime de Next).
 export const getEliminationContext = unstable_cache(
   computeEliminationContext,
-  ['elimination-context-v2'],
+  ['elimination-context-v3'],
   { revalidate: 3600, tags: ['teams', 'players'] },
 )
 

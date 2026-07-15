@@ -9,7 +9,7 @@ import { ShareableImageFrame } from '@/components/share/shareable-image-frame'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { resolutionRuns, teams } from '@/db/schema'
+import { matches, resolutionRuns, teams } from '@/db/schema'
 import {
   buildTournamentInputs,
   computeRevelationAndDisappointment,
@@ -53,11 +53,11 @@ const getTeamsForBoard = unstable_cache(
       })
       .from(teams)
       .orderBy(asc(teams.fifaRanking)),
-  ['teams-board-v3'],
+  ['teams-board-v4'],
   { revalidate: 3600, tags: ['teams'] },
 )
 
-function reachedLabel(r: string | null, started: boolean): string {
+function reachedLabel(r: string | null, started: boolean, playsThirdPlace = false): string {
   if (!started || r === null) return started ? 'Activo' : '—'
   switch (r) {
     case 'champion':
@@ -71,7 +71,9 @@ function reachedLabel(r: string | null, started: boolean): string {
     case 'alive_final':
       return 'Activo · final'
     case 'alive_sf':
-      return 'Activo · semis'
+      // Perdió la semi y ya está en el partido por el 3.er puesto: no sigue "en
+      // semis" como los que aún no jugaron su llave.
+      return playsThirdPlace ? 'Juega 3er puesto' : 'Activo · semis'
     case 'alive_qf':
       return 'Activo · cuartos'
     case 'alive_r16':
@@ -157,6 +159,20 @@ export default async function TableSeleccionesPage() {
           .limit(1)
       : Promise.resolve([] as { finishedAt: Date | null }[]),
   ])
+
+  // Perdedores de semifinal: ya están sentados en el partido por el 3.er puesto,
+  // así que su reachedRound 'alive_sf' significa "juega el 3.er puesto", no
+  // "sigue en semis" (a diferencia de los semifinalistas que aún no jugaron su
+  // llave). Los distinguimos para no rotularlos igual.
+  const thirdPlaceRows = tournamentStarted
+    ? await db
+        .select({ a: matches.teamAId, b: matches.teamBId })
+        .from(matches)
+        .where(eq(matches.stage, 'third_place'))
+    : []
+  const playsThirdPlace = new Set(
+    thirdPlaceRows.flatMap((m) => [m.a, m.b]).filter((id): id is string => !!id),
+  )
 
   // buildTournamentInputs normaliza el ranking FIFA a 1-48 entre participantes
   // y mapea reachedRound (null → 'alive_r32') — la misma construcción que usa
@@ -421,7 +437,11 @@ export default async function TableSeleccionesPage() {
                       </td>
                       {tournamentStarted && (
                         <td className="hidden px-3 py-2 align-middle text-xs text-muted-foreground md:table-cell">
-                          {reachedLabel(t.reachedRound, tournamentStarted)}
+                          {reachedLabel(
+                            t.reachedRound,
+                            tournamentStarted,
+                            playsThirdPlace.has(t.id),
+                          )}
                         </td>
                       )}
                       <td className="hidden px-3 py-2 align-middle text-right font-mono text-xs text-muted-foreground tabular-nums sm:table-cell">
