@@ -5,6 +5,10 @@ import Link from 'next/link'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
+import {
+  type CelebrationRow,
+  MundialEndCelebration,
+} from '@/components/celebrations/mundial-end-celebration'
 import { ResultCelebration } from '@/components/celebrations/result-celebration'
 import { CountdownBanner } from '@/components/countdown/countdown-banner'
 import { CopyCodeButton } from '@/components/groups/copy-code-button'
@@ -15,7 +19,16 @@ import { PersonalStatsCard } from '@/components/stats/personal-stats-card'
 import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { db } from '@/db'
-import { groupMembers, groups, poolTransactions, predictions, profiles, results } from '@/db/schema'
+import {
+  categories,
+  groupMembers,
+  groups,
+  poolTransactions,
+  predictions,
+  profiles,
+  results,
+  teams,
+} from '@/db/schema'
 import { computePayout, getPoolSummary } from '@/features/pool/queries'
 import { getRankedLeaderboard, getUserCategoryBreakdown } from '@/features/scoring/queries'
 import { competitionRanks } from '@/features/scoring/rank'
@@ -101,6 +114,7 @@ export default async function GroupPage({ params }: Params) {
     myBreakdown,
     [latestResolution],
     [myPoolPayment],
+    [championRow],
   ] = await withTimeout(
     Promise.all([
       getRankedLeaderboard(group.id),
@@ -132,6 +146,15 @@ export default async function GroupPage({ params }: Params) {
             eq(poolTransactions.contributorUserId, user.id),
           ),
         )
+        .limit(1),
+      // Campeón del Mundial (categoría 'champion'). Si existe, el torneo terminó
+      // → mostramos la portada de fin de Mundial con la tabla de ganadores.
+      db
+        .select({ name: teams.name })
+        .from(results)
+        .innerJoin(categories, eq(categories.id, results.categoryId))
+        .innerJoin(teams, eq(teams.id, results.teamId))
+        .where(eq(categories.key, 'champion'))
         .limit(1),
     ]),
     DB_TIMEOUT_MS,
@@ -167,6 +190,21 @@ export default async function GroupPage({ params }: Params) {
   // El "Líder" no puede ser alguien que no aportó al pozo. Como los no-pagadores
   // quedan últimos, el primer pagador es el líder elegible.
   const eligibleLeader = leaderboard.find((r) => r.hasPaid !== false) ?? null
+
+  // Portada de fin de Mundial: aparece cuando ya hay campeón del mundo. Muestra
+  // SOLO a los pagadores (los no-pagadores no entran a la tabla de ganadores),
+  // rankeados con el mismo desempate de la tabla.
+  const championTeam = championRow?.name ?? null
+  const tournamentOver = championTeam !== null
+  const payers = leaderboard.filter((r) => r.hasPaid !== false)
+  const payerRanks = competitionRanks(payers)
+  const celebrationRows: CelebrationRow[] = payers.map((r, i) => ({
+    userId: r.userId,
+    displayName: r.displayName,
+    totalPoints: r.totalPoints,
+    rank: payerRanks[i].rank,
+    tied: payerRanks[i].tied,
+  }))
 
   const predictionsCtaState: 'locked' | 'empty' | 'partial' | 'done' = locked
     ? 'locked'
@@ -315,6 +353,16 @@ export default async function GroupPage({ params }: Params) {
         <div className="flex flex-col gap-3 sm:fixed sm:top-20 sm:left-4 sm:z-40 sm:w-[22rem]">
           <PushOptIn vapidPublicKey={env.NEXT_PUBLIC_VAPID_PUBLIC_KEY ?? null} />
         </div>
+
+        {tournamentOver && celebrationRows.length > 0 && (
+          <div className="mb-6">
+            <MundialEndCelebration
+              groupName={group.name}
+              championTeam={championTeam}
+              rows={celebrationRows}
+            />
+          </div>
+        )}
 
         {!locked && (
           <div className="mb-4">
