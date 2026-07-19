@@ -2,9 +2,21 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import { env } from '@/lib/env'
 
+// getUser() hace una llamada HTTP a Supabase Auth sin timeout propio. Si Auth
+// no responde (o el socket quedó colgado tras un freeze de Fluid), la página se
+// cuelga hasta que Vercel mata la función (~60s). Este fetch aborta a los 8s
+// para que falle rápido y el error boundary reintente.
+const AUTH_FETCH_TIMEOUT_MS = 8000
+const fetchWithTimeout: typeof fetch = (input, init) => {
+  const timeout = AbortSignal.timeout(AUTH_FETCH_TIMEOUT_MS)
+  const signal = init?.signal ? AbortSignal.any([init.signal, timeout]) : timeout
+  return fetch(input, { ...init, signal })
+}
+
 export async function createSupabaseServerClient() {
   const cookieStore = await cookies()
   return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
+    global: { fetch: fetchWithTimeout },
     cookies: {
       getAll: () => cookieStore.getAll(),
       // setAll runs when Supabase rotates the access/refresh token mid-request.

@@ -16,6 +16,12 @@ const client = postgres(env.DATABASE_URL, {
   max: 15,
   idle_timeout: 20,
   connect_timeout: 10,
+  // Recicla cada conexión a los 5min. Bajo Fluid Compute la instancia se
+  // congela entre requests y los sockets ociosos del pool mueren (los cierra
+  // Supavisor/NAT) sin que postgres.js lo note; al despertar, la primera query
+  // sobre un socket zombi se cuelga hasta el timeout de la función. max_lifetime
+  // fuerza el descarte de conexiones viejas antes de que se vuelvan zombis.
+  max_lifetime: 60 * 5,
 })
 
 export const db = drizzle(client, { schema })
