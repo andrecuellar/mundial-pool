@@ -15,20 +15,23 @@ export async function recomputeLeaderboardSnapshot(groupId: string): Promise<voi
 // sync de stats de jugadores, overrides de admin) que cambian el leaderboard de
 // todos. Best-effort por grupo: un fallo en uno no frena al resto. Los grupos
 // son pocos (app entre amigos), así que iterar en serie está bien.
+const sleep = (ms: number): Promise<void> => new Promise((resolve) => setTimeout(resolve, ms))
+
 export async function recomputeAllLeaderboardSnapshots(): Promise<void> {
   const all = await db.select({ id: groups.id }).from(groups)
   for (const g of all) {
-    try {
-      await recomputeLeaderboardSnapshot(g.id)
-    } catch (e) {
-      // Reintento único: los fallos casi siempre son blips transitorios de
-      // conexión (postgres.js en serverless) durante el batch largo. postgres.js
-      // descarta la conexión mala, así que el segundo intento agarra una fresca.
-      console.error('recomputeLeaderboardSnapshot failed, reintentando', g.id, e)
+    // Reintentos CON DELAY: tras la resolución pesada, la primera query del
+    // batch cae sobre un pool "sucio" (conexiones churneadas) y falla; un
+    // reintento inmediato también falla, pero con una pausa breve el pool se
+    // recupera y el siguiente intento pasa. El fallback en carga de página no
+    // sufre esto porque corre sobre conexiones frescas.
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
         await recomputeLeaderboardSnapshot(g.id)
-      } catch (e2) {
-        console.error('recomputeLeaderboardSnapshot falló de nuevo para', g.id, e2)
+        break
+      } catch (e) {
+        console.error(`recomputeLeaderboardSnapshot ${g.id} intento ${attempt}/3 falló`, e)
+        if (attempt < 3) await sleep(500 * attempt)
       }
     }
   }
