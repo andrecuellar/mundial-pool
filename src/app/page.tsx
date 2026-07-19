@@ -6,8 +6,8 @@ import { AppHeader } from '@/components/app-shell/app-header'
 import { NavButton } from '@/components/app-shell/nav-button'
 import { CreateGroupCTA } from '@/components/groups/create-group-cta'
 import { DualPendingBanner } from '@/components/groups/dual-pending-banner'
-import { GroupRequestRejectedBanner } from '@/components/groups/group-request-rejected-banner'
 import { GroupCardChips } from '@/components/groups/group-card-chips'
+import { GroupRequestRejectedBanner } from '@/components/groups/group-request-rejected-banner'
 import { DataMundialSection } from '@/components/home/data-mundial-section'
 import { PoolDisclaimerHome } from '@/components/legal/pool-disclaimer-home'
 import { PushOptIn } from '@/components/notifications/push-opt-in'
@@ -89,6 +89,13 @@ export default async function Home() {
     .innerJoin(groups, eq(groups.id, groupMembers.groupId))
     .where(eq(groupMembers.userId, user.id))
     .orderBy(desc(groups.createdAt))
+
+  // Si el usuario pertenece a un solo grupo, mostrar una lista de un único
+  // elemento no aporta: lo mandamos directo al home de ese grupo. Los que aún
+  // deben completar el onboarding lo ven primero (no los redirigimos).
+  if (!shouldOnboard && myGroups.length === 1) {
+    redirect(`/groups/${myGroups[0].slug}`)
+  }
 
   const poolGroupIds = myGroups.filter((g) => g.poolEnabled).map((g) => g.id)
   const [poolTotals, myPaidRows, myPredCountRows] = await Promise.all([
