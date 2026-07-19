@@ -10,6 +10,7 @@ import {
   results,
   teams,
 } from '@/db/schema'
+import { recomputeAllLeaderboardSnapshots } from '@/features/scoring/snapshots'
 import {
   buildTournamentInputs,
   computeRevelationAndDisappointment,
@@ -279,6 +280,15 @@ export async function runResolution() {
         details: { provider: provider.id, summary },
       })
       .where(eq(resolutionRuns.id, run.id))
+
+    // Rematerializa el leaderboard de todos los grupos con los resultados y
+    // standings recién escritos (updateTeamStandings ya invalidó el tag 'teams',
+    // así que getEliminationContext recomputa fresco). Best-effort.
+    try {
+      await recomputeAllLeaderboardSnapshots()
+    } catch (e) {
+      console.error('recomputeAllLeaderboardSnapshots (post-resolución) failed', e)
+    }
 
     return { runId: run.id, summary, notifiedCategories: newlyResolvedCategoryIds.length }
   } catch (error) {

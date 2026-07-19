@@ -13,6 +13,7 @@ import {
   unique,
   uuid,
 } from 'drizzle-orm/pg-core'
+import type { RankedLeaderboardRow } from '@/features/scoring/queries'
 
 export const memberRole = pgEnum('member_role', ['owner', 'admin', 'member'])
 
@@ -397,8 +398,21 @@ export const clientErrors = pgTable(
   ],
 )
 
+// Snapshot materializado del ranked leaderboard por grupo. Lo reescribe el
+// recálculo por eventos (resolución / player-stats / join de miembro); la página
+// lee esta única fila en vez de recalcular ~12 queries por carga. `rows` es el
+// RankedLeaderboardRow[] ya ordenado por compareRanked.
+export const leaderboardSnapshots = pgTable('leaderboard_snapshots', {
+  groupId: uuid('group_id')
+    .primaryKey()
+    .references(() => groups.id, { onDelete: 'cascade' }),
+  rows: jsonb('rows').$type<RankedLeaderboardRow[]>().notNull(),
+  computedAt: timestamp('computed_at', { withTimezone: true }).defaultNow().notNull(),
+})
+
 export type Profile = typeof profiles.$inferSelect
 export type Group = typeof groups.$inferSelect
+export type LeaderboardSnapshot = typeof leaderboardSnapshots.$inferSelect
 export type GroupMember = typeof groupMembers.$inferSelect
 export type Team = typeof teams.$inferSelect
 export type Player = typeof players.$inferSelect

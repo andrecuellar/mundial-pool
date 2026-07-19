@@ -2,9 +2,11 @@
 
 import { and, eq } from 'drizzle-orm'
 import { revalidatePath, revalidateTag } from 'next/cache'
+import { after } from 'next/server'
 import { z } from 'zod'
 import { db } from '@/db'
 import { players, teams } from '@/db/schema'
+import { recomputeAllLeaderboardSnapshots } from '@/features/scoring/snapshots'
 import { requireSuperAdmin } from '@/lib/admin'
 
 export type AdminPlayerActionResult = { ok: true } | { ok: false; error: string }
@@ -29,6 +31,11 @@ export async function updatePlayerAssists(input: unknown): Promise<AdminPlayerAc
 
   revalidateTag('players', 'hours')
   revalidatePath('/admin/jugadores')
+  after(() =>
+    recomputeAllLeaderboardSnapshots().catch((e) =>
+      console.error('recomputeAllLeaderboardSnapshots (post-admin-player) failed', e),
+    ),
+  )
   revalidatePath('/torneo/jugadores')
   return { ok: true }
 }
@@ -86,6 +93,11 @@ export async function addPlayer(input: unknown): Promise<AdminPlayerActionResult
 
   revalidateTag('players', 'hours')
   revalidatePath('/admin/jugadores')
+  after(() =>
+    recomputeAllLeaderboardSnapshots().catch((e) =>
+      console.error('recomputeAllLeaderboardSnapshots (post-admin-player) failed', e),
+    ),
+  )
   revalidatePath('/torneo/jugadores')
   return { ok: true }
 }
@@ -110,6 +122,11 @@ export async function updatePlayerGoals(input: unknown): Promise<AdminPlayerActi
 
   revalidateTag('players', 'hours')
   revalidatePath('/admin/jugadores')
+  after(() =>
+    recomputeAllLeaderboardSnapshots().catch((e) =>
+      console.error('recomputeAllLeaderboardSnapshots (post-admin-player) failed', e),
+    ),
+  )
   revalidatePath('/torneo/jugadores')
   return { ok: true }
 }
@@ -136,6 +153,11 @@ export async function deletePlayer(input: unknown): Promise<AdminPlayerActionRes
 
   revalidateTag('players', 'hours')
   revalidatePath('/admin/jugadores')
+  after(() =>
+    recomputeAllLeaderboardSnapshots().catch((e) =>
+      console.error('recomputeAllLeaderboardSnapshots (post-admin-player) failed', e),
+    ),
+  )
   revalidatePath('/torneo/jugadores')
   return { ok: true }
 }

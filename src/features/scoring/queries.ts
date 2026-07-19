@@ -7,6 +7,7 @@ import {
   groupCategories,
   groupMembers,
   groups,
+  leaderboardSnapshots,
   predictions,
   results,
   teams,
@@ -147,7 +148,9 @@ export type RankedLeaderboardRow = LeaderboardRow & {
  * el orden de la tabla, la posición personal y el reparto del pozo — usar esto
  * en vez de getLeaderboard en cualquier superficie que muestre puestos.
  */
-const computeRankedLeaderboard = async (groupId: string): Promise<RankedLeaderboardRow[]> => {
+export const computeRankedLeaderboard = async (
+  groupId: string,
+): Promise<RankedLeaderboardRow[]> => {
   const group = await db.query.groups.findFirst({
     where: eq(groups.id, groupId),
     columns: { predictionsLockAt: true },
@@ -219,22 +222,38 @@ const computeRankedLeaderboard = async (groupId: string): Promise<RankedLeaderbo
   return ranked.sort(compareRanked)
 }
 
-// unstable_cache colapsa las ~10 queries internas a una sola lectura del Data
-// Cache. revalidate 60s: la tabla solo cambia cuando el cron resuelve (una vez
-// al día) o alguien predice antes del cierre — 60s de staleness es invisible, y
-// es el cambio que corta de raíz el pool thrashing / conexiones huérfanas
-// (menos queries por request = requests más cortos = casi nunca se matan a
-// mitad). Los tags dejan que la resolución la invalide al instante.
-const cachedRankedLeaderboard = unstable_cache(
-  computeRankedLeaderboard,
-  ['ranked-leaderboard-v1'],
-  { revalidate: 60, tags: ['teams', 'players'] },
-)
+// Escribe (upsert) el snapshot materializado del grupo. Lo llaman el recálculo
+// por eventos y el fallback perezoso de getRankedLeaderboard.
+export async function writeLeaderboardSnapshot(
+  groupId: string,
+  rows: RankedLeaderboardRow[],
+): Promise<void> {
+  const computedAt = new Date()
+  await db.insert(leaderboardSnapshots).values({ groupId, rows, computedAt }).onConflictDoUpdate({
+    target: leaderboardSnapshots.groupId,
+    set: { rows, computedAt },
+  })
+}
 
-// React cache dedupe intra-request: la página y computePayout la piden en el
-// mismo render y así solo hay una lectura del Data Cache.
+// Lectura snapshot-first: la página lee 1 fila materializada (ya ordenada) en
+// vez de recalcular ~12 queries por carga. El recálculo pesado corre fuera del
+// request (resolución / player-stats / join). Si aún no hay snapshot (grupo
+// nuevo o pre-backfill) computamos en vivo y lo guardamos. React cache dedupe
+// intra-request (la página y computePayout la piden en el mismo render).
 export const getRankedLeaderboard = cache(
-  (groupId: string): Promise<RankedLeaderboardRow[]> => cachedRankedLeaderboard(groupId),
+  async (groupId: string): Promise<RankedLeaderboardRow[]> => {
+    const snap = await db.query.leaderboardSnapshots.findFirst({
+      where: eq(leaderboardSnapshots.groupId, groupId),
+    })
+    if (snap) return snap.rows
+    const rows = await computeRankedLeaderboard(groupId)
+    try {
+      await writeLeaderboardSnapshot(groupId, rows)
+    } catch (e) {
+      console.error('writeLeaderboardSnapshot (fallback) failed', e)
+    }
+    return rows
+  },
 )
 
 export type UserCategoryBreakdownRow = {
