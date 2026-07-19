@@ -5,31 +5,32 @@ import type { AllPredictionsPick } from '@/features/predictions/queries'
 // own module so server components (comprobante page) can import it without
 // pulling in the 'use client' boundary of all-predictions-view.
 
-// Badge con la probabilidad (0..1) de que el pick gane su categoría. null/undefined
-// = categoría no modelada (jurado). El color marca al favorito.
-function probBadge(prob: number | null | undefined): React.ReactNode {
-  if (prob == null) return null
-  const pct = Math.round(prob * 100)
-  const label = prob > 0 && pct < 1 ? '<1%' : `${pct}%`
+// Badge con el % de aciertos de un pick plural (team_set) ya resuelto: cuántas
+// de las selecciones elegidas cayeron en el resultado oficial. Solo se muestra
+// cuando la categoría está resuelta (resolvedTeamSet). Verde si acertó todo,
+// ámbar si fue parcial, apagado si no acertó ninguna.
+function hitRateBadge(correct: number, total: number): React.ReactNode {
+  if (total === 0) return null
+  const pct = Math.round((correct / total) * 100)
   const tone =
-    prob >= 0.6
+    correct === total
       ? 'text-success border-success/30'
-      : prob >= 0.25
-        ? 'text-foreground border-border'
-        : 'text-muted-foreground border-border'
+      : correct === 0
+        ? 'text-muted-foreground border-border'
+        : 'text-warning border-warning/30'
   return (
     <span
       className={`ml-1.5 shrink-0 rounded border px-1 py-0.5 text-[10px] font-semibold tabular-nums ${tone}`}
-      title="Probabilidad de ganar esta categoría"
+      title={`${correct} de ${total} aciertos`}
     >
-      {label}
+      {correct}/{total} · {pct}%
     </span>
   )
 }
 
 export function renderPick(
   p: AllPredictionsPick | undefined,
-  prob?: number | null,
+  opts?: { resolvedTeamSet?: boolean },
 ): React.ReactNode {
   if (!p || p.kind === 'empty') {
     return <span className="text-xs italic text-muted-foreground">Sin respuesta</span>
@@ -45,11 +46,13 @@ export function renderPick(
         >
           {p.teamName}
         </span>
-        {probBadge(prob)}
       </span>
     )
   }
   if (p.kind === 'team_set') {
+    // En una categoría resuelta, `dead` de cada equipo significa "no está en el
+    // resultado" = fallado; !dead = acierto. Así el % de aciertos sale directo.
+    const correct = p.teams.filter((t) => !t.dead).length
     return (
       <span className="inline-flex flex-wrap items-center justify-end gap-1.5">
         {p.teams.map((t) => (
@@ -69,7 +72,7 @@ export function renderPick(
             </span>
           </span>
         ))}
-        {probBadge(prob)}
+        {opts?.resolvedTeamSet && hitRateBadge(correct, p.teams.length)}
       </span>
     )
   }
@@ -83,7 +86,6 @@ export function renderPick(
         >
           {p.text}
         </span>
-        {probBadge(prob)}
       </span>
     )
   }
