@@ -7,6 +7,7 @@ import { db } from '@/db'
 import { profiles } from '@/db/schema'
 import { isSuperAdminEmail, requireSuperAdmin } from '@/lib/admin'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
+import { runResolution } from '@/server/resolution'
 
 export type AdminActionResult = { ok: true } | { ok: false; error: string }
 
@@ -79,4 +80,27 @@ export async function unbanUser(userId: string): Promise<AdminActionResult> {
   revalidatePath('/admin/usuarios')
   revalidatePath(`/admin/usuarios/${userId}`)
   return { ok: true }
+}
+
+export type ForceResolutionResult = { ok: true; message: string } | { ok: false; error: string }
+
+/**
+ * Dispara la resolución del Mundial a mano (mismo runResolution() que el cron).
+ * Pensado para forzar la resolución al instante en que termina un partido —
+ * p.ej. la final — sin esperar al cron. Idempotente: upsert de resultados +
+ * chequeo de firmas, así que darle varias veces es seguro.
+ */
+export async function forceResolution(): Promise<ForceResolutionResult> {
+  await requireSuperAdmin()
+  try {
+    const { summary, notifiedCategories } = await runResolution()
+    revalidatePath('/admin/sistema')
+    const processed = Object.keys(summary).length
+    return {
+      ok: true,
+      message: `Resolución corrida: ${processed} categorías procesadas, ${notifiedCategories} nuevas resueltas.`,
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : String(e) }
+  }
 }

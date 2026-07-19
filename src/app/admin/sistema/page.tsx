@@ -1,4 +1,5 @@
 import { AdminDataTable } from '@/components/admin/data-table'
+import { ForceResolutionButton } from '@/components/admin/force-resolution-button'
 import { Card } from '@/components/ui/card'
 import {
   Table,
@@ -13,6 +14,9 @@ import { env } from '@/lib/env'
 import { formatDayTime } from '@/lib/format'
 
 export const dynamic = 'force-dynamic'
+// runResolution puede tardar hasta ~60s (lee predicciones → computa → escribe
+// resultados → notifica). Dale al server action el mismo techo que el cron.
+export const maxDuration = 60
 
 export default async function AdminSistemaPage() {
   const [runs, state] = await Promise.all([listAdminResolutionRuns(), listAdminAppState()])
@@ -45,6 +49,20 @@ export default async function AdminSistemaPage() {
           </p>
         </Card>
       </div>
+
+      <Card className="flex flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+            Resolución manual
+          </p>
+          <p className="mt-1 text-sm font-medium">Forzar la resolución ahora</p>
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Corre el mismo proceso que el cron, al instante. Idempotente: solo resuelve lo que ya se
+            puede resolver. Útil apenas termina un partido (p.ej. la final).
+          </p>
+        </div>
+        <ForceResolutionButton />
+      </Card>
 
       <AdminDataTable
         title={`Estado global (${state.length})`}
