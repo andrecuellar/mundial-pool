@@ -196,15 +196,6 @@ export default async function Home() {
         </div>
         <p className="mt-1 text-sm text-muted-foreground">Tus pools del Mundial 2026.</p>
 
-        <div className="mt-4 rounded-xl border border-primary/15 bg-primary/5 px-4 py-3 text-sm leading-relaxed">
-          Aquí no perdemos el tiempo como otras apps que te obligan a predecir{' '}
-          <span className="font-medium text-foreground">Congo vs Uzbekistán</span> o{' '}
-          <span className="font-medium text-foreground">Haití vs Escocia</span>{' '}
-          <span className="animate-chef-kiss" aria-label="chef's kiss">
-            🤌🏽
-          </span>
-        </div>
-
         {lastRejectedAt && (
           <GroupRequestRejectedBanner
             reason={lastRejectionReason}
