@@ -27,10 +27,17 @@ import * as schema from './schema'
 // se cuelga hasta el timeout — confirmado: max:8 → 50s colgado, max:20 → 350ms.
 // Como el cliente es por-request y se cierra con after(), estas conexiones no se
 // acumulan entre requests.
+// idle_timeout alto a propósito: `after()` cierra el cliente al final de CADA
+// request, así que no necesitamos cerrar conexiones ociosas para evitar zombis.
+// Con idle_timeout corto (10s), en invocaciones LARGAS (resolución ~13s, que
+// recalcula todos los snapshots) el pool cerraba conexiones a mitad de camino y
+// la query que las agarraba justo cerrándose fallaba ("Failed query"). 90s > el
+// maxDuration más alto (60s), así que ninguna conexión se cierra dentro de una
+// invocación; after() se encarga del cierre entre requests.
 const CLIENT_OPTS = {
   prepare: false,
   max: 20,
-  idle_timeout: 10,
+  idle_timeout: 90,
   connect_timeout: 10,
 } as const
 
