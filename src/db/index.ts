@@ -21,6 +21,12 @@ import * as schema from './schema'
 // cierra el cliente, así que nunca queda una conexión huérfana). El pooler de
 // transacciones (6543) está hecho para esto: muchas conexiones cortas. Desde
 // pdx1 (misma región que la DB) abrir una conexión cuesta ~ms.
+// max:20 es CRÍTICO. La página del grupo dispara ~20 queries concurrentes
+// (getRankedLeaderboard sola abre ~12 con su fan-out anidado). Con un pool más
+// chico que ese fan-out, las queries se starvan esperando un slot y la request
+// se cuelga hasta el timeout — confirmado: max:8 → 50s colgado, max:20 → 350ms.
+// Como el cliente es por-request y se cierra con after(), estas conexiones no se
+// acumulan entre requests.
 const CLIENT_OPTS = {
   prepare: false,
   max: 20,
@@ -36,17 +42,15 @@ const getRequestDb = cache((): DrizzleDb => {
   const client = postgres(env.DATABASE_URL, CLIENT_OPTS)
   try {
     after(async () => {
-      const t = Date.now()
       try {
         await client.end({ timeout: 5 })
-        console.log(`[db] after: cliente cerrado en ${Date.now() - t}ms`)
-      } catch (e) {
-        console.log(`[db] after: cierre falló ${(e as Error)?.message}`)
+      } catch {
+        // ya cerrado
       }
     })
-    console.log('[db] path=request (after registrado)')
   } catch (err) {
-    console.log(`[db] after() lanzó → fallback shared: ${(err as Error)?.message}`)
+    // Sin request scope (script CLI): cerramos el cliente recién creado y
+    // dejamos que resolveDb caiga al cliente compartido.
     void client.end({ timeout: 1 }).catch(() => {})
     throw err
   }
