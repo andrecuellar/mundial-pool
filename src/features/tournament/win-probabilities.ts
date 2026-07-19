@@ -3,7 +3,7 @@ import 'server-only'
 import { eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
-import { appState, players, teams } from '@/db/schema'
+import { appState, categories, players, results, teams } from '@/db/schema'
 import { getEliminationContext, normalizePlayerText } from '@/features/tournament/eliminations'
 
 // Probabilidad de que cada candidato GANE su categoría, calculada del estado
@@ -228,6 +228,34 @@ const compute = async (): Promise<WinProbabilities> => {
   for (const cat in byTeam) topByCategory[cat] = top3(byTeam[cat], (name) => name)
   for (const cat in byPlayer)
     topByCategory[cat] = top3(byPlayer[cat], (norm) => displayByNorm.get(norm) ?? norm)
+
+  // Categorías YA resueltas → 100% al ganador real (pisa el heurístico). Con el
+  // torneo terminado esto muestra el resultado, no una probabilidad.
+  const resolved = await db
+    .select({
+      key: categories.key,
+      teamId: results.teamId,
+      teamSet: results.teamSet,
+      playerText: results.playerText,
+    })
+    .from(results)
+    .innerJoin(categories, eq(categories.id, results.categoryId))
+  for (const r of resolved) {
+    if (r.playerText) {
+      byPlayer[r.key] = { [normalizePlayerText(r.playerText)]: 1 }
+      topByCategory[r.key] = [{ label: r.playerText, prob: 1 }]
+    } else if (r.teamId) {
+      const name = nameById.get(r.teamId)
+      if (name) {
+        byTeam[r.key] = { [name]: 1 }
+        topByCategory[r.key] = [{ label: name, prob: 1 }]
+      }
+    } else if (Array.isArray(r.teamSet)) {
+      const names = r.teamSet.map((id) => nameById.get(id)).filter((n): n is string => !!n)
+      byTeam[r.key] = Object.fromEntries(names.map((n) => [n, 1]))
+      topByCategory[r.key] = names.map((n) => ({ label: n, prob: 1 }))
+    }
+  }
 
   const finalOdds = finalists.map((f) => ({
     teamId: f.id,
