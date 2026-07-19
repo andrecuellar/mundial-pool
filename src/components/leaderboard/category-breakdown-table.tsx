@@ -1,7 +1,9 @@
+import { XCircle } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+import { Badge } from '@/components/ui/badge'
 import { Card } from '@/components/ui/card'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
-import type { LeaderboardRow } from '@/features/scoring/queries'
+import type { RankedLeaderboardRow } from '@/features/scoring/queries'
 
 type Category = { id: string; name: string; key: string; points: number }
 
@@ -22,12 +24,14 @@ export function CategoryBreakdownTable({
   resolvedCategoryIds,
   lostByUser,
   currentUserId,
+  poolEnabled,
 }: {
-  rows: LeaderboardRow[]
+  rows: RankedLeaderboardRow[]
   categories: Category[]
   resolvedCategoryIds: string[]
   lostByUser: Record<string, string[]>
   currentUserId: string
+  poolEnabled: boolean
 }) {
   const resolvedSet = new Set(resolvedCategoryIds)
   return (
@@ -76,6 +80,16 @@ export function CategoryBreakdownTable({
                         </AvatarFallback>
                       </Avatar>
                       <span className="text-sm font-medium">{r.displayName}</span>
+                      {poolEnabled && r.hasPaid === false && (
+                        <Badge
+                          variant="outline"
+                          className="shrink-0 gap-1 border-destructive/30 text-destructive"
+                          title="No aportó al pozo"
+                        >
+                          <XCircle className="h-3 w-3" />
+                          No pagó
+                        </Badge>
+                      )}
                     </div>
                   </td>
                   {categories.map((c) => {

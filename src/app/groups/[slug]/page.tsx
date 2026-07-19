@@ -164,6 +164,9 @@ export default async function GroupPage({ params }: Params) {
   const myIndex = leaderboard.findIndex((r) => r.userId === user.id)
   const myRank = myIndex >= 0 ? ranks[myIndex].rank : -1
   const myTied = myIndex >= 0 ? ranks[myIndex].tied : false
+  // El "Líder" no puede ser alguien que no aportó al pozo. Como los no-pagadores
+  // quedan últimos, el primer pagador es el líder elegible.
+  const eligibleLeader = leaderboard.find((r) => r.hasPaid !== false) ?? null
 
   const predictionsCtaState: 'locked' | 'empty' | 'partial' | 'done' = locked
     ? 'locked'
@@ -491,23 +494,25 @@ export default async function GroupPage({ params }: Params) {
                 <ChevronRight className="h-4 w-4 text-muted-foreground transition-transform group-hover:translate-x-0.5 group-hover:text-primary" />
               </div>
               <div className="mt-auto pt-4">
-                {leaderboard.length > 0 ? (
+                {eligibleLeader ? (
                   <div className="flex items-center gap-2 rounded-lg border border-border bg-muted/30 px-3 py-2">
                     <span className="text-base leading-none">🏆</span>
                     <div className="min-w-0 flex-1">
                       <p className="text-[10px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
                         Líder
                       </p>
-                      <p className="truncate text-xs font-medium">{leaderboard[0].displayName}</p>
+                      <p className="truncate text-xs font-medium">{eligibleLeader.displayName}</p>
                     </div>
                     <span className="font-mono text-sm font-semibold tabular-nums">
-                      {leaderboard[0].totalPoints}
+                      {eligibleLeader.totalPoints}
                       <span className="ml-0.5 text-[10px] text-muted-foreground">pts</span>
                     </span>
                   </div>
                 ) : (
                   <div className="rounded-lg border border-dashed border-border bg-muted/20 px-3 py-2 text-center text-xs text-muted-foreground">
-                    Se llena cuando inicie el Mundial
+                    {leaderboard.length > 0
+                      ? 'Nadie aportó al pozo todavía'
+                      : 'Se llena cuando inicie el Mundial'}
                   </div>
                 )}
               </div>

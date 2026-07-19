@@ -111,6 +111,7 @@ export function LeaderboardTabs({
           resolvedCategoryIds={resolvedCategoryIds}
           lostByUser={lostByUser}
           currentUserId={currentUserId}
+          poolEnabled={poolEnabled}
         />
       </TabsContent>
     </Tabs>
