@@ -3,7 +3,6 @@ import type { Metadata } from 'next'
 import { notFound, redirect } from 'next/navigation'
 import { AppHeader } from '@/components/app-shell/app-header'
 import { BackLink } from '@/components/app-shell/back-link'
-import { CategoryOddsCard } from '@/components/leaderboard/category-odds-card'
 import { LeaderboardTabs } from '@/components/leaderboard/leaderboard-tabs'
 import { PoolBand } from '@/components/pool/pool-band'
 import { db } from '@/db'
@@ -15,7 +14,6 @@ import {
   getRankedLeaderboard,
   getResolvedCategoryIds,
 } from '@/features/scoring/queries'
-import { getWinProbabilities } from '@/features/tournament/win-probabilities'
 import { formatTimeOnly } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -50,25 +48,23 @@ export default async function LeaderboardPage({ params }: Params) {
   })
   if (!membership) notFound()
 
-  const [leaderboard, catsRaw, pool, paidAt, resolvedCategoryIds, lostByUser, probs] =
-    await Promise.all([
-      getRankedLeaderboard(group.id),
-      db
-        .select({
-          id: categories.id,
-          name: categories.name,
-          key: categories.key,
-          points: groupCategories.points,
-        })
-        .from(categories)
-        .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
-        .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
-      getPoolSummary(group.id),
-      getPoolContributorPaidAt(group.id),
-      getResolvedCategoryIds(),
-      getLostCategoryIdsByUser(group.id, group.predictionsLockAt),
-      getWinProbabilities().catch(() => null),
-    ])
+  const [leaderboard, catsRaw, pool, paidAt, resolvedCategoryIds, lostByUser] = await Promise.all([
+    getRankedLeaderboard(group.id),
+    db
+      .select({
+        id: categories.id,
+        name: categories.name,
+        key: categories.key,
+        points: groupCategories.points,
+      })
+      .from(categories)
+      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+      .where(and(eq(groupCategories.groupId, group.id), eq(groupCategories.enabled, true))),
+    getPoolSummary(group.id),
+    getPoolContributorPaidAt(group.id),
+    getResolvedCategoryIds(),
+    getLostCategoryIdsByUser(group.id, group.predictionsLockAt),
+  ])
   const cats = sortByCategoryOrder(catsRaw)
 
   const displayName =
@@ -101,12 +97,6 @@ export default async function LeaderboardPage({ params }: Params) {
         </p>
 
         {hasScores && <PoolBand pool={pool} />}
-
-        {probs && (
-          <div className="mt-6">
-            <CategoryOddsCard categories={cats} topByCategory={probs.topByCategory} />
-          </div>
-        )}
 
         <div className="mt-6">
           <LeaderboardTabs
