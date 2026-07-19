@@ -135,37 +135,48 @@ const compute = async (): Promise<WinProbabilities> => {
   for (const f of finalists) setTeam('finalists', f.id, 1)
 
   // top_scoring_team / most_conceded_team.
-  // Clave: cuando varios equipos ya eliminados EMPATAN en el máximo, la
-  // resolución (findTopByGoals, `>` estricto) se queda con UNO solo — no es un
-  // empate 50/50. Replicamos eso: un único líder congelado (el primero al máximo)
-  // se lleva el grueso; solo cuentan como retadores los que aún juegan Y pueden
-  // realmente alcanzar el máximo en la final (≤3 goles de diferencia). Así, si
-  // nadie que sigue vivo puede alcanzarlo, la categoría queda ~decidida en 1 equipo.
-  const goalsCat = (cat: string, goalsOf: (id: string) => number, max: number) => {
+  // Cuando varios equipos ya eliminados EMPATAN en el máximo, NO es un empate
+  // 50/50: se colapsa a UN solo líder congelado. Desempate por DIFERENCIA DE GOL
+  // (elección del usuario): para "más goleada" gana la de PEOR diferencia (p.ej.
+  // Irak −11 sobre Túnez −10, y excluye a Inglaterra que llegó a semis con +8);
+  // para "más goleadora" la de MEJOR diferencia. Solo cuentan como retadores los
+  // que aún juegan Y pueden alcanzar el máximo en la final (≤3 goles).
+  const goalsCat = (
+    cat: string,
+    goalsOf: (id: string) => number,
+    max: number,
+    preferWorseDiff: boolean,
+  ) => {
     const scores: Record<string, number> = {}
-    let frozenLeaderId: string | null = null
+    let leaderId: string | null = null
+    let leaderDiff = 0
     for (const t of teamRows) {
       const fate = ctx.fatesByTeamId[t.id]
       if (!fate) continue
       const g = goalsOf(t.id)
       if (fate.stillPlaying) {
-        // Solo es candidato si puede alcanzar el máximo en un partido.
         const need = max - g + 1
         if (need <= 3) scores[t.id] = scoreAtLeast(need)
-      } else if (g >= max && frozenLeaderId === null) {
-        // Único líder congelado (desempate = primero, como la resolución).
-        frozenLeaderId = t.id
+      } else if (g >= max) {
+        // Líder congelado: entre los empatados, elige por diferencia de gol.
+        const diff = fate.goalsFor - fate.goalsAgainst
+        const better = preferWorseDiff ? diff < leaderDiff : diff > leaderDiff
+        if (leaderId === null || better) {
+          leaderId = t.id
+          leaderDiff = diff
+        }
       }
     }
-    if (frozenLeaderId) scores[frozenLeaderId] = 1
+    if (leaderId) scores[leaderId] = 1
     const norm = normalize(scores)
     for (const id in norm) setTeam(cat, id, norm[id])
   }
-  goalsCat('top_scoring_team', (id) => ctx.fatesByTeamId[id]?.goalsFor ?? 0, ctx.maxGoalsFor)
+  goalsCat('top_scoring_team', (id) => ctx.fatesByTeamId[id]?.goalsFor ?? 0, ctx.maxGoalsFor, false)
   goalsCat(
     'most_conceded_team',
     (id) => ctx.fatesByTeamId[id]?.goalsAgainst ?? 0,
     ctx.maxGoalsAgainst,
+    true,
   )
 
   // top_5 (team_set): reparte prob de estar en el top-5 según si están vivos.
