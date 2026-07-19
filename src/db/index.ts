@@ -23,7 +23,7 @@ import * as schema from './schema'
 // pdx1 (misma región que la DB) abrir una conexión cuesta ~ms.
 const CLIENT_OPTS = {
   prepare: false,
-  max: 8,
+  max: 20,
   idle_timeout: 10,
   connect_timeout: 10,
 } as const
@@ -36,15 +36,17 @@ const getRequestDb = cache((): DrizzleDb => {
   const client = postgres(env.DATABASE_URL, CLIENT_OPTS)
   try {
     after(async () => {
+      const t = Date.now()
       try {
         await client.end({ timeout: 5 })
-      } catch {
-        // ya cerrado
+        console.log(`[db] after: cliente cerrado en ${Date.now() - t}ms`)
+      } catch (e) {
+        console.log(`[db] after: cierre falló ${(e as Error)?.message}`)
       }
     })
+    console.log('[db] path=request (after registrado)')
   } catch (err) {
-    // Sin request scope (script CLI): cerramos el cliente recién creado y
-    // dejamos que resolveDb caiga al cliente compartido.
+    console.log(`[db] after() lanzó → fallback shared: ${(err as Error)?.message}`)
     void client.end({ timeout: 1 }).catch(() => {})
     throw err
   }
