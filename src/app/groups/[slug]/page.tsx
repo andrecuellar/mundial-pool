@@ -22,17 +22,29 @@ import { competitionRanks } from '@/features/scoring/rank'
 import { env } from '@/lib/env'
 import { formatDayShort, formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
+import { withTimeout } from '@/lib/with-timeout'
 
 export const dynamic = 'force-dynamic'
+// Backstop duro: si algo se cuelga pese a los timeouts de abajo, la función
+// muere en 24s (no en los 60s del runtime) y el error boundary reintenta.
+export const maxDuration = 24
+
+// Ninguna lectura a la DB debe colgar la página: si una query no responde en
+// 12s (normal: <2s), abortamos y dejamos que error.tsx reintente con conexión
+// fresca en vez de esperar al timeout de la función.
+const DB_TIMEOUT_MS = 12_000
 
 type Params = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params
-  const group = await db.query.groups.findFirst({
-    where: eq(groups.slug, slug),
-    columns: { name: true },
-  })
+  // Metadata no es crítica: si la DB se cuelga, no vale tumbar la página por el
+  // título. Timeout corto y fallback.
+  const group = await withTimeout(
+    db.query.groups.findFirst({ where: eq(groups.slug, slug), columns: { name: true } }),
+    DB_TIMEOUT_MS,
+    'generateMetadata:group',
+  ).catch(() => null)
   return {
     title: group?.name ?? 'Grupo',
   }
@@ -51,12 +63,20 @@ export default async function GroupPage({ params }: Params) {
   } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const group = await db.query.groups.findFirst({ where: eq(groups.slug, slug) })
+  const group = await withTimeout(
+    db.query.groups.findFirst({ where: eq(groups.slug, slug) }),
+    DB_TIMEOUT_MS,
+    'group',
+  )
   if (!group) notFound()
 
-  const membership = await db.query.groupMembers.findFirst({
-    where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
-  })
+  const membership = await withTimeout(
+    db.query.groupMembers.findFirst({
+      where: and(eq(groupMembers.groupId, group.id), eq(groupMembers.userId, user.id)),
+    }),
+    DB_TIMEOUT_MS,
+    'membership',
+  )
 
   const displayName =
     (user.user_metadata?.full_name as string | undefined) ??
@@ -82,38 +102,42 @@ export default async function GroupPage({ params }: Params) {
     myBreakdown,
     [latestResolution],
     [myPoolPayment],
-  ] = await Promise.all([
-    getRankedLeaderboard(group.id),
-    getPoolSummary(group.id),
-    computePayout(group.id),
-    db.select({ count: count() }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
-    db
-      .select({ displayName: profiles.displayName, avatarUrl: profiles.avatarUrl })
-      .from(groupMembers)
-      .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
-      .where(eq(groupMembers.groupId, group.id))
-      .limit(10),
-    db
-      .select({ count: count() })
-      .from(predictions)
-      .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
-    getUserCategoryBreakdown(group.id, user.id),
-    db
-      .select({ resolvedAt: results.resolvedAt })
-      .from(results)
-      .orderBy(desc(results.resolvedAt))
-      .limit(1),
-    db
-      .select({ id: poolTransactions.id })
-      .from(poolTransactions)
-      .where(
-        and(
-          eq(poolTransactions.groupId, group.id),
-          eq(poolTransactions.contributorUserId, user.id),
-        ),
-      )
-      .limit(1),
-  ])
+  ] = await withTimeout(
+    Promise.all([
+      getRankedLeaderboard(group.id),
+      getPoolSummary(group.id),
+      computePayout(group.id),
+      db.select({ count: count() }).from(groupMembers).where(eq(groupMembers.groupId, group.id)),
+      db
+        .select({ displayName: profiles.displayName, avatarUrl: profiles.avatarUrl })
+        .from(groupMembers)
+        .innerJoin(profiles, eq(profiles.id, groupMembers.userId))
+        .where(eq(groupMembers.groupId, group.id))
+        .limit(10),
+      db
+        .select({ count: count() })
+        .from(predictions)
+        .where(and(eq(predictions.groupId, group.id), eq(predictions.userId, user.id))),
+      getUserCategoryBreakdown(group.id, user.id),
+      db
+        .select({ resolvedAt: results.resolvedAt })
+        .from(results)
+        .orderBy(desc(results.resolvedAt))
+        .limit(1),
+      db
+        .select({ id: poolTransactions.id })
+        .from(poolTransactions)
+        .where(
+          and(
+            eq(poolTransactions.groupId, group.id),
+            eq(poolTransactions.contributorUserId, user.id),
+          ),
+        )
+        .limit(1),
+    ]),
+    DB_TIMEOUT_MS,
+    'group-page-data',
+  )
   const hasPaid = Boolean(myPoolPayment)
   const latestResolvedAt = latestResolution?.resolvedAt ?? null
   // All-time wins for the user. The client compares latestResolvedAt against
