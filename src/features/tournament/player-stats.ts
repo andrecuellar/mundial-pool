@@ -2,6 +2,7 @@ import { like } from 'drizzle-orm'
 import { revalidatePath, revalidateTag } from 'next/cache'
 import { db } from '@/db'
 import { players, teams } from '@/db/schema'
+import { recomputeAllLeaderboardSnapshots } from '@/features/scoring/snapshots'
 import { fetchPlayerStats } from '@/integrations/football/espn-players'
 import { teamMatchKey } from '@/integrations/football/normalize'
 
@@ -79,6 +80,13 @@ export async function syncPlayerStats(): Promise<SyncResult> {
   // tiene la tag cacheada con un TTL más largo.
   revalidatePath('/torneo/jugadores')
   revalidatePath('/admin/jugadores')
+
+  // Goles/asistencias afectan las categorías de jugador → rematerializar.
+  try {
+    await recomputeAllLeaderboardSnapshots()
+  } catch (e) {
+    console.error('recomputeAllLeaderboardSnapshots (post-player-stats) failed', e)
+  }
 
   return {
     syncedAt: now.toISOString(),

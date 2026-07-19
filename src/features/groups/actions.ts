@@ -13,6 +13,7 @@ import {
   CATEGORY_KEYS,
   type CategoryKey,
 } from '@/features/predictions/category-defaults'
+import { recomputeLeaderboardSnapshot } from '@/features/scoring/snapshots'
 import { isSuperAdminEmail } from '@/lib/admin'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
@@ -226,6 +227,11 @@ export async function createGroup(formData: FormData): Promise<ActionResult<{ sl
       poolCurrency: created.poolCurrency ?? 'none',
     }).catch((e) => console.error('analytics group_created failed', e)),
   )
+  after(() =>
+    recomputeLeaderboardSnapshot(created.id).catch((e) =>
+      console.error('recomputeLeaderboardSnapshot (group_created) failed', e),
+    ),
+  )
   return { ok: true, data: { slug: created.slug } }
 }
 
@@ -251,7 +257,10 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
     return { ok: false, error: 'No encontramos un grupo con ese código.' }
   }
   if (new Date() >= group.predictionsLockAt) {
-    return { ok: false, error: 'Este grupo ya cerró sus predicciones — no se pueden unir nuevos miembros.' }
+    return {
+      ok: false,
+      error: 'Este grupo ya cerró sus predicciones — no se pueden unir nuevos miembros.',
+    }
   }
 
   const inserted = await db
@@ -279,6 +288,13 @@ export async function joinGroup(formData: FormData): Promise<ActionResult<{ slug
         await track('group_joined', { via: 'code' })
       } catch (e) {
         console.error('analytics group_joined failed', e)
+      }
+      // El miembro nuevo debe aparecer en el leaderboard sin esperar a la
+      // próxima resolución.
+      try {
+        await recomputeLeaderboardSnapshot(group.id)
+      } catch (e) {
+        console.error('recomputeLeaderboardSnapshot (group_joined) failed', e)
       }
     })
   }
