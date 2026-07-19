@@ -8,15 +8,21 @@
 // y el siguiente puesto salta por el tamaño del empate (1, 1, 3, 3, 5) — la
 // misma regla con la que se reparte el pozo.
 
-export type RankableRow = { totalPoints: number; failedCount: number }
+// hasPaid: solo relevante con pozo activo. undefined/true = tratado como pagador
+// (sin pozo, nadie se castiga). Los NO-pagadores van SIEMPRE al final, muestren
+// los puntos que muestren.
+export type RankableRow = { totalPoints: number; failedCount: number; hasPaid?: boolean }
 
 export type RankInfo = { rank: number; tied: boolean }
 
-/** Ordena filas ya cargadas: puntos DESC, fallos ASC, nombre ASC. */
+/** Ordena filas ya cargadas: pagadores primero, luego puntos DESC, fallos ASC, nombre ASC. */
 export function compareRanked(
   a: RankableRow & { displayName: string },
   b: RankableRow & { displayName: string },
 ): number {
+  const aPaid = a.hasPaid ?? true
+  const bPaid = b.hasPaid ?? true
+  if (aPaid !== bPaid) return aPaid ? -1 : 1
   if (a.totalPoints !== b.totalPoints) return b.totalPoints - a.totalPoints
   if (a.failedCount !== b.failedCount) return a.failedCount - b.failedCount
   return a.displayName.localeCompare(b.displayName, 'es')
@@ -29,7 +35,10 @@ export function competitionRanks(rows: RankableRow[]): RankInfo[] {
   let prevRank = 0
   rows.forEach((r, i) => {
     const tiesPrev =
-      prev !== null && r.totalPoints === prev.totalPoints && r.failedCount === prev.failedCount
+      prev !== null &&
+      r.totalPoints === prev.totalPoints &&
+      r.failedCount === prev.failedCount &&
+      (r.hasPaid ?? true) === (prev.hasPaid ?? true)
     const rank = tiesPrev ? prevRank : i + 1
     out.push({ rank, tied: false })
     prev = r

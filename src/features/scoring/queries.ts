@@ -1,4 +1,4 @@
-import { and, eq, gt, sql } from 'drizzle-orm'
+import { and, eq, gt, isNotNull, sql } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { cache } from 'react'
 import { db } from '@/db'
@@ -8,6 +8,7 @@ import {
   groupMembers,
   groups,
   leaderboardSnapshots,
+  poolTransactions,
   predictions,
   results,
   teams,
@@ -140,6 +141,9 @@ export type RankedLeaderboardRow = LeaderboardRow & {
   failedCount: number
   /** Banderas (únicas) de las selecciones elegidas que ya quedaron fuera del torneo. */
   deadFlags: string[]
+  /** ¿Aportó al pozo? Sin pozo activo es true para todos. Los que NO pagaron van
+   * al final de toda tabla y no pueden ser proclamados ganadores. */
+  hasPaid: boolean
 }
 
 /**
@@ -153,31 +157,46 @@ export const computeRankedLeaderboard = async (
 ): Promise<RankedLeaderboardRow[]> => {
   const group = await db.query.groups.findFirst({
     where: eq(groups.id, groupId),
-    columns: { predictionsLockAt: true },
+    columns: { predictionsLockAt: true, poolEnabled: true },
   })
   const lockAt = group?.predictionsLockAt ?? new Date(0)
+  const poolEnabled = group?.poolEnabled ?? false
 
-  const [rows, lostByUser, resolvedIds, catRows, predRows, teamRows, ctx] = await Promise.all([
-    getLeaderboard(groupId),
-    getLostCategoryIdsByUser(groupId, lockAt),
-    getResolvedCategoryIds(),
-    db
-      .select({ id: categories.id })
-      .from(categories)
-      .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
-      .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
-    db
-      .select({
-        userId: predictions.userId,
-        categoryId: predictions.categoryId,
-        teamId: predictions.teamId,
-        teamSet: predictions.teamSet,
-      })
-      .from(predictions)
-      .where(eq(predictions.groupId, groupId)),
-    db.select({ id: teams.id, flagEmoji: teams.flagEmoji }).from(teams),
-    getEliminationContext(),
-  ])
+  const [rows, lostByUser, resolvedIds, catRows, predRows, teamRows, ctx, paidRows] =
+    await Promise.all([
+      getLeaderboard(groupId),
+      getLostCategoryIdsByUser(groupId, lockAt),
+      getResolvedCategoryIds(),
+      db
+        .select({ id: categories.id })
+        .from(categories)
+        .innerJoin(groupCategories, eq(groupCategories.categoryId, categories.id))
+        .where(and(eq(groupCategories.groupId, groupId), eq(groupCategories.enabled, true))),
+      db
+        .select({
+          userId: predictions.userId,
+          categoryId: predictions.categoryId,
+          teamId: predictions.teamId,
+          teamSet: predictions.teamSet,
+        })
+        .from(predictions)
+        .where(eq(predictions.groupId, groupId)),
+      db.select({ id: teams.id, flagEmoji: teams.flagEmoji }).from(teams),
+      getEliminationContext(),
+      // Quiénes aportaron al pozo (solo si el pozo está activo).
+      poolEnabled
+        ? db
+            .selectDistinct({ userId: poolTransactions.contributorUserId })
+            .from(poolTransactions)
+            .where(
+              and(
+                eq(poolTransactions.groupId, groupId),
+                isNotNull(poolTransactions.contributorUserId),
+              ),
+            )
+        : Promise.resolve([] as { userId: string | null }[]),
+    ])
+  const paidSet = new Set(paidRows.map((r) => r.userId).filter((id): id is string => id != null))
 
   const resolved = new Set(resolvedIds)
   const enabledCatIds = new Set(catRows.map((c) => c.id))
@@ -217,6 +236,7 @@ export const computeRankedLeaderboard = async (
       correctCount,
       failedCount,
       deadFlags: deadFlagsByUser.get(r.userId) ?? [],
+      hasPaid: !poolEnabled || paidSet.has(r.userId),
     }
   })
   return ranked.sort(compareRanked)

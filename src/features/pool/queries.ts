@@ -171,7 +171,9 @@ export type PayoutEntry = {
 export async function computePayout(groupId: string): Promise<PayoutEntry[]> {
   const summary = await getPoolSummary(groupId)
   if (!summary.enabled || summary.total === 0) return []
-  const leaderboard = await getRankedLeaderboard(groupId)
+  // Los que NO aportaron al pozo no pueden ganar plata: se excluyen del reparto.
+  // hasPaid===false = no-pagador explícito (undefined en snapshots viejos = elegible).
+  const leaderboard = (await getRankedLeaderboard(groupId)).filter((r) => r.hasPaid !== false)
   if (leaderboard.length === 0) return []
 
   const splits: Record<PoolSummary['payoutRule'], number[]> = {
