@@ -134,23 +134,30 @@ const compute = async (): Promise<WinProbabilities> => {
   // finalists (team_set): cada finalista tiene prob 1 de SER finalista.
   for (const f of finalists) setTeam('finalists', f.id, 1)
 
-  // top_scoring_team / most_conceded_team: líder actual vs finalistas que aún
-  // pueden sumar en la final.
+  // top_scoring_team / most_conceded_team.
+  // Clave: cuando varios equipos ya eliminados EMPATAN en el máximo, la
+  // resolución (findTopByGoals, `>` estricto) se queda con UNO solo — no es un
+  // empate 50/50. Replicamos eso: un único líder congelado (el primero al máximo)
+  // se lleva el grueso; solo cuentan como retadores los que aún juegan Y pueden
+  // realmente alcanzar el máximo en la final (≤3 goles de diferencia). Así, si
+  // nadie que sigue vivo puede alcanzarlo, la categoría queda ~decidida en 1 equipo.
   const goalsCat = (cat: string, goalsOf: (id: string) => number, max: number) => {
     const scores: Record<string, number> = {}
+    let frozenLeaderId: string | null = null
     for (const t of teamRows) {
       const fate = ctx.fatesByTeamId[t.id]
       if (!fate) continue
       const g = goalsOf(t.id)
       if (fate.stillPlaying) {
-        // Puede sumar en la final: prob de alcanzar/pasar al líder.
-        scores[t.id] = scoreAtLeast(max - g + 1)
-      } else if (g >= max) {
-        // Líder congelado: se mantiene salvo que un finalista lo pase.
-        scores[t.id] = 1
+        // Solo es candidato si puede alcanzar el máximo en un partido.
+        const need = max - g + 1
+        if (need <= 3) scores[t.id] = scoreAtLeast(need)
+      } else if (g >= max && frozenLeaderId === null) {
+        // Único líder congelado (desempate = primero, como la resolución).
+        frozenLeaderId = t.id
       }
-      // congelado por debajo del líder → 0 (no aparece)
     }
+    if (frozenLeaderId) scores[frozenLeaderId] = 1
     const norm = normalize(scores)
     for (const id in norm) setTeam(cat, id, norm[id])
   }
