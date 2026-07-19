@@ -205,6 +205,11 @@ export default async function GroupPage({ params }: Params) {
     rank: payerRanks[i].rank,
     tied: payerRanks[i].tied,
   }))
+  // No-pagadores: fuera de premios, pero se listan aparte con sus puntos por
+  // transparencia (que se vea que sumaron pero no aportaron al pozo).
+  const nonPayers = leaderboard
+    .filter((r) => r.hasPaid === false)
+    .map((r) => ({ userId: r.userId, displayName: r.displayName, totalPoints: r.totalPoints }))
 
   const predictionsCtaState: 'locked' | 'empty' | 'partial' | 'done' = locked
     ? 'locked'
@@ -360,6 +365,7 @@ export default async function GroupPage({ params }: Params) {
               groupName={group.name}
               championTeam={championTeam}
               rows={celebrationRows}
+              nonPayers={nonPayers}
             />
           </div>
         )}
