@@ -1,0 +1,29 @@
+name: Resolver final (respaldo automático)
+
+# Le pega al endpoint de resolución del Mundial cada 15 min durante la ventana
+# de la final. Vercel Hobby solo permite crons 1×/día con ±59 min de imprecisión;
+# GitHub Actions (repo público = gratis) da cobertura densa y puntual.
+#
+# Pinneado al 19 de julio (día de la final) para no correr el resto del año.
+# También se puede disparar a mano desde la pestaña Actions (workflow_dispatch)
+# apenas termine el partido, para resolución inmediata.
+#
+# La resolución es idempotente (upsert + chequeo de firmas), así que correrla
+# muchas veces es seguro. Quitar este archivo después del torneo si se quiere.
+
+on:
+  schedule:
+    # min 0,15,30,45 · horas 21-23 UTC (5:00–7:45 PM BOT) · solo el 19 de julio
+    - cron: '0,15,30,45 21-23 19 7 *'
+  workflow_dispatch: {}
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Disparar resolución
+        run: |
+          curl -fsS -X POST \
+            --max-time 90 \
+            -H "Authorization: Bearer ${{ secrets.RESOLUTION_CRON_SECRET }}" \
+            "https://mundial-pool.vercel.app/api/cron/resolve"
