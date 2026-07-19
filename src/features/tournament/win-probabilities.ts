@@ -3,7 +3,7 @@ import 'server-only'
 import { eq } from 'drizzle-orm'
 import { unstable_cache } from 'next/cache'
 import { db } from '@/db'
-import { appState, teams } from '@/db/schema'
+import { appState, players, teams } from '@/db/schema'
 import { getEliminationContext, normalizePlayerText } from '@/features/tournament/eliminations'
 
 // Probabilidad de que cada candidato GANE su categoría, calculada del estado
@@ -22,6 +22,8 @@ export type WinProbabilities = {
   byTeam: Record<string, Record<string, number>>
   /** categoryKey → nombre de jugador normalizado → probabilidad 0..1. */
   byPlayer: Record<string, Record<string, number>>
+  /** Listo para mostrar: categoryKey → top candidatos {label, prob} ordenados. */
+  topByCategory: Record<string, { label: string; prob: number }[]>
   /** Metadatos para el admin: los 2 finalistas y su prob de campeón (0..100). */
   finalOdds: { teamId: string; teamName: string; pct: number }[]
 }
@@ -44,7 +46,7 @@ function normalize(m: Record<string, number>): Record<string, number> {
 }
 
 const compute = async (): Promise<WinProbabilities> => {
-  const [teamRows, ctx, oddsRow] = await Promise.all([
+  const [teamRows, playerRows, ctx, oddsRow] = await Promise.all([
     db
       .select({
         id: teams.id,
@@ -53,16 +55,32 @@ const compute = async (): Promise<WinProbabilities> => {
         fifaRanking: teams.fifaRanking,
       })
       .from(teams),
+    db
+      .select({ fullName: players.fullName, goals: players.goals, assists: players.assists })
+      .from(players),
     getEliminationContext(),
     db.query.appState.findFirst({ where: eq(appState.key, FINAL_ODDS_KEY) }),
   ])
+  // Nombre display por nombre normalizado (para mostrar en la lista de favoritos;
+  // ante homónimos, el de más goles+asistencias).
+  const displayByNorm = new Map<string, string>()
+  const scoreByNorm = new Map<string, number>()
+  for (const p of playerRows) {
+    const norm = normalizePlayerText(p.fullName)
+    const s = (p.goals ?? 0) + (p.assists ?? 0)
+    if (!scoreByNorm.has(norm) || s > (scoreByNorm.get(norm) ?? -1)) {
+      scoreByNorm.set(norm, s)
+      displayByNorm.set(norm, p.fullName)
+    }
+  }
   const nameById = new Map(teamRows.map((t) => [t.id, t.name]))
   const byTeam: Record<string, Record<string, number>> = {}
   const byPlayer: Record<string, Record<string, number>> = {}
   const setTeam = (cat: string, teamId: string, p: number) => {
     const name = nameById.get(teamId)
     if (!name) return
-    ;(byTeam[cat] ??= {})[name] = p
+    byTeam[cat] ??= {}
+    byTeam[cat][name] = p
   }
 
   // --- Finalistas y cuotas de campeón (editables por admin, default por FIFA) ---
@@ -118,12 +136,12 @@ const compute = async (): Promise<WinProbabilities> => {
 
   // top_scoring_team / most_conceded_team: líder actual vs finalistas que aún
   // pueden sumar en la final.
-  const goalsCat = (cat: string, valueOf: (id: string) => number, max: number) => {
+  const goalsCat = (cat: string, goalsOf: (id: string) => number, max: number) => {
     const scores: Record<string, number> = {}
     for (const t of teamRows) {
       const fate = ctx.fatesByTeamId[t.id]
       if (!fate) continue
-      const g = valueOf(t.id)
+      const g = goalsOf(t.id)
       if (fate.stillPlaying) {
         // Puede sumar en la final: prob de alcanzar/pasar al líder.
         scores[t.id] = scoreAtLeast(max - g + 1)
@@ -181,13 +199,25 @@ const compute = async (): Promise<WinProbabilities> => {
   playerCat('top_scorer_player', (c) => c.goals, ctx.maxPlayerGoals)
   playerCat('top_assists_player', (c) => c.assists, ctx.maxPlayerAssists)
 
+  // Listo para mostrar: top 3 candidatos por categoría (label + prob), ordenado.
+  const topByCategory: Record<string, { label: string; prob: number }[]> = {}
+  const top3 = (m: Record<string, number>, labelOf: (k: string) => string) =>
+    Object.entries(m)
+      .filter(([, p]) => p >= 0.01)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 3)
+      .map(([k, prob]) => ({ label: labelOf(k), prob }))
+  for (const cat in byTeam) topByCategory[cat] = top3(byTeam[cat], (name) => name)
+  for (const cat in byPlayer)
+    topByCategory[cat] = top3(byPlayer[cat], (norm) => displayByNorm.get(norm) ?? norm)
+
   const finalOdds = finalists.map((f) => ({
     teamId: f.id,
     teamName: f.name,
     pct: Math.round((championByTeamId[f.id] ?? 0) * 100),
   }))
 
-  return { byTeam, byPlayer, finalOdds }
+  return { byTeam, byPlayer, topByCategory, finalOdds }
 }
 
 // Cacheado como el resto: se recalcula cuando cambian standings/players o el
