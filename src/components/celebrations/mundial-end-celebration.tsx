@@ -24,10 +24,14 @@ export function MundialEndCelebration({
   groupName,
   championTeam,
   rows,
+  nonPayers = [],
 }: {
   groupName: string
   championTeam: string | null
   rows: CelebrationRow[]
+  // Jugadores que NO aportaron al pozo: se muestran aparte (fuera de premios)
+  // con sus puntos, solo por transparencia.
+  nonPayers?: { userId: string; displayName: string; totalPoints: number }[]
 }) {
   if (rows.length === 0) return null
   const champion = rows[0]
@@ -172,6 +176,26 @@ export function MundialEndCelebration({
           </div>
         )}
 
+        {nonPayers.length > 0 && (
+          <div className="mpe-aside">
+            <div className="mpe-aside-head">
+              <span className="mpe-aside-title">Aparte · Fuera de premios</span>
+              <span className="mpe-aside-sub">
+                Sumaron estos puntos pero no aportaron al pozo, así que no entran al premio.
+              </span>
+            </div>
+            {nonPayers.map((r) => (
+              <div key={r.userId} className="mpe-arow">
+                <span className="mpe-anm">
+                  {r.displayName}
+                  <span className="mpe-nopay">No pagó</span>
+                </span>
+                <span className="mpe-asc mpe-num">{r.totalPoints}</span>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="mpe-foot">
           <div className="mpe-cheer">¡Felicitaciones a todos los que jugaron! 🎉</div>
           <div className="mpe-brand">
@@ -278,6 +302,17 @@ const MPE_CSS = `
 .mpe-row.mpe-tied{background:color-mix(in oklab,var(--mpe-blue) 6%, transparent)}
 .mpe-badge{font-size:clamp(9px,1.8vw,13px);font-weight:700;color:var(--mpe-blue);background:color-mix(in oklab,var(--mpe-blue) 14%,transparent);
   border:1px solid color-mix(in oklab,var(--mpe-blue) 30%,transparent);padding:2px 8px;border-radius:6px;letter-spacing:.3px;flex:none}
+
+.mpe-aside{border-radius:16px;overflow:hidden;border:1px dashed color-mix(in oklab,var(--mpe-red) 30%, var(--mpe-line));background:oklch(0.14 0.02 262 / .5)}
+.mpe-aside-head{padding:12px clamp(16px,3vw,26px);border-bottom:1px solid color-mix(in oklab,var(--mpe-line) 60%,transparent);display:flex;flex-direction:column;gap:3px}
+.mpe-aside-title{font-size:clamp(10px,2.1vw,14px);font-weight:800;letter-spacing:.6px;text-transform:uppercase;color:var(--mpe-soft)}
+.mpe-aside-sub{font-size:clamp(10px,1.9vw,13px);color:var(--mpe-dim);font-weight:500;text-wrap:balance}
+.mpe-arow{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 clamp(16px,3vw,26px);height:clamp(44px,7vw,58px);border-bottom:1px solid color-mix(in oklab,var(--mpe-line) 40%,transparent)}
+.mpe-arow:last-child{border-bottom:none}
+.mpe-anm{display:flex;align-items:center;gap:10px;min-width:0;font-size:clamp(.95rem,2.8vw,1.3rem);font-weight:700;color:var(--mpe-soft);overflow-wrap:anywhere}
+.mpe-nopay{flex:none;font-size:clamp(9px,1.8vw,12px);font-weight:700;letter-spacing:.3px;color:var(--mpe-red);
+  background:color-mix(in oklab,var(--mpe-red) 14%,transparent);border:1px solid color-mix(in oklab,var(--mpe-red) 32%,transparent);padding:2px 8px;border-radius:6px}
+.mpe-asc{font-weight:700;font-size:clamp(1rem,3vw,1.4rem);color:var(--mpe-dim)}
 
 .mpe-foot{text-align:center;display:flex;flex-direction:column;gap:10px;padding-top:6px}
 .mpe-cheer{font-size:clamp(1rem,3vw,1.5rem);font-weight:800;letter-spacing:-.3px;color:var(--mpe-ink);text-wrap:balance}
