@@ -21,7 +21,15 @@ export async function recomputeAllLeaderboardSnapshots(): Promise<void> {
     try {
       await recomputeLeaderboardSnapshot(g.id)
     } catch (e) {
-      console.error('recomputeLeaderboardSnapshot failed for group', g.id, e)
+      // Reintento único: los fallos casi siempre son blips transitorios de
+      // conexión (postgres.js en serverless) durante el batch largo. postgres.js
+      // descarta la conexión mala, así que el segundo intento agarra una fresca.
+      console.error('recomputeLeaderboardSnapshot failed, reintentando', g.id, e)
+      try {
+        await recomputeLeaderboardSnapshot(g.id)
+      } catch (e2) {
+        console.error('recomputeLeaderboardSnapshot falló de nuevo para', g.id, e2)
+      }
     }
   }
 }
