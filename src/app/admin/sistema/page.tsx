@@ -1,4 +1,5 @@
 import { AdminDataTable } from '@/components/admin/data-table'
+import { FinalOddsForm } from '@/components/admin/final-odds-form'
 import { ForceResolutionButton } from '@/components/admin/force-resolution-button'
 import { Card } from '@/components/ui/card'
 import {
@@ -10,6 +11,7 @@ import {
   TableRow,
 } from '@/components/ui/table'
 import { listAdminAppState, listAdminResolutionRuns } from '@/features/admin/queries'
+import { getWinProbabilities } from '@/features/tournament/win-probabilities'
 import { env } from '@/lib/env'
 import { formatDayTime } from '@/lib/format'
 
@@ -19,7 +21,11 @@ export const dynamic = 'force-dynamic'
 export const maxDuration = 60
 
 export default async function AdminSistemaPage() {
-  const [runs, state] = await Promise.all([listAdminResolutionRuns(), listAdminAppState()])
+  const [runs, state, probs] = await Promise.all([
+    listAdminResolutionRuns(),
+    listAdminAppState(),
+    getWinProbabilities().catch(() => null),
+  ])
 
   return (
     <div className="space-y-6">
@@ -62,6 +68,17 @@ export default async function AdminSistemaPage() {
           </p>
         </div>
         <ForceResolutionButton />
+      </Card>
+
+      <Card className="p-4">
+        <p className="font-mono text-[10px] uppercase tracking-[0.14em] text-muted-foreground">
+          Cuotas de la final
+        </p>
+        <p className="mt-1 mb-3 text-[11px] text-muted-foreground">
+          Probabilidad de campeón entre los finalistas (de casas de apuestas). Alimenta el % que se
+          muestra en las cards de predicciones y el leaderboard.
+        </p>
+        <FinalOddsForm finalOdds={probs?.finalOdds ?? []} />
       </Card>
 
       <AdminDataTable

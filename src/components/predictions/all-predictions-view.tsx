@@ -53,6 +53,8 @@ export type ViewData = {
   fateByMemberCategory?: Record<string, Record<string, PickFate | undefined>>
   /** El apostador perfecto: respuesta oficial por categoría. */
   perfect?: PerfectCard | null
+  /** Probabilidad (0..1) de que gane el pick de cada (miembro, categoría). */
+  probByMemberCategory?: Record<string, Record<string, number | null>>
 }
 
 type Props = {
@@ -268,7 +270,10 @@ export function AllPredictionsView({
                           </div>
                           <div className="flex items-center justify-end gap-2 text-right text-sm">
                             {fateChipFor(m.userId, focusedCategory.id)}
-                            {renderPick(p)}
+                            {renderPick(
+                              p,
+                              view.probByMemberCategory?.[m.userId]?.[focusedCategory.id],
+                            )}
                           </div>
                         </div>
                         {!isMe && reactionBarFor(m.userId, focusedCategory.id)}
@@ -398,7 +403,10 @@ export function AllPredictionsView({
                         <span className="min-w-0 text-muted-foreground">{cat.name}</span>
                         <span className="flex items-center justify-end gap-2 text-right text-foreground">
                           {fateChipFor(m.userId, cat.id)}
-                          {renderPick(memberPicks[cat.id])}
+                          {renderPick(
+                            memberPicks[cat.id],
+                            view.probByMemberCategory?.[m.userId]?.[cat.id],
+                          )}
                         </span>
                       </div>
                       {!isMe && reactionBarFor(m.userId, cat.id)}

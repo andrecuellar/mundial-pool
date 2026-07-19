@@ -14,6 +14,7 @@ import {
   serialiseAllPredictionsView,
 } from '@/features/predictions/queries'
 import { getGroupReactions } from '@/features/reactions/queries'
+import { getWinProbabilities, probabilityForPick } from '@/features/tournament/win-probabilities'
 import { formatDayTime } from '@/lib/format'
 import { createSupabaseServerClient } from '@/lib/supabase/server'
 
@@ -62,7 +63,27 @@ export default async function PredictionsPage({ params }: Params) {
     : [null, undefined, null]
   const view = rawView ? serialiseAllPredictionsView(rawView, predIds) : null
   const reactionsByKey = reactionMap ? Object.fromEntries(reactionMap) : {}
-  const viewWithReactions = view ? { ...view, reactionsByKey } : null
+
+  // Probabilidad (0..1) de que gane el pick de cada (miembro, categoría), del
+  // estado del torneo + las cuotas de la final. null en categorías no modeladas.
+  let probByMemberCategory: Record<string, Record<string, number | null>> | undefined
+  if (view && locked) {
+    const probs = await getWinProbabilities().catch(() => null)
+    if (probs) {
+      probByMemberCategory = {}
+      for (const m of view.members) {
+        const picks = view.picksByMemberCategory[m.userId] ?? {}
+        const row: Record<string, number | null> = {}
+        for (const c of view.categories) {
+          const pick = picks[c.id]
+          row[c.id] = pick ? probabilityForPick(probs, c.key, pick) : null
+        }
+        probByMemberCategory[m.userId] = row
+      }
+    }
+  }
+
+  const viewWithReactions = view ? { ...view, reactionsByKey, probByMemberCategory } : null
 
   return (
     <>

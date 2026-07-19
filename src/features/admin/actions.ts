@@ -1,10 +1,11 @@
 'use server'
 
 import { eq } from 'drizzle-orm'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { z } from 'zod'
 import { db } from '@/db'
-import { profiles } from '@/db/schema'
+import { appState, profiles } from '@/db/schema'
+import { FINAL_ODDS_KEY } from '@/features/tournament/win-probabilities'
 import { isSuperAdminEmail, requireSuperAdmin } from '@/lib/admin'
 import { createSupabaseAdminClient } from '@/lib/supabase/admin'
 import { runResolution } from '@/server/resolution'
@@ -90,6 +91,33 @@ export type ForceResolutionResult = { ok: true; message: string } | { ok: false;
  * p.ej. la final — sin esperar al cron. Idempotente: upsert de resultados +
  * chequeo de firmas, así que darle varias veces es seguro.
  */
+const finalOddsSchema = z.object({
+  odds: z
+    .array(z.object({ teamId: z.uuid(), pct: z.number().min(0).max(100) }))
+    .min(1)
+    .max(4),
+})
+
+/** Cuotas de campeón entre los finalistas (0-100), que alimentan las
+ *  probabilidades mostradas en las cards. Se guardan por teamId en app_state. */
+export async function setFinalChampionOdds(input: unknown): Promise<AdminActionResult> {
+  await requireSuperAdmin()
+  const parsed = finalOddsSchema.safeParse(input)
+  if (!parsed.success) return { ok: false, error: 'Datos inválidos.' }
+  const map: Record<string, number> = {}
+  for (const o of parsed.data.odds) map[o.teamId] = o.pct
+  await db
+    .insert(appState)
+    .values({ key: FINAL_ODDS_KEY, value: JSON.stringify(map), updatedAt: new Date() })
+    .onConflictDoUpdate({
+      target: appState.key,
+      set: { value: JSON.stringify(map), updatedAt: new Date() },
+    })
+  revalidateTag('odds', 'hours')
+  revalidatePath('/admin/sistema')
+  return { ok: true }
+}
+
 export async function forceResolution(): Promise<ForceResolutionResult> {
   await requireSuperAdmin()
   try {
