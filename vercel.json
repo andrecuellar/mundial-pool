@@ -1,22 +1,4 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
-  "regions": ["pdx1"],
-  "crons": [
-    {
-      "path": "/api/cron/resolve",
-      "schedule": "0 0 * * *"
-    },
-    {
-      "path": "/api/cron/lock-reminder",
-      "schedule": "0 14 * * *"
-    },
-    {
-      "path": "/api/cron/payment-reminder",
-      "schedule": "0 16 * * *"
-    },
-    {
-      "path": "/api/cron/player-stats",
-      "schedule": "30 8 * * *"
-    }
-  ]
+  "regions": ["pdx1"]
 }
